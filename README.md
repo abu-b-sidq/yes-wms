@@ -1,4 +1,4 @@
-# Rozana WMS
+# YES WMS
 
 Rozana WMS is a standalone Django + Django Ninja warehouse operations application rooted
 in `app/` and exposed only through `/api/v1/`.
