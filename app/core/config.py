@@ -29,9 +29,11 @@ class RuntimeSettings:
     firebase_service_account_json: str | None
     firebase_service_account_path: str | None
     firebase_project_id: str | None
+    firebase_storage_bucket: str | None
     auth_fallback_enabled: bool
     legacy_api_keys: dict[str, str]
     warehouse_config: dict[str, Any]
+    document_generation_enabled: bool
     log_destination: str
     log_format: str
     log_include_payloads: bool
@@ -135,11 +137,15 @@ def get_runtime_settings() -> RuntimeSettings:
         firehose_flush = 5.0
     firehose_flush_interval_seconds = max(1.0, min(300.0, firehose_flush))
 
+    firebase_storage_bucket = (os.getenv("FIREBASE_STORAGE_BUCKET") or "").strip() or None
+
     return RuntimeSettings(
         firebase_service_account_json=os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON"),
         firebase_service_account_path=firebase_path,
         firebase_project_id=os.getenv("FIREBASE_PROJECT_ID"),
+        firebase_storage_bucket=firebase_storage_bucket,
         auth_fallback_enabled=_parse_bool(os.getenv("AUTH_FALLBACK_ENABLED"), True),
+        document_generation_enabled=_parse_bool(os.getenv("DOCUMENT_GENERATION_ENABLED"), False),
         legacy_api_keys=_parse_legacy_api_keys(os.getenv("LEGACY_API_KEYS")),
         warehouse_config=warehouse_config,
         log_destination=log_destination,

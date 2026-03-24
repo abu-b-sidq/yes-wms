@@ -8,15 +8,16 @@ services:
       POSTGRES_PASSWORD: rozana
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
 
   wms-middleware:
     build: .
     container_name: wms-middleware
+    working_dir: /app
     env_file:
       - .env
-    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      PYTHONPATH: /app
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./:/app
     ports:

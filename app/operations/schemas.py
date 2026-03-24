@@ -68,6 +68,7 @@ class TransactionOut(Schema):
     cancelled_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    document_url: str = ""
 
 
 # --- Convenience endpoints ---

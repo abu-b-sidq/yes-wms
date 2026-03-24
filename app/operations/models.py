@@ -24,6 +24,7 @@ class Transaction(TenantAwareModel):
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    document_url = models.URLField(max_length=500, blank=True, default="")
 
     class Meta:
         db_table = "app_transaction"

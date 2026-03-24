@@ -1,0 +1,51 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Move Slip — {{ transaction.reference_number|default:transaction.id }}{% endblock %}
+{% block doc_title %}Inventory Move Slip{% endblock %}
+
+{% block content %}
+<div class="section">
+  <h2>Movement Details</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>SKU Code</th>
+        <th>SKU Name</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Batch</th>
+        <th>Qty</th>
+        <th>UOM</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for drop in transaction.drops.all %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ drop.sku.code }}</td>
+        <td>{{ drop.sku.name }}</td>
+        <td>{% if drop.paired_pick %}{{ drop.paired_pick.source_entity_code }}{% else %}—{% endif %}</td>
+        <td><strong>{{ drop.dest_entity_code }}</strong></td>
+        <td>{{ drop.batch_number|default:"—" }}</td>
+        <td><strong>{{ drop.quantity }}</strong></td>
+        <td>{{ drop.sku.unit_of_measure }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:#888;">No items</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section" style="margin-top:32px;">
+  <div style="display:flex; justify-content:space-between;">
+    <div style="width:45%;">
+      <div style="border-top:1px solid #333; padding-top:4px; text-align:center; font-size:11px;">Moved By</div>
+    </div>
+    <div style="width:45%;">
+      <div style="border-top:1px solid #333; padding-top:4px; text-align:center; font-size:11px;">Verified By</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

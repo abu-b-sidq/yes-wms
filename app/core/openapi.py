@@ -49,12 +49,72 @@ API_KEY_HEADER_PARAM = {
 
 PROTECTED_SECURITY = [{"bearerAuth": []}, {"apiKeyAuth": []}]
 
+# ---------------------------------------------------------------------------
+# Reusable inline response-body schemas for openapi_extra["responses"]
+# ---------------------------------------------------------------------------
+
+_META_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "request_id": {"type": "string"},
+        "warehouse_key": {"type": "string"},
+        "org_id": {"type": "string", "nullable": True},
+        "facility_id": {"type": "string", "nullable": True},
+        "auth_source": {"type": "string", "enum": ["bearer", "api_key", "none"]},
+        "uid": {"type": "string"},
+        "client_name": {"type": "string"},
+    },
+}
+
+_ERROR_SCHEMA = {
+    "type": "object",
+    "nullable": True,
+    "properties": {
+        "code": {"type": "string"},
+        "message": {"type": "string"},
+        "details": {},
+    },
+}
+
+_SUCCESS_RESPONSES = {
+    "401": {"description": "Unauthorised — missing or invalid auth credentials."},
+    "403": {"description": "Forbidden — valid auth but insufficient permissions."},
+    "404": {"description": "Not found."},
+    "422": {"description": "Validation error — request body or parameters are invalid."},
+}
+
+
+def success_response_schema(data_schema: dict, description: str = "Success") -> dict:
+    """Return an ``openapi_extra['responses']`` dict with the standard success envelope."""
+    return {
+        "responses": {
+            "200": {
+                "description": description,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "success": {"type": "boolean", "example": True},
+                                "data": data_schema,
+                                "error": _ERROR_SCHEMA,
+                                "meta": _META_SCHEMA,
+                            },
+                        }
+                    }
+                },
+            },
+            **_SUCCESS_RESPONSES,
+        }
+    }
+
 
 def protected_openapi_extra(
     *,
     require_org: bool = True,
     require_facility: bool = False,
     include_facility: bool | None = None,
+    response_schema: dict | None = None,
 ) -> dict:
     params = [
         copy.deepcopy(WAREHOUSE_HEADER_PARAM),
@@ -76,10 +136,13 @@ def protected_openapi_extra(
         ]
     )
 
-    return {
+    extra: dict = {
         "security": copy.deepcopy(PROTECTED_SECURITY),
         "parameters": params,
     }
+    if response_schema is not None:
+        extra.update(response_schema)
+    return extra
 
 
 def inject_security_schemes(schema: dict) -> dict:

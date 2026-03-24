@@ -1,0 +1,53 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Pick List — {{ transaction.reference_number|default:transaction.id }}{% endblock %}
+{% block doc_title %}Order Pick List{% endblock %}
+
+{% block content %}
+<div class="section">
+  <h2>Items to Pick</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>SKU Code</th>
+        <th>SKU Name</th>
+        <th>Pick From</th>
+        <th>Order / Invoice</th>
+        <th>Batch</th>
+        <th>Qty</th>
+        <th>UOM</th>
+        <th>Picked ✓</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pick in transaction.picks.all %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ pick.sku.code }}</td>
+        <td>{{ pick.sku.name }}</td>
+        <td><strong>{{ pick.source_entity_code }}</strong></td>
+        <td>{% if pick.paired_drop %}{{ pick.paired_drop.dest_entity_code }}{% else %}—{% endif %}</td>
+        <td>{{ pick.batch_number|default:"—" }}</td>
+        <td><strong>{{ pick.quantity }}</strong></td>
+        <td>{{ pick.sku.unit_of_measure }}</td>
+        <td style="width:50px;">&nbsp;</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" style="text-align:center;color:#888;">No items</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section" style="margin-top:32px;">
+  <div style="display:flex; justify-content:space-between;">
+    <div style="width:45%;">
+      <div style="border-top:1px solid #333; padding-top:4px; text-align:center; font-size:11px;">Picked By</div>
+    </div>
+    <div style="width:45%;">
+      <div style="border-top:1px solid #333; padding-top:4px; text-align:center; font-size:11px;">Dispatched By</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

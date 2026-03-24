@@ -19,10 +19,34 @@ api = StandaloneWMSAPI(
     version="2.0.0",
     urls_namespace="api",
     description=(
-        "Standalone warehouse operations application with master data, inventory "
-        "visibility, and transaction execution. Protected business APIs require "
-        "`warehouse` plus either `Authorization` or `X-API-Key`; org-scoped routes "
-        "use `X-Org-Id`, and facility-scoped routes use `X-Facility-Id`."
+        "Standalone warehouse management system with master data, inventory visibility, "
+        "and transaction execution.\n\n"
+        "## Authentication\n\n"
+        "All protected endpoints require the `warehouse` header (tenant key). "
+        "Provide one of:\n"
+        "- `Authorization: Bearer <firebase-id-token>` — primary auth\n"
+        "- `X-API-Key: <key>` — legacy fallback (when enabled)\n\n"
+        "Org-scoped routes require `X-Org-Id`. Facility-scoped routes also require `X-Facility-Id`.\n\n"
+        "## Response envelope\n\n"
+        "All endpoints wrap their payload in a standard envelope:\n"
+        "```json\n"
+        "{\n"
+        '  "success": true,\n'
+        '  "data": { ... },\n'
+        '  "error": null,\n'
+        '  "meta": {\n'
+        '    "request_id": "...",\n'
+        '    "warehouse_key": "...",\n'
+        '    "org_id": "...",\n'
+        '    "facility_id": "...",\n'
+        '    "auth_source": "bearer | api_key | none"\n'
+        "  }\n"
+        "}\n"
+        "```\n\n"
+        "## Document generation\n\n"
+        "When configured (`TransactionDocumentConfig`), executing a transaction generates an HTML "
+        "document and uploads it to Firebase Storage. The download URL is returned in "
+        "`data.document_url` and persisted on the transaction."
     ),
     docs_url="/swagger",
     openapi_url="/openapi.json",

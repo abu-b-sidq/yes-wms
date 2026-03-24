@@ -13,6 +13,13 @@ The service owns:
 
 Legacy proxy endpoints and secondary API version paths are not part of this application.
 
+## Full Application Documentation
+
+For complete technical documentation (architecture, route catalog, auth/tenant header
+matrix, domain model, configuration, and operations), see:
+
+- [`docs/application-documentation.md`](docs/application-documentation.md)
+
 ## Repository Layout
 
 - `app/auth/`: authentication middleware and API-key helpers

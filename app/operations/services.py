@@ -89,6 +89,14 @@ def execute_transaction(txn: Transaction) -> Transaction:
 
         transition(txn, TransactionStatus.COMPLETED)
 
+    txn.refresh_from_db()
+
+    from app.documents.services import generate_and_store_document
+    url = generate_and_store_document(txn)
+    if url:
+        txn.document_url = url
+        txn.save(update_fields=["document_url", "updated_at"])
+
     return Transaction.objects.prefetch_related(
         "picks__sku", "drops__sku", "drops__paired_pick"
     ).get(pk=txn.pk)
