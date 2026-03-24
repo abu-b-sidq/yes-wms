@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ninja import Router
 
-from app.core.openapi import protected_openapi_extra, success_response_schema
+from app.core.openapi import protected_openapi_extra, register_response_schema
 from app.core.response import success_response
 from app.core.tenant import resolve_request_tenant
 from app.inventory import schemas, services
@@ -10,7 +10,7 @@ from app.inventory import schemas, services
 router = Router(tags=["inventory"])
 
 # ---------------------------------------------------------------------------
-# Response schemas
+# Response data schemas
 # ---------------------------------------------------------------------------
 
 _ENTITY_TYPE_ENUM = ["LOCATION", "ZONE", "INVOICE", "VIRTUAL_BUCKET", "SUPPLIER", "CUSTOMER"]
@@ -49,22 +49,18 @@ _LEDGER_SCHEMA = {
         "quantity": {
             "type": "string",
             "format": "decimal",
-            "description": "Signed quantity — negative for picks, positive for drops.",
+            "description": "Signed — negative for picks, positive for drops.",
         },
         "balance_after": {"type": "string", "format": "decimal"},
         "created_at": {"type": "string", "format": "date-time"},
     },
 }
 
-_BALANCES_RESPONSE = success_response_schema({"type": "array", "items": _BALANCE_SCHEMA})
-_LEDGER_RESPONSE = success_response_schema({"type": "array", "items": _LEDGER_SCHEMA})
-
-ORG_WITH_OPTIONAL_FACILITY = protected_openapi_extra(include_facility=True)
-ORG_WITH_REQUIRED_FACILITY = protected_openapi_extra(require_facility=True)
-
+_BALANCES_LIST = {"type": "array", "items": _BALANCE_SCHEMA}
+_LEDGER_LIST = {"type": "array", "items": _LEDGER_SCHEMA}
 
 # ---------------------------------------------------------------------------
-# Balances
+# Routes
 # ---------------------------------------------------------------------------
 
 @router.get(
@@ -74,7 +70,7 @@ ORG_WITH_REQUIRED_FACILITY = protected_openapi_extra(require_facility=True)
         "Return current stock levels filtered by optional SKU, entity type, or entity code. "
         "Pass `X-Facility-Id` to scope results to a specific facility."
     ),
-    openapi_extra=protected_openapi_extra(include_facility=True, response_schema=_BALANCES_RESPONSE),
+    openapi_extra=protected_openapi_extra(include_facility=True),
 )
 def list_balances(
     request,
@@ -94,7 +90,7 @@ def list_balances(
     "/balances/by-location/{code}",
     summary="Inventory at a specific location",
     description="Return all SKU balances at the given storage location within a facility.",
-    openapi_extra=protected_openapi_extra(require_facility=True, response_schema=_BALANCES_RESPONSE),
+    openapi_extra=protected_openapi_extra(require_facility=True),
 )
 def balances_by_location(request, code: str):
     org, facility = resolve_request_tenant(request, require_facility=True)
@@ -106,7 +102,7 @@ def balances_by_location(request, code: str):
     "/balances/by-sku/{code}",
     summary="Inventory for a SKU across locations",
     description="Return balances for a specific SKU across all locations in a facility.",
-    openapi_extra=protected_openapi_extra(require_facility=True, response_schema=_BALANCES_RESPONSE),
+    openapi_extra=protected_openapi_extra(require_facility=True),
 )
 def balances_by_sku(request, code: str):
     org, facility = resolve_request_tenant(request, require_facility=True)
@@ -114,18 +110,14 @@ def balances_by_sku(request, code: str):
     return success_response(request, data=[_balance_out(b) for b in balances])
 
 
-# ---------------------------------------------------------------------------
-# Ledger
-# ---------------------------------------------------------------------------
-
 @router.get(
     "/ledger",
     summary="Query inventory ledger",
     description=(
-        "Return immutable ledger entries representing inventory debits (picks) and credits (drops). "
-        "Filter by SKU or transaction ID. Quantity is signed: negative for picks, positive for drops."
+        "Return immutable ledger entries representing inventory movements. "
+        "Quantity is signed: negative for picks (debits), positive for drops (credits)."
     ),
-    openapi_extra=protected_openapi_extra(include_facility=True, response_schema=_LEDGER_RESPONSE),
+    openapi_extra=protected_openapi_extra(include_facility=True),
 )
 def list_ledger(
     request,
@@ -143,12 +135,23 @@ def list_ledger(
     "/ledger/by-transaction/{txn_id}",
     summary="Ledger entries for a specific transaction",
     description="Return all ledger entries created by a single transaction execution.",
-    openapi_extra=protected_openapi_extra(response_schema=_LEDGER_RESPONSE),
+    openapi_extra=protected_openapi_extra(),
 )
 def ledger_by_transaction(request, txn_id: str):
     org, _ = resolve_request_tenant(request)
     entries = services.get_ledger(org, transaction_id=txn_id)
     return success_response(request, data=[_ledger_out(e) for e in entries])
+
+
+# ---------------------------------------------------------------------------
+# Register response schemas
+# ---------------------------------------------------------------------------
+
+register_response_schema("app_inventory_routes_list_balances", _BALANCES_LIST)
+register_response_schema("app_inventory_routes_balances_by_location", _BALANCES_LIST)
+register_response_schema("app_inventory_routes_balances_by_sku", _BALANCES_LIST)
+register_response_schema("app_inventory_routes_list_ledger", _LEDGER_LIST)
+register_response_schema("app_inventory_routes_ledger_by_transaction", _LEDGER_LIST)
 
 
 # ---------------------------------------------------------------------------

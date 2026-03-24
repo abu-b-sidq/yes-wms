@@ -1,6 +1,6 @@
 from ninja import Router
 
-from app.core.openapi import protected_openapi_extra, success_response_schema
+from app.core.openapi import protected_openapi_extra, register_response_schema
 from app.core.response import success_response
 from app.core.tenant import resolve_request_tenant
 from app.masters import schemas, services
@@ -8,7 +8,7 @@ from app.masters import schemas, services
 router = Router(tags=["masters"])
 
 # ---------------------------------------------------------------------------
-# Response schemas
+# Response data schemas
 # ---------------------------------------------------------------------------
 
 _ORG_SCHEMA = {
@@ -75,149 +75,6 @@ _LOCATION_SCHEMA = {
     },
 }
 
-_MAPPING_OVERRIDE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "is_active": {"type": "boolean"},
-        "overrides": {"type": "object"},
-    },
-}
-
-
-def _list_of(schema: dict) -> dict:
-    return {"type": "array", "items": schema}
-
-
-ORGLESS_PROTECTED = protected_openapi_extra(require_org=False)
-ORG_PROTECTED = protected_openapi_extra()
-
-
-# ---------------------------------------------------------------------------
-# Organization
-# ---------------------------------------------------------------------------
-
-@router.post(
-    "/organizations",
-    summary="Create organization",
-    description="Create a new top-level organisation. The `id` is chosen by the caller and must be unique.",
-    openapi_extra=protected_openapi_extra(
-        require_org=False,
-        response_schema=success_response_schema(_ORG_SCHEMA),
-    ),
-)
-def create_organization(request, payload: schemas.OrganizationCreateIn):
-    org = services.create_organization(payload.dict())
-    return success_response(request, data=schemas.OrganizationOut.from_orm(org).dict())
-
-
-@router.get(
-    "/organizations",
-    summary="List organizations",
-    description="Return all organisations visible to the authenticated warehouse.",
-    openapi_extra=protected_openapi_extra(
-        require_org=False,
-        response_schema=success_response_schema(_list_of(_ORG_SCHEMA)),
-    ),
-)
-def list_organizations(request):
-    orgs = services.list_organizations()
-    return success_response(
-        request,
-        data=[schemas.OrganizationOut.from_orm(o).dict() for o in orgs],
-    )
-
-
-@router.get(
-    "/organizations/{org_id}",
-    summary="Get organization",
-    description="Retrieve a single organisation by its ID.",
-    openapi_extra=protected_openapi_extra(
-        require_org=False,
-        response_schema=success_response_schema(_ORG_SCHEMA),
-    ),
-)
-def get_organization(request, org_id: str):
-    org = services.get_organization(org_id)
-    return success_response(request, data=schemas.OrganizationOut.from_orm(org).dict())
-
-
-@router.patch(
-    "/organizations/{org_id}",
-    summary="Update organization",
-    description="Partially update an organisation's name or active status.",
-    openapi_extra=protected_openapi_extra(
-        require_org=False,
-        response_schema=success_response_schema(_ORG_SCHEMA),
-    ),
-)
-def update_organization(request, org_id: str, payload: schemas.OrganizationUpdateIn):
-    org = services.update_organization(org_id, payload.dict(exclude_unset=True))
-    return success_response(request, data=schemas.OrganizationOut.from_orm(org).dict())
-
-
-# ---------------------------------------------------------------------------
-# Facility
-# ---------------------------------------------------------------------------
-
-@router.post(
-    "/facilities",
-    summary="Create facility",
-    description=(
-        "Create a new warehouse facility within the organisation. "
-        "Creating a facility automatically maps all existing org-level SKUs, zones, and locations to it."
-    ),
-    openapi_extra=protected_openapi_extra(response_schema=success_response_schema(_FACILITY_SCHEMA)),
-)
-def create_facility(request, payload: schemas.FacilityCreateIn):
-    org, _ = resolve_request_tenant(request)
-    user = _get_user(request)
-    facility = services.create_facility(org, payload.dict(), user=user)
-    return success_response(request, data=_facility_out(facility))
-
-
-@router.get(
-    "/facilities",
-    summary="List facilities",
-    description="Return all facilities for the organisation.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_list_of(_FACILITY_SCHEMA))
-    ),
-)
-def list_facilities(request):
-    org, _ = resolve_request_tenant(request)
-    facilities = services.list_facilities(org)
-    return success_response(request, data=[_facility_out(f) for f in facilities])
-
-
-@router.get(
-    "/facilities/{code}",
-    summary="Get facility",
-    description="Retrieve a single facility by its code.",
-    openapi_extra=protected_openapi_extra(response_schema=success_response_schema(_FACILITY_SCHEMA)),
-)
-def get_facility(request, code: str):
-    org, _ = resolve_request_tenant(request)
-    facility = services.get_facility(org, code)
-    return success_response(request, data=_facility_out(facility))
-
-
-@router.patch(
-    "/facilities/{code}",
-    summary="Update facility",
-    description="Partially update a facility's name, address, or active status.",
-    openapi_extra=protected_openapi_extra(response_schema=success_response_schema(_FACILITY_SCHEMA)),
-)
-def update_facility(request, code: str, payload: schemas.FacilityUpdateIn):
-    org, _ = resolve_request_tenant(request)
-    user = _get_user(request)
-    facility = services.update_facility(org, code, payload.dict(exclude_unset=True), user=user)
-    return success_response(request, data=_facility_out(facility))
-
-
-# ---------------------------------------------------------------------------
-# Facility Mapping Overrides
-# ---------------------------------------------------------------------------
-
 _FAC_SKU_SCHEMA = {
     "type": "object",
     "properties": {
@@ -247,13 +104,125 @@ _FAC_LOCATION_SCHEMA = {
 }
 
 
+def _list_of(schema: dict) -> dict:
+    return {"type": "array", "items": schema}
+
+
+# ---------------------------------------------------------------------------
+# Organization
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/organizations",
+    summary="Create organization",
+    description="Create a new top-level organisation. The `id` is chosen by the caller and must be unique.",
+    openapi_extra=protected_openapi_extra(require_org=False),
+)
+def create_organization(request, payload: schemas.OrganizationCreateIn):
+    org = services.create_organization(payload.dict())
+    return success_response(request, data=schemas.OrganizationOut.from_orm(org).dict())
+
+
+@router.get(
+    "/organizations",
+    summary="List organizations",
+    description="Return all organisations visible to the authenticated warehouse.",
+    openapi_extra=protected_openapi_extra(require_org=False),
+)
+def list_organizations(request):
+    orgs = services.list_organizations()
+    return success_response(
+        request,
+        data=[schemas.OrganizationOut.from_orm(o).dict() for o in orgs],
+    )
+
+
+@router.get(
+    "/organizations/{org_id}",
+    summary="Get organization",
+    description="Retrieve a single organisation by its ID.",
+    openapi_extra=protected_openapi_extra(require_org=False),
+)
+def get_organization(request, org_id: str):
+    org = services.get_organization(org_id)
+    return success_response(request, data=schemas.OrganizationOut.from_orm(org).dict())
+
+
+@router.patch(
+    "/organizations/{org_id}",
+    summary="Update organization",
+    description="Partially update an organisation's name or active status.",
+    openapi_extra=protected_openapi_extra(require_org=False),
+)
+def update_organization(request, org_id: str, payload: schemas.OrganizationUpdateIn):
+    org = services.update_organization(org_id, payload.dict(exclude_unset=True))
+    return success_response(request, data=schemas.OrganizationOut.from_orm(org).dict())
+
+
+# ---------------------------------------------------------------------------
+# Facility
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/facilities",
+    summary="Create facility",
+    description=(
+        "Create a warehouse facility within the organisation. "
+        "All existing org SKUs, zones, and locations are automatically mapped to it."
+    ),
+    openapi_extra=protected_openapi_extra(),
+)
+def create_facility(request, payload: schemas.FacilityCreateIn):
+    org, _ = resolve_request_tenant(request)
+    user = _get_user(request)
+    facility = services.create_facility(org, payload.dict(), user=user)
+    return success_response(request, data=_facility_out(facility))
+
+
+@router.get(
+    "/facilities",
+    summary="List facilities",
+    description="Return all facilities for the organisation.",
+    openapi_extra=protected_openapi_extra(),
+)
+def list_facilities(request):
+    org, _ = resolve_request_tenant(request)
+    facilities = services.list_facilities(org)
+    return success_response(request, data=[_facility_out(f) for f in facilities])
+
+
+@router.get(
+    "/facilities/{code}",
+    summary="Get facility",
+    description="Retrieve a single facility by its code.",
+    openapi_extra=protected_openapi_extra(),
+)
+def get_facility(request, code: str):
+    org, _ = resolve_request_tenant(request)
+    facility = services.get_facility(org, code)
+    return success_response(request, data=_facility_out(facility))
+
+
+@router.patch(
+    "/facilities/{code}",
+    summary="Update facility",
+    description="Partially update a facility's name, address, or active status.",
+    openapi_extra=protected_openapi_extra(),
+)
+def update_facility(request, code: str, payload: schemas.FacilityUpdateIn):
+    org, _ = resolve_request_tenant(request)
+    user = _get_user(request)
+    facility = services.update_facility(org, code, payload.dict(exclude_unset=True), user=user)
+    return success_response(request, data=_facility_out(facility))
+
+
+# --- Facility SKU mappings ---
+
 @router.get(
     "/facilities/{code}/skus",
     summary="List facility SKU mappings",
     description="Return all SKUs mapped to this facility, including per-facility override settings.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_list_of(_FAC_SKU_SCHEMA))
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def list_facility_skus(request, code: str):
     org, _ = resolve_request_tenant(request)
@@ -277,9 +246,7 @@ def list_facility_skus(request, code: str):
     "/facilities/{code}/skus/{sku_code}",
     summary="Update facility SKU mapping",
     description="Update the `is_active` flag or `overrides` for a SKU–facility mapping.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_FAC_SKU_SCHEMA)
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def update_facility_sku(request, code: str, sku_code: str, payload: schemas.FacilityMappingOverrideIn):
     org, _ = resolve_request_tenant(request)
@@ -296,13 +263,13 @@ def update_facility_sku(request, code: str, sku_code: str, payload: schemas.Faci
     )
 
 
+# --- Facility zone mappings ---
+
 @router.get(
     "/facilities/{code}/zones",
     summary="List facility zone mappings",
     description="Return all zones mapped to this facility.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_list_of(_FAC_ZONE_SCHEMA))
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def list_facility_zones(request, code: str):
     org, _ = resolve_request_tenant(request)
@@ -326,9 +293,7 @@ def list_facility_zones(request, code: str):
     "/facilities/{code}/zones/{zone_code}",
     summary="Update facility zone mapping",
     description="Update the `is_active` flag or `overrides` for a zone–facility mapping.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_FAC_ZONE_SCHEMA)
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def update_facility_zone(request, code: str, zone_code: str, payload: schemas.FacilityMappingOverrideIn):
     org, _ = resolve_request_tenant(request)
@@ -345,13 +310,13 @@ def update_facility_zone(request, code: str, zone_code: str, payload: schemas.Fa
     )
 
 
+# --- Facility location mappings ---
+
 @router.get(
     "/facilities/{code}/locations",
     summary="List facility location mappings",
     description="Return all locations mapped to this facility.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_list_of(_FAC_LOCATION_SCHEMA))
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def list_facility_locations(request, code: str):
     org, _ = resolve_request_tenant(request)
@@ -375,9 +340,7 @@ def list_facility_locations(request, code: str):
     "/facilities/{code}/locations/{location_code}",
     summary="Update facility location mapping",
     description="Update the `is_active` flag or `overrides` for a location–facility mapping.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_FAC_LOCATION_SCHEMA)
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def update_facility_location(
     request, code: str, location_code: str, payload: schemas.FacilityMappingOverrideIn
@@ -406,10 +369,10 @@ def update_facility_location(
     "/skus",
     summary="Create SKU",
     description=(
-        "Create a new Stock Keeping Unit within the organisation. "
-        "Creating a SKU automatically maps it to all existing org facilities."
+        "Create a new SKU within the organisation. "
+        "Automatically mapped to all existing org facilities."
     ),
-    openapi_extra=protected_openapi_extra(response_schema=success_response_schema(_SKU_SCHEMA)),
+    openapi_extra=protected_openapi_extra(),
 )
 def create_sku(request, payload: schemas.SKUCreateIn):
     org, _ = resolve_request_tenant(request)
@@ -422,9 +385,7 @@ def create_sku(request, payload: schemas.SKUCreateIn):
     "/skus",
     summary="List SKUs",
     description="Return all SKUs for the organisation.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_list_of(_SKU_SCHEMA))
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def list_skus(request):
     org, _ = resolve_request_tenant(request)
@@ -439,7 +400,7 @@ def list_skus(request):
     "/skus/{code}",
     summary="Get SKU",
     description="Retrieve a single SKU by its code.",
-    openapi_extra=protected_openapi_extra(response_schema=success_response_schema(_SKU_SCHEMA)),
+    openapi_extra=protected_openapi_extra(),
 )
 def get_sku(request, code: str):
     org, _ = resolve_request_tenant(request)
@@ -451,7 +412,7 @@ def get_sku(request, code: str):
     "/skus/{code}",
     summary="Update SKU",
     description="Partially update a SKU's name, unit of measure, active status, or metadata.",
-    openapi_extra=protected_openapi_extra(response_schema=success_response_schema(_SKU_SCHEMA)),
+    openapi_extra=protected_openapi_extra(),
 )
 def update_sku(request, code: str, payload: schemas.SKUUpdateIn):
     org, _ = resolve_request_tenant(request)
@@ -468,10 +429,10 @@ def update_sku(request, code: str, payload: schemas.SKUUpdateIn):
     "/zones",
     summary="Create zone",
     description=(
-        "Create a new zone within the organisation. "
-        "Creating a zone automatically maps it to all existing org facilities."
+        "Create a zone within the organisation. "
+        "Automatically mapped to all existing org facilities."
     ),
-    openapi_extra=protected_openapi_extra(response_schema=success_response_schema(_ZONE_SCHEMA)),
+    openapi_extra=protected_openapi_extra(),
 )
 def create_zone(request, payload: schemas.ZoneCreateIn):
     org, _ = resolve_request_tenant(request)
@@ -484,9 +445,7 @@ def create_zone(request, payload: schemas.ZoneCreateIn):
     "/zones",
     summary="List zones",
     description="Return all zones for the organisation.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_list_of(_ZONE_SCHEMA))
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def list_zones(request):
     org, _ = resolve_request_tenant(request)
@@ -501,7 +460,7 @@ def list_zones(request):
     "/zones/{code}",
     summary="Get zone",
     description="Retrieve a single zone by its code.",
-    openapi_extra=protected_openapi_extra(response_schema=success_response_schema(_ZONE_SCHEMA)),
+    openapi_extra=protected_openapi_extra(),
 )
 def get_zone(request, code: str):
     org, _ = resolve_request_tenant(request)
@@ -513,7 +472,7 @@ def get_zone(request, code: str):
     "/zones/{code}",
     summary="Update zone",
     description="Partially update a zone's name or active status.",
-    openapi_extra=protected_openapi_extra(response_schema=success_response_schema(_ZONE_SCHEMA)),
+    openapi_extra=protected_openapi_extra(),
 )
 def update_zone(request, code: str, payload: schemas.ZoneUpdateIn):
     org, _ = resolve_request_tenant(request)
@@ -530,12 +489,10 @@ def update_zone(request, code: str, payload: schemas.ZoneUpdateIn):
     "/locations",
     summary="Create location",
     description=(
-        "Create a new storage location within a zone. "
-        "Creating a location automatically maps it to all existing org facilities."
+        "Create a storage location within a zone. "
+        "Automatically mapped to all existing org facilities."
     ),
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_LOCATION_SCHEMA)
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def create_location(request, payload: schemas.LocationCreateIn):
     org, _ = resolve_request_tenant(request)
@@ -548,9 +505,7 @@ def create_location(request, payload: schemas.LocationCreateIn):
     "/locations",
     summary="List locations",
     description="Return all locations for the organisation.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_list_of(_LOCATION_SCHEMA))
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def list_locations(request):
     org, _ = resolve_request_tenant(request)
@@ -562,9 +517,7 @@ def list_locations(request):
     "/locations/{code}",
     summary="Get location",
     description="Retrieve a single location by its code.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_LOCATION_SCHEMA)
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def get_location(request, code: str):
     org, _ = resolve_request_tenant(request)
@@ -576,15 +529,45 @@ def get_location(request, code: str):
     "/locations/{code}",
     summary="Update location",
     description="Partially update a location's name, zone, capacity, or active status.",
-    openapi_extra=protected_openapi_extra(
-        response_schema=success_response_schema(_LOCATION_SCHEMA)
-    ),
+    openapi_extra=protected_openapi_extra(),
 )
 def update_location(request, code: str, payload: schemas.LocationUpdateIn):
     org, _ = resolve_request_tenant(request)
     user = _get_user(request)
     location = services.update_location(org, code, payload.dict(exclude_unset=True), user=user)
     return success_response(request, data=_location_out(location))
+
+
+# ---------------------------------------------------------------------------
+# Register response schemas
+# ---------------------------------------------------------------------------
+
+register_response_schema("app_masters_routes_create_organization", _ORG_SCHEMA)
+register_response_schema("app_masters_routes_list_organizations", _list_of(_ORG_SCHEMA))
+register_response_schema("app_masters_routes_get_organization", _ORG_SCHEMA)
+register_response_schema("app_masters_routes_update_organization", _ORG_SCHEMA)
+register_response_schema("app_masters_routes_create_facility", _FACILITY_SCHEMA)
+register_response_schema("app_masters_routes_list_facilities", _list_of(_FACILITY_SCHEMA))
+register_response_schema("app_masters_routes_get_facility", _FACILITY_SCHEMA)
+register_response_schema("app_masters_routes_update_facility", _FACILITY_SCHEMA)
+register_response_schema("app_masters_routes_list_facility_skus", _list_of(_FAC_SKU_SCHEMA))
+register_response_schema("app_masters_routes_update_facility_sku", _FAC_SKU_SCHEMA)
+register_response_schema("app_masters_routes_list_facility_zones", _list_of(_FAC_ZONE_SCHEMA))
+register_response_schema("app_masters_routes_update_facility_zone", _FAC_ZONE_SCHEMA)
+register_response_schema("app_masters_routes_list_facility_locations", _list_of(_FAC_LOCATION_SCHEMA))
+register_response_schema("app_masters_routes_update_facility_location", _FAC_LOCATION_SCHEMA)
+register_response_schema("app_masters_routes_create_sku", _SKU_SCHEMA)
+register_response_schema("app_masters_routes_list_skus", _list_of(_SKU_SCHEMA))
+register_response_schema("app_masters_routes_get_sku", _SKU_SCHEMA)
+register_response_schema("app_masters_routes_update_sku", _SKU_SCHEMA)
+register_response_schema("app_masters_routes_create_zone", _ZONE_SCHEMA)
+register_response_schema("app_masters_routes_list_zones", _list_of(_ZONE_SCHEMA))
+register_response_schema("app_masters_routes_get_zone", _ZONE_SCHEMA)
+register_response_schema("app_masters_routes_update_zone", _ZONE_SCHEMA)
+register_response_schema("app_masters_routes_create_location", _LOCATION_SCHEMA)
+register_response_schema("app_masters_routes_list_locations", _list_of(_LOCATION_SCHEMA))
+register_response_schema("app_masters_routes_get_location", _LOCATION_SCHEMA)
+register_response_schema("app_masters_routes_update_location", _LOCATION_SCHEMA)
 
 
 # ---------------------------------------------------------------------------

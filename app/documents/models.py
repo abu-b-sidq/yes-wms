@@ -50,7 +50,6 @@ class TransactionDocumentConfig(UUIDPrimaryKeyMixin, TimestampedModel):
             models.UniqueConstraint(
                 fields=["org", "facility", "transaction_type"],
                 name="uq_doc_config_org_facility_type",
-                nulls_distinct=False,
             )
         ]
 

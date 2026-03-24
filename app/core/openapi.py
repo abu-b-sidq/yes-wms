@@ -49,8 +49,41 @@ API_KEY_HEADER_PARAM = {
 
 PROTECTED_SECURITY = [{"bearerAuth": []}, {"apiKeyAuth": []}]
 
+
+def protected_openapi_extra(
+    *,
+    require_org: bool = True,
+    require_facility: bool = False,
+    include_facility: bool | None = None,
+) -> dict:
+    params = [
+        copy.deepcopy(WAREHOUSE_HEADER_PARAM),
+    ]
+    if require_org:
+        params.append(copy.deepcopy(ORG_HEADER_PARAM))
+
+    if include_facility is None:
+        include_facility = require_facility
+    if include_facility:
+        facility_param = copy.deepcopy(FACILITY_HEADER_PARAM)
+        facility_param["required"] = require_facility
+        params.append(facility_param)
+
+    params.extend(
+        [
+            copy.deepcopy(AUTHORIZATION_HEADER_PARAM),
+            copy.deepcopy(API_KEY_HEADER_PARAM),
+        ]
+    )
+
+    return {
+        "security": copy.deepcopy(PROTECTED_SECURITY),
+        "parameters": params,
+    }
+
+
 # ---------------------------------------------------------------------------
-# Reusable inline response-body schemas for openapi_extra["responses"]
+# Response schema components — injected globally via inject_security_schemes
 # ---------------------------------------------------------------------------
 
 _META_SCHEMA = {
@@ -76,79 +109,32 @@ _ERROR_SCHEMA = {
     },
 }
 
-_SUCCESS_RESPONSES = {
-    "401": {"description": "Unauthorised — missing or invalid auth credentials."},
-    "403": {"description": "Forbidden — valid auth but insufficient permissions."},
-    "404": {"description": "Not found."},
-    "422": {"description": "Validation error — request body or parameters are invalid."},
-}
+# Maps path prefix → data schema for the 200 response envelope.
+# Populated by route modules via register_response_schema().
+_RESPONSE_SCHEMAS: dict[str, dict] = {}
 
 
-def success_response_schema(data_schema: dict, description: str = "Success") -> dict:
-    """Return an ``openapi_extra['responses']`` dict with the standard success envelope."""
+def register_response_schema(operation_id: str, data_schema: dict) -> None:
+    """Register a data schema for an operation's 200 response envelope."""
+    _RESPONSE_SCHEMAS[operation_id] = data_schema
+
+
+def _make_envelope(data_schema: dict) -> dict:
     return {
-        "responses": {
-            "200": {
-                "description": description,
-                "content": {
-                    "application/json": {
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "success": {"type": "boolean", "example": True},
-                                "data": data_schema,
-                                "error": _ERROR_SCHEMA,
-                                "meta": _META_SCHEMA,
-                            },
-                        }
-                    }
-                },
-            },
-            **_SUCCESS_RESPONSES,
-        }
+        "type": "object",
+        "properties": {
+            "success": {"type": "boolean", "example": True},
+            "data": data_schema,
+            "error": _ERROR_SCHEMA,
+            "meta": _META_SCHEMA,
+        },
     }
-
-
-def protected_openapi_extra(
-    *,
-    require_org: bool = True,
-    require_facility: bool = False,
-    include_facility: bool | None = None,
-    response_schema: dict | None = None,
-) -> dict:
-    params = [
-        copy.deepcopy(WAREHOUSE_HEADER_PARAM),
-    ]
-    if require_org:
-        params.append(copy.deepcopy(ORG_HEADER_PARAM))
-
-    if include_facility is None:
-        include_facility = require_facility
-    if include_facility:
-        facility_param = copy.deepcopy(FACILITY_HEADER_PARAM)
-        facility_param["required"] = require_facility
-        params.append(facility_param)
-
-    params.extend(
-        [
-            copy.deepcopy(AUTHORIZATION_HEADER_PARAM),
-            copy.deepcopy(API_KEY_HEADER_PARAM),
-        ]
-    )
-
-    extra: dict = {
-        "security": copy.deepcopy(PROTECTED_SECURITY),
-        "parameters": params,
-    }
-    if response_schema is not None:
-        extra.update(response_schema)
-    return extra
 
 
 def inject_security_schemes(schema: dict) -> dict:
+    # Security scheme components
     components = schema.setdefault("components", {})
     security_schemes = components.setdefault("securitySchemes", {})
-
     security_schemes["bearerAuth"] = {
         "type": "http",
         "scheme": "bearer",
@@ -161,5 +147,37 @@ def inject_security_schemes(schema: dict) -> dict:
         "name": "X-API-Key",
         "description": "Fallback auth for trusted clients when Firebase tokens are unavailable.",
     }
+
+    # Post-process every operation's responses
+    for _path, path_item in schema.get("paths", {}).items():
+        for _method, operation in path_item.items():
+            if not isinstance(operation, dict):
+                continue
+
+            operation_id = operation.get("operationId", "")
+            data_schema = _RESPONSE_SCHEMAS.get(operation_id, {"type": "object"})
+
+            # Replace the 200 response — remove both int and str variants Ninja may write
+            responses = operation.setdefault("responses", {})
+            responses.pop(200, None)
+            responses.pop("200", None)
+            responses["200"] = {
+                "description": "Success",
+                "content": {
+                    "application/json": {
+                        "schema": _make_envelope(data_schema),
+                    }
+                },
+            }
+
+            # Add standard error responses (only if operation has security — i.e. protected)
+            if operation.get("security"):
+                # Remove Ninja's integer-keyed 422 before setting our string-keyed version
+                for code in (401, 403, 404, 422):
+                    responses.pop(code, None)
+                responses.setdefault("401", {"description": "Unauthorised — missing or invalid credentials."})
+                responses.setdefault("403", {"description": "Forbidden — valid credentials but insufficient permissions."})
+                responses.setdefault("404", {"description": "Resource not found."})
+                responses.setdefault("422", {"description": "Validation error — request body or parameters are invalid."})
 
     return schema
