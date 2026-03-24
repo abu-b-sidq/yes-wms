@@ -69,7 +69,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "app.core.middleware.RequestIDMiddleware",
     "app.core.middleware.RequestLoggingMiddleware",
-    "app.auth.middleware.DualAuthMiddleware",
+    # "app.auth.middleware.DualAuthMiddleware",
     "app.core.middleware.TenantContextMiddleware",
 ]
 
