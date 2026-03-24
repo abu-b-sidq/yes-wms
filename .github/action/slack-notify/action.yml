@@ -1,0 +1,53 @@
+name: "Slack Notify"
+description: "Send deployment status to Slack"
+
+inputs:
+  status:
+    required: true
+  service:
+    required: true
+  environment:
+    required: true
+  image:
+    required: true
+  repository:
+    required: true
+  actor:
+    required: true
+  webhook:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        STATUS="${{ inputs.status }}"
+
+        if [ "$STATUS" = "success" ]; then
+          ICON="✅"
+          TITLE="Deployment Successful"
+          MENTION=""
+        elif [ "$STATUS" = "started" ]; then
+          ICON="🚀"
+          TITLE="Deployment Started"
+          MENTION=""
+        else
+          ICON="❌"
+          TITLE="Deployment Failed"
+          MENTION=" <!here>"
+        fi
+
+        curl -X POST -H 'Content-type: application/json' \
+        --data "{
+          \"blocks\": [
+            {
+              \"type\": \"section\",
+              \"text\": {
+                \"type\": \"mrkdwn\",
+                \"text\": \"$ICON *$TITLE*$MENTION\\n*Service:* ${{ inputs.service }}\\n*Environment:* ${{ inputs.environment }}\\n*Image:* ${{ inputs.image }}\\n*Repo:* <https://github.com/${{ inputs.repository }}|${{ inputs.repository }}>\\n*Triggered By:* ${{ inputs.actor }}\"
+              }
+            }
+          ]
+        }" \
+        "${{ inputs.webhook }}"

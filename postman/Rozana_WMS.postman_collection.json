@@ -1,0 +1,554 @@
+{
+  "info": {
+    "name": "Rozana WMS",
+    "description": "Standalone Rozana WMS API collection for the `/api/v1` application surface.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8010/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "warehouse",
+      "value": "TEST_WH9",
+      "type": "string"
+    },
+    {
+      "key": "org_id",
+      "value": "rozana",
+      "type": "string"
+    },
+    {
+      "key": "facility_code",
+      "value": "FAC-001",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "legacy-secret",
+      "type": "string"
+    },
+    {
+      "key": "sku_code",
+      "value": "SKU-001",
+      "type": "string"
+    },
+    {
+      "key": "zone_code",
+      "value": "ZONE-A",
+      "type": "string"
+    },
+    {
+      "key": "location_code",
+      "value": "LOC-001",
+      "type": "string"
+    },
+    {
+      "key": "location_code_2",
+      "value": "LOC-002",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OpenAPI",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/openapi.json",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "openapi.json"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Masters",
+      "item": [
+        {
+          "name": "Create Organization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{org_id}}\",\n  \"name\": \"Rozana Foods\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/masters/organizations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "masters",
+                "organizations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Facility",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{facility_code}}\",\n  \"name\": \"Main Warehouse\",\n  \"address\": \"Plot 42, Industrial Area\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/masters/facilities",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "masters",
+                "facilities"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Zone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{zone_code}}\",\n  \"name\": \"Ambient Zone\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/masters/zones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "masters",
+                "zones"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create SKU",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{sku_code}}\",\n  \"name\": \"Test SKU\",\n  \"unit_of_measure\": \"EA\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/masters/skus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "masters",
+                "skus"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{location_code}}\",\n  \"name\": \"Aisle A Bin 1\",\n  \"zone_code\": \"{{zone_code}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/masters/locations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "masters",
+                "locations"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Operations",
+      "item": [
+        {
+          "name": "Create GRN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              },
+              {
+                "key": "X-Facility-Id",
+                "value": "{{facility_code}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"sku_code\": \"{{sku_code}}\",\n      \"quantity\": \"10\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/operations/grn",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "operations",
+                "grn"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Putaway",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              },
+              {
+                "key": "X-Facility-Id",
+                "value": "{{facility_code}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku_code\": \"{{sku_code}}\",\n  \"dest_entity_code\": \"{{location_code}}\",\n  \"quantity\": \"10\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/operations/putaway",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "operations",
+                "putaway"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Move",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              },
+              {
+                "key": "X-Facility-Id",
+                "value": "{{facility_code}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku_code\": \"{{sku_code}}\",\n  \"source_entity_code\": \"{{location_code}}\",\n  \"dest_entity_code\": \"{{location_code_2}}\",\n  \"quantity\": \"5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/operations/move",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "operations",
+                "move"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/operations/transactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "operations",
+                "transactions"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inventory",
+      "item": [
+        {
+          "name": "Balances",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              },
+              {
+                "key": "X-Facility-Id",
+                "value": "{{facility_code}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/inventory/balances?sku_code={{sku_code}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "balances"
+              ],
+              "query": [
+                {
+                  "key": "sku_code",
+                  "value": "{{sku_code}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Balances By Location",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              },
+              {
+                "key": "X-Facility-Id",
+                "value": "{{facility_code}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/inventory/balances/by-location/{{location_code}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "balances",
+                "by-location",
+                "{{location_code}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ledger",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "warehouse",
+                "value": "{{warehouse}}"
+              },
+              {
+                "key": "X-Org-Id",
+                "value": "{{org_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/inventory/ledger?sku_code={{sku_code}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "inventory",
+                "ledger"
+              ],
+              "query": [
+                {
+                  "key": "sku_code",
+                  "value": "{{sku_code}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

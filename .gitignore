@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+.pytest_cache/
+.venv/
+.env
+app/auth/firebase_service_account.json
+auth/
+.coverage
+htmlcov/

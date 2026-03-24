@@ -1,0 +1,68 @@
+name: Deploy WMS to UAT
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+          description: "Image version tag (default: latest)"
+          required: false
+          default: latest
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 30
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECS_API_CLUSTER: rozana-cluster-uat
+      ECS_API_SERVICE: rozana-wms-uat-service
+      ECS_API_TASK: rozana-wms-uat
+      ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+      ECR_IMAGE_TAG: ${{ github.event.inputs.version }}
+      ECR_REPOSITORY:  ${{ vars.ECR_REPOSITORY }}
+      # Deployment metadata
+      ENVIRONMENT: UAT
+      SERVICE_NAME: rozana-wms
+
+      # Slack
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Ensure deploy script is executable
+        run: chmod +x scripts/deploy-service.sh
+
+      - name: Slack – Deployment Started
+        uses: ./.github/action/slack-notify
+        with:
+          status: started
+          service: ${{ env.SERVICE_NAME }}
+          environment: ${{ env.ENVIRONMENT }}
+          image: ${{ env.ECR_IMAGE_TAG }}
+          repository: ${{ github.repository }}
+          actor: ${{ github.actor }}
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          
+      - name: Deploy WMS service
+        run: ./scripts/deploy-service.sh "$ECS_API_CLUSTER" "$ECS_API_SERVICE" "$ECS_API_TASK" "$ECR_REGISTRY/$ECR_REPOSITORY:$ECR_IMAGE_TAG" "$ECR_IMAGE_TAG" "rozana-wms"
+
+      - name: Slack – Deployment Status
+        if: always()
+        uses: ./.github/action/slack-notify
+        with:
+          status: ${{ job.status }}
+          service: ${{ env.SERVICE_NAME }}
+          environment: ${{ env.ENVIRONMENT }}
+          image: ${{ env.ECR_IMAGE_TAG }}
+          repository: ${{ github.repository }}
+          actor: ${{ github.actor }}
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}

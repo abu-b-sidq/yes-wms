@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rozana-wms-uat
+  namespace: uat
+  labels:
+    app: rozana-wms
+    environment: uat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rozana-wms
+      environment: uat
+  template:
+    metadata:
+      labels:
+        app: rozana-wms
+        environment: uat
+    spec:
+      imagePullSecrets:
+        - name: ecr-registry-uat
+      containers:
+        - name: wms-api
+          # Image is overridden by CI (kubectl set image or kustomize)
+          image: PLACEHOLDER_ECR_REGISTRY/PLACEHOLDER_ECR_REPOSITORY:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: APPLICATION_ENVIRONMENT
+              value: "UAT"
+          volumeMounts:
+            # .env from secret
+            - name: env-file
+              mountPath: /app/.env
+              subPath: .env
+              readOnly: true
+            # Firebase JSON: from secret (server file) or baked into image at build
+            - name: firebase-auth
+              mountPath: /app/auth
+              readOnly: true
+            # Fallback log directory when LOG_DESTINATION=file
+            - name: app-logs
+              mountPath: /app/logs
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 180
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+      volumes:
+        - name: env-file
+          secret:
+            secretName: wms-env
+            items:
+              - key: env
+                path: .env
+        - name: firebase-auth
+          secret:
+            secretName: wms-firebase
+            optional: true
+            items:
+              - key: firebase_service_account.json
+                path: firebase_service_account.json
+        - name: app-logs
+          emptyDir: {}
