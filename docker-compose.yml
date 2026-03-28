@@ -3,9 +3,9 @@ services:
     image: postgres:16-alpine
     container_name: wms-db
     environment:
-      POSTGRES_DB: rozana_wms
-      POSTGRES_USER: rozana
-      POSTGRES_PASSWORD: rozana
+      POSTGRES_DB: yes_wms
+      POSTGRES_USER: yes
+      POSTGRES_PASSWORD: yes
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -17,7 +17,7 @@ services:
       - .env
     environment:
       PYTHONPATH: /app
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate && uvicorn wms_middleware.asgi:application --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - ./:/app
     ports:

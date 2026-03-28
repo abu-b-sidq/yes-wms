@@ -1,6 +1,23 @@
 from django.db import models
+from django.db.models import Q
 
-from app.core.base_models import TenantAwareModel, TimestampedModel
+from app.core.base_models import TenantAwareModel, TimestampedModel, UUIDPrimaryKeyMixin
+
+
+class AppUserStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    ACTIVE = "ACTIVE", "Active"
+    SUSPENDED = "SUSPENDED", "Suspended"
+
+
+class RoleScope(models.TextChoices):
+    PLATFORM = "PLATFORM", "Platform"
+    ORG = "ORG", "Organization"
+
+
+class MembershipStatus(models.TextChoices):
+    ACTIVE = "ACTIVE", "Active"
+    INACTIVE = "INACTIVE", "Inactive"
 
 
 class Organization(TimestampedModel):
@@ -15,8 +32,156 @@ class Organization(TimestampedModel):
         return f"{self.id} - {self.name}"
 
 
+class AppUser(UUIDPrimaryKeyMixin, TimestampedModel):
+    firebase_uid = models.CharField(max_length=255, unique=True)
+    email = models.EmailField(blank=True, default="", db_index=True)
+    display_name = models.CharField(max_length=255, blank=True, default="")
+    phone_number = models.CharField(max_length=32, blank=True, default="")
+    photo_url = models.URLField(max_length=500, blank=True, default="")
+    status = models.CharField(
+        max_length=32,
+        choices=AppUserStatus.choices,
+        default=AppUserStatus.PENDING,
+        db_index=True,
+    )
+    last_login_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "app_user"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["email"],
+                condition=~Q(email=""),
+                name="uq_app_user_email_non_empty",
+            ),
+        ]
+
+    def __str__(self):
+        return self.email or self.firebase_uid
+
+
+class Permission(TimestampedModel):
+    code = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default="")
+
+    class Meta:
+        db_table = "app_permission"
+
+    def __str__(self):
+        return self.code
+
+
+class Role(TimestampedModel):
+    code = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default="")
+    scope = models.CharField(max_length=16, choices=RoleScope.choices)
+    permissions = models.ManyToManyField(
+        "app_masters.Permission",
+        through="app_masters.RolePermission",
+        related_name="roles",
+    )
+
+    class Meta:
+        db_table = "app_role"
+
+    def __str__(self):
+        return self.code
+
+
+class RolePermission(TimestampedModel):
+    id = models.BigAutoField(primary_key=True)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name="role_permissions")
+    permission = models.ForeignKey(
+        Permission,
+        on_delete=models.CASCADE,
+        related_name="permission_roles",
+    )
+
+    class Meta:
+        db_table = "app_role_permission"
+        constraints = [
+            models.UniqueConstraint(fields=["role", "permission"], name="uq_role_permission"),
+        ]
+
+
+class UserPlatformRole(TimestampedModel):
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(
+        AppUser,
+        on_delete=models.CASCADE,
+        related_name="platform_role_assignments",
+    )
+    role = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name="platform_assignments",
+    )
+
+    class Meta:
+        db_table = "app_user_platform_role"
+        constraints = [
+            models.UniqueConstraint(fields=["user", "role"], name="uq_user_platform_role"),
+        ]
+
+
+class UserOrgMembership(UUIDPrimaryKeyMixin, TimestampedModel):
+    user = models.ForeignKey(
+        AppUser,
+        on_delete=models.CASCADE,
+        related_name="org_memberships",
+    )
+    org = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="user_memberships",
+    )
+    role = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name="org_role_memberships",
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=MembershipStatus.choices,
+        default=MembershipStatus.ACTIVE,
+        db_index=True,
+    )
+
+    class Meta:
+        db_table = "app_user_org_membership"
+        constraints = [
+            models.UniqueConstraint(fields=["user", "org"], name="uq_user_org_membership"),
+        ]
+
+
+class UserMembershipFacility(TimestampedModel):
+    id = models.BigAutoField(primary_key=True)
+    membership = models.ForeignKey(
+        UserOrgMembership,
+        on_delete=models.CASCADE,
+        related_name="facility_assignments",
+    )
+    facility = models.ForeignKey(
+        "app_masters.Facility",
+        on_delete=models.CASCADE,
+        related_name="membership_assignments",
+    )
+
+    class Meta:
+        db_table = "app_user_membership_facility"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["membership", "facility"],
+                name="uq_user_membership_facility",
+            ),
+        ]
+
+
 class Facility(TenantAwareModel):
     code = models.CharField(max_length=100)
+    warehouse_key = models.CharField(max_length=100)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     address = models.TextField(blank=True, default="")
@@ -41,6 +206,7 @@ class Facility(TenantAwareModel):
         db_table = "app_facility"
         constraints = [
             models.UniqueConstraint(fields=["org", "code"], name="uq_facility_org_code"),
+            models.UniqueConstraint(fields=["org", "warehouse_key"], name="uq_facility_org_warehouse_key"),
         ]
 
     def __str__(self):

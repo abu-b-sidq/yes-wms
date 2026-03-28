@@ -3,6 +3,11 @@ from django.contrib import admin
 from app.operations.models import Drop, Pick, Transaction
 
 
+class TimestampedAdmin(admin.ModelAdmin):
+    readonly_fields = ("created_at", "updated_at")
+    ordering = ("-created_at",)
+
+
 class PickInline(admin.TabularInline):
     model = Pick
     extra = 0
@@ -16,20 +21,25 @@ class DropInline(admin.TabularInline):
 
 
 @admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
+class TransactionAdmin(TimestampedAdmin):
     list_display = ("id", "org", "facility", "transaction_type", "status", "created_at")
     list_filter = ("transaction_type", "status", "org")
+    list_select_related = ("org", "facility")
     search_fields = ("id", "reference_number")
     inlines = [PickInline, DropInline]
 
 
 @admin.register(Pick)
-class PickAdmin(admin.ModelAdmin):
+class PickAdmin(TimestampedAdmin):
     list_display = ("id", "transaction", "sku", "source_entity_type", "source_entity_code", "quantity")
     list_filter = ("source_entity_type",)
+    list_select_related = ("transaction", "sku", "org")
+    search_fields = ("id", "transaction__reference_number", "sku__code", "source_entity_code")
 
 
 @admin.register(Drop)
-class DropAdmin(admin.ModelAdmin):
+class DropAdmin(TimestampedAdmin):
     list_display = ("id", "transaction", "sku", "dest_entity_type", "dest_entity_code", "quantity")
     list_filter = ("dest_entity_type",)
+    list_select_related = ("transaction", "sku", "org")
+    search_fields = ("id", "transaction__reference_number", "sku__code", "dest_entity_code")

@@ -1,6 +1,6 @@
 # YES WMS
 
-Rozana WMS is a standalone Django + Django Ninja warehouse operations application rooted
+YES WMS is a standalone Django + Django Ninja warehouse operations application rooted
 in `app/` and exposed only through `/api/v1/`.
 
 ## Overview
@@ -49,6 +49,9 @@ Protected route groups:
 Representative endpoints:
 
 - `POST /api/v1/masters/organizations`
+- `GET /api/v1/masters/me`
+- `GET /api/v1/masters/users`
+- `POST /api/v1/masters/users/grants`
 - `GET /api/v1/masters/facilities`
 - `PATCH /api/v1/masters/skus/{code}`
 - `POST /api/v1/operations/grn`
@@ -68,10 +71,17 @@ Public routes such as health and docs do not require authentication.
 Protected business routes use this contract:
 
 - `warehouse`: required on every protected request
+  This is the warehouse key stored on a facility record.
 - `Authorization`: Firebase ID token, typically `Bearer <token>`
 - `X-API-Key`: optional fallback when transitional auth fallback is enabled
 - `X-Org-Id`: required for org-scoped business routes
 - `X-Facility-Id`: required only for facility-scoped operations and queries
+
+Firebase-authenticated users are also subject to application-side authorization:
+
+- first-time Firebase users are created as `PENDING`
+- org/platform admins grant roles and org/facility scope through `/api/v1/masters/users*`
+- `/api/v1/masters/me` and `/api/v1/masters/users*` require Firebase auth and do not accept API-key bypass
 
 Example headers:
 
@@ -104,9 +114,9 @@ cp .env.example .env
 - `DB_ENGINE`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`
 - `FIREBASE_SERVICE_ACCOUNT_JSON` or `FIREBASE_SERVICE_ACCOUNT_PATH`
 - `FIREBASE_PROJECT_ID`
+- `BOOTSTRAP_PLATFORM_ADMIN_UIDS`
 - `AUTH_FALLBACK_ENABLED`
 - `LEGACY_API_KEYS`
-- `WAREHOUSE_CONFIG`
 - `LOG_DESTINATION`
 
 5. Apply the schema:
@@ -157,6 +167,21 @@ curl -X POST "http://localhost:8010/api/v1/masters/organizations" \
   --data-raw '{
     "id": "testorg",
     "name": "Test Org"
+  }'
+```
+
+Create the first facility and assign its warehouse key:
+
+```bash
+curl -X POST "http://localhost:8010/api/v1/masters/facilities" \
+  -H "warehouse: TEST_WH9" \
+  -H "X-Org-Id: testorg" \
+  -H "X-API-Key: legacy-secret" \
+  -H "Content-Type: application/json" \
+  --data-raw '{
+    "code": "FAC-001",
+    "warehouse_key": "TEST_WH9",
+    "name": "Main Facility"
   }'
 ```
 
@@ -230,7 +255,7 @@ Common event families:
 
 ## Tooling
 
-- The shared Postman collection lives at `postman/Rozana_WMS.postman_collection.json`
+- The shared Postman collection lives at `postman/YES_WMS.postman_collection.json`
 - Kubernetes probes should continue targeting `/api/v1/health`
 - Future changes should extend the standalone `app/` package rather than reintroducing
   versioned packages or proxy flows

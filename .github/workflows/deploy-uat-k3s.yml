@@ -17,7 +17,7 @@ jobs:
       ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
       ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
       K8S_NAMESPACE: uat
-      K8S_DEPLOYMENT: rozana-wms-uat
+      K8S_DEPLOYMENT: yes-wms-uat
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST || '95.217.202.233' }}
       DEPLOY_USER: ${{ vars.DEPLOY_USER || 'root' }}
 
@@ -35,8 +35,8 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
 
-          # Copy manifests to target (creates /tmp/rozana-wms-uat/ on remote)
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r k8s/uat $DEPLOY_USER@$DEPLOY_HOST:/tmp/rozana-wms-uat
+          # Copy manifests to target (creates /tmp/yes-wms-uat/ on remote)
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -r k8s/uat $DEPLOY_USER@$DEPLOY_HOST:/tmp/yes-wms-uat
 
           # Run entire deployment on target machine
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST bash -s << 'REMOTE_SCRIPT'
@@ -44,20 +44,20 @@ jobs:
           export ECR_REGISTRY="${{ vars.ECR_REGISTRY }}"
           export ECR_REPOSITORY="${{ vars.ECR_REPOSITORY }}"
           export K8S_NAMESPACE="uat"
-          export K8S_DEPLOYMENT="rozana-wms-uat"
+          export K8S_DEPLOYMENT="yes-wms-uat"
           export IMAGE_TAG="${{ github.event.inputs.version || 'latest' }}"
           export AWS_REGION="${{ vars.AWS_REGION || 'ap-south-1' }}"
           export AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}"
           export AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-          export K8S_DIR="/tmp/rozana-wms-uat"
+          export K8S_DIR="/tmp/yes-wms-uat"
 
-          # Create wms-env secret from /opt/rozana-wms-secrets
+          # Create wms-env secret from /opt/yes-wms-secrets
           kubectl create namespace $K8S_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
           kubectl delete secret wms-env -n $K8S_NAMESPACE --ignore-not-found
-          kubectl create secret generic wms-env -n $K8S_NAMESPACE --from-file=env=/opt/rozana-wms-secrets/.env.uat
+          kubectl create secret generic wms-env -n $K8S_NAMESPACE --from-file=env=/opt/yes-wms-secrets/.env.uat
           # Create wms-firebase secret so /app/auth/firebase_service_account.json exists in the pod (if file exists on server)
-          if [ -f /opt/rozana-wms-secrets/firebase_service_account.json ]; then
-            kubectl create secret generic wms-firebase -n $K8S_NAMESPACE --from-file=firebase_service_account.json=/opt/rozana-wms-secrets/firebase_service_account.json --dry-run=client -o yaml | kubectl apply -f -
+          if [ -f /opt/yes-wms-secrets/firebase_service_account.json ]; then
+            kubectl create secret generic wms-firebase -n $K8S_NAMESPACE --from-file=firebase_service_account.json=/opt/yes-wms-secrets/firebase_service_account.json --dry-run=client -o yaml | kubectl apply -f -
           else
             kubectl delete secret wms-firebase -n $K8S_NAMESPACE --ignore-not-found
           fi
@@ -82,7 +82,7 @@ jobs:
           kubectl rollout restart deployment/$K8S_DEPLOYMENT -n $K8S_NAMESPACE
           kubectl rollout status deployment/$K8S_DEPLOYMENT -n $K8S_NAMESPACE --timeout=15m
 
-          rm -rf /tmp/rozana-wms-uat
+          rm -rf /tmp/yes-wms-uat
           echo "Deployment complete."
           REMOTE_SCRIPT
 
@@ -94,14 +94,14 @@ jobs:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST || '95.217.202.233' }}
           DEPLOY_USER: ${{ vars.DEPLOY_USER || 'root' }}
           K8S_NAMESPACE: uat
-          K8S_DEPLOYMENT: rozana-wms-uat
+          K8S_DEPLOYMENT: yes-wms-uat
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST -- \
-            kubectl get pods -n $K8S_NAMESPACE -l app=rozana-wms -o wide && \
+            kubectl get pods -n $K8S_NAMESPACE -l app=yes-wms -o wide && \
             kubectl describe deployment $K8S_DEPLOYMENT -n $K8S_NAMESPACE && \
-            kubectl logs -n $K8S_NAMESPACE -l app=rozana-wms --tail=200 --all-containers=true || true
+            kubectl logs -n $K8S_NAMESPACE -l app=yes-wms --tail=200 --all-containers=true || true
           rm -f ~/.ssh/deploy_key

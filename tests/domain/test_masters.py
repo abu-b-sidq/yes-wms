@@ -37,14 +37,18 @@ class TestOrganization:
 class TestFacility:
     def test_create_facility(self, org):
         facility = services.create_facility(
-            org, {"code": "FAC-X", "name": "Facility X"}
+            org, {"code": "FAC-X", "warehouse_key": "WH-FAC-X", "name": "Facility X"}
         )
         assert facility.code == "FAC-X"
+        assert facility.warehouse_key == "WH-FAC-X"
         assert facility.org_id == "testorg"
 
     def test_create_duplicate_facility(self, org, facility):
         with pytest.raises(ValidationError, match="already exists"):
-            services.create_facility(org, {"code": "FAC-001", "name": "Dup"})
+            services.create_facility(
+                org,
+                {"code": "FAC-001", "warehouse_key": "WH-DUP", "name": "Dup"},
+            )
 
     def test_get_facility(self, org, facility):
         fetched = services.get_facility(org, "FAC-001")
@@ -52,9 +56,10 @@ class TestFacility:
 
     def test_update_facility(self, org, facility):
         updated = services.update_facility(
-            org, "FAC-001", {"name": "Updated Facility"}
+            org, "FAC-001", {"name": "Updated Facility", "warehouse_key": "TEST_WH9-UPDATED"}
         )
         assert updated.name == "Updated Facility"
+        assert updated.warehouse_key == "TEST_WH9-UPDATED"
 
     def test_list_facilities(self, org, facility, facility2):
         facilities = services.list_facilities(org)

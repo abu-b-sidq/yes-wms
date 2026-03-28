@@ -5,6 +5,6 @@ __pycache__/
 .venv/
 .env
 app/auth/firebase_service_account.json
-auth/
+/auth/
 .coverage
 htmlcov/

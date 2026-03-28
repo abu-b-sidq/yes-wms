@@ -47,7 +47,7 @@ def create_transaction(
         _create_picks(txn, org, picks_data)
         _create_drops(txn, org, drops_data)
 
-    return Transaction.objects.prefetch_related(
+    return Transaction.objects.select_related("facility").prefetch_related(
         "picks__sku", "drops__sku", "drops__paired_pick"
     ).get(pk=txn.pk)
 
@@ -97,7 +97,7 @@ def execute_transaction(txn: Transaction) -> Transaction:
         txn.document_url = url
         txn.save(update_fields=["document_url", "updated_at"])
 
-    return Transaction.objects.prefetch_related(
+    return Transaction.objects.select_related("facility").prefetch_related(
         "picks__sku", "drops__sku", "drops__paired_pick"
     ).get(pk=txn.pk)
 
@@ -113,7 +113,7 @@ def get_transaction(org: Organization, txn_id: str) -> Transaction:
     try:
         return Transaction.objects.prefetch_related(
             "picks__sku", "drops__sku", "drops__paired_pick"
-        ).get(org=org, pk=txn_id)
+        ).select_related("facility").get(org=org, pk=txn_id)
     except Transaction.DoesNotExist:
         raise EntityNotFoundError(f"Transaction '{txn_id}' not found.")
 
@@ -124,7 +124,7 @@ def list_transactions(
     transaction_type: str | None = None,
     status: str | None = None,
 ) -> list[Transaction]:
-    qs = Transaction.objects.filter(org=org).prefetch_related(
+    qs = Transaction.objects.filter(org=org).select_related("facility").prefetch_related(
         "picks__sku", "drops__sku"
     )
     if facility:

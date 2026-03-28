@@ -8,8 +8,25 @@ if os.path.isfile("/app/.env"):
 else:
     load_dotenv()
 
-from django.core.asgi import get_asgi_application
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wms_middleware.settings")
 
-application = get_asgi_application()
+from django.core.asgi import get_asgi_application  # noqa: E402
+
+# Calling get_asgi_application() triggers django.setup(), which must happen
+# before any Django-dependent imports (mcp module, services, etc.).
+_django_app = get_asgi_application()
+
+# Import MCP Starlette app after Django is fully configured.
+from app.mcp.asgi import mcp_starlette_app  # noqa: E402
+
+_MCP_PREFIXES = ("/mcp", "/.well-known")
+
+
+async def application(scope, receive, send):
+    """ASGI entry point — routes MCP/OAuth traffic to Starlette, rest to Django."""
+    if scope["type"] in ("http", "websocket"):
+        path = scope.get("path", "")
+        if any(path.startswith(p) for p in _MCP_PREFIXES):
+            await mcp_starlette_app(scope, receive, send)
+            return
+    await _django_app(scope, receive, send)

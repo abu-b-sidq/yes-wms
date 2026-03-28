@@ -15,18 +15,21 @@ class StandaloneWMSAPI(NinjaAPI):
 
 
 api = StandaloneWMSAPI(
-    title="Rozana WMS",
+    title="YES WMS",
     version="2.0.0",
     urls_namespace="api",
     description=(
         "Standalone warehouse management system with master data, inventory visibility, "
         "and transaction execution.\n\n"
         "## Authentication\n\n"
-        "All protected endpoints require the `warehouse` header (tenant key). "
+        "All protected endpoints require the `warehouse` header. "
+        "For org- and facility-scoped routes, this value must match a warehouse key stored on a facility record. "
         "Provide one of:\n"
         "- `Authorization: Bearer <firebase-id-token>` — primary auth\n"
-        "- `X-API-Key: <key>` — legacy fallback (when enabled)\n\n"
+        "- `X-API-Key: <key>` — legacy fallback for existing business routes (when enabled)\n\n"
         "Org-scoped routes require `X-Org-Id`. Facility-scoped routes also require `X-Facility-Id`.\n\n"
+        "User-management routes under `/masters/me` and `/masters/users*` require Firebase auth and "
+        "use application-side roles and org/facility memberships.\n\n"
         "## Response envelope\n\n"
         "All endpoints wrap their payload in a standard envelope:\n"
         "```json\n"
@@ -39,7 +42,7 @@ api = StandaloneWMSAPI(
         '    "warehouse_key": "...",\n'
         '    "org_id": "...",\n'
         '    "facility_id": "...",\n'
-        '    "auth_source": "bearer | api_key | none"\n'
+        '    "auth_source": "firebase | api_key | none"\n'
         "  }\n"
         "}\n"
         "```\n\n"
@@ -75,7 +78,7 @@ def health(request):
         request,
         data={
             "status": "ok",
-            "service": "rozana-wms",
+            "service": "yes-wms",
             "version": "2.0.0",
         },
     )

@@ -51,7 +51,8 @@ def create_facility(org: Organization, data: dict, user: str = "") -> Facility:
         )
     except IntegrityError:
         raise ValidationError(
-            f"Facility with code '{data.get('code')}' already exists in org '{org.id}'."
+            "Facility code or warehouse key already exists in "
+            f"org '{org.id}'."
         )
 
 
@@ -68,7 +69,13 @@ def update_facility(org: Organization, code: str, data: dict, user: str = "") ->
         if value is not None:
             setattr(facility, key, value)
     facility.updated_by = user
-    facility.save()
+    try:
+        facility.save()
+    except IntegrityError:
+        raise ValidationError(
+            "Facility code or warehouse key already exists in "
+            f"org '{org.id}'."
+        )
     return facility
 
 

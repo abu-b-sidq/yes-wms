@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository now targets a single standalone Rozana WMS application.
+This repository now targets a single standalone YES WMS application.
 Use this file as the working guide for future cutover-safe changes.
 
 ## Mission
@@ -20,7 +20,7 @@ Use this file as the working guide for future cutover-safe changes.
 - `wms_middleware/`: Django settings and URL wiring
 - `tests/domain/`: domain service and model behavior tests
 - `tests/`: API, middleware, logging, and schema tests
-- `postman/Rozana_WMS.postman_collection.json`: shared API collection
+- `postman/YES_WMS.postman_collection.json`: shared API collection
 - `.env.example`: local runtime template
 
 ## Working Rules

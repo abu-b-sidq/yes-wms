@@ -10,6 +10,9 @@ class AuthContext:
     auth_source: str | None = None
     uid: str | None = None
     client_name: str | None = None
+    app_user_id: str | None = None
+    email: str | None = None
+    user_status: str | None = None
     claims: dict[str, Any] = field(default_factory=dict)
 
 
@@ -18,7 +21,6 @@ class TenantContext:
     warehouse_key: str | None = None
     org_id: str | None = None
     facility_id: str | None = None
-    warehouse_meta: dict[str, Any] = field(default_factory=dict)
 
 
 def get_auth_context(request: Any) -> AuthContext:

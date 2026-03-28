@@ -8,8 +8,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 RUNTIME_SETTINGS = get_runtime_settings()
 
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-only-secret-key")
-DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+DEBUG = _env_bool("DEBUG", False)
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "*").split(",") if host.strip()]
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_DESTINATION = RUNTIME_SETTINGS.log_destination
@@ -32,6 +40,7 @@ CORS_ALLOWED_ORIGIN_PATTERNS = [
     for pattern in os.getenv("CORS_ALLOWED_ORIGIN_PATTERNS", "").split(",")
     if pattern.strip()
 ]
+CORS_ALLOW_ALL_ORIGINS = _env_bool("CORS_ALLOW_ALL_ORIGINS", DEBUG)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 DEFAULT_CORS_ALLOW_HEADERS = [
@@ -54,8 +63,11 @@ CORS_ALLOW_HEADERS = [
 CORS_PREFLIGHT_MAX_AGE = int(os.getenv("CORS_PREFLIGHT_MAX_AGE", "86400"))
 
 INSTALLED_APPS = [
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
     "django.contrib.staticfiles",
     "app.masters",
     "app.operations",
@@ -65,11 +77,16 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "app.core.middleware.CORSMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "app.core.middleware.RequestIDMiddleware",
     "app.core.middleware.RequestLoggingMiddleware",
-    # "app.auth.middleware.DualAuthMiddleware",
+    "app.auth.middleware.DualAuthMiddleware",
     "app.core.middleware.TenantContextMiddleware",
 ]
 
@@ -82,6 +99,8 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.request",
             ],
         },
@@ -110,6 +129,7 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_URL = "/static/"
+STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles"))
 
 
 def _build_logging_handler(formatter_name: str) -> dict[str, Any]:
@@ -135,7 +155,7 @@ def _build_logging_handler(formatter_name: str) -> dict[str, Any]:
         try:
             os.makedirs(directory, exist_ok=True)
         except OSError:
-            filename = "/tmp/rozana-wms.log"
+            filename = "/tmp/yes-wms.log"
 
     return {
         "class": "logging.handlers.RotatingFileHandler",
@@ -159,7 +179,7 @@ LOGGING = {
         },
         "json": {
             "()": "app.core.logging_utils.JsonLogFormatter",
-            "service": "rozana-wms",
+            "service": "yes-wms",
             "environment": os.getenv("APPLICATION_ENVIRONMENT", "unknown"),
             "redact_keys": LOG_REDACT_KEYS,
         },

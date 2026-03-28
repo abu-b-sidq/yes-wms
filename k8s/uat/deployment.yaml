@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rozana-wms-uat
+  name: yes-wms-uat
   namespace: uat
   labels:
-    app: rozana-wms
+    app: yes-wms
     environment: uat
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rozana-wms
+      app: yes-wms
       environment: uat
   template:
     metadata:
       labels:
-        app: rozana-wms
+        app: yes-wms
         environment: uat
     spec:
       imagePullSecrets:

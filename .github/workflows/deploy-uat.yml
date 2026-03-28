@@ -14,15 +14,15 @@ jobs:
     timeout-minutes: 30
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
-      ECS_API_CLUSTER: rozana-cluster-uat
-      ECS_API_SERVICE: rozana-wms-uat-service
-      ECS_API_TASK: rozana-wms-uat
+      ECS_API_CLUSTER: yes-cluster-uat
+      ECS_API_SERVICE: yes-wms-uat-service
+      ECS_API_TASK: yes-wms-uat
       ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
       ECR_IMAGE_TAG: ${{ github.event.inputs.version }}
       ECR_REPOSITORY:  ${{ vars.ECR_REPOSITORY }}
       # Deployment metadata
       ENVIRONMENT: UAT
-      SERVICE_NAME: rozana-wms
+      SERVICE_NAME: yes-wms
 
       # Slack
       SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -53,7 +53,7 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           
       - name: Deploy WMS service
-        run: ./scripts/deploy-service.sh "$ECS_API_CLUSTER" "$ECS_API_SERVICE" "$ECS_API_TASK" "$ECR_REGISTRY/$ECR_REPOSITORY:$ECR_IMAGE_TAG" "$ECR_IMAGE_TAG" "rozana-wms"
+        run: ./scripts/deploy-service.sh "$ECS_API_CLUSTER" "$ECS_API_SERVICE" "$ECS_API_TASK" "$ECR_REGISTRY/$ECR_REPOSITORY:$ECR_IMAGE_TAG" "$ECR_IMAGE_TAG" "yes-wms"
 
       - name: Slack – Deployment Status
         if: always()

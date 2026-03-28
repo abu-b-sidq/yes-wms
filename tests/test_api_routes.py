@@ -1,4 +1,5 @@
 from decimal import Decimal
+from uuid import UUID
 
 import pytest
 
@@ -24,7 +25,7 @@ def test_organization_routes_are_not_org_scoped(client, api_headers):
 def test_facility_routes_require_org_and_return_meta(client, org, api_headers):
     response = client.post(
         "/api/v1/masters/facilities",
-        data={"code": "FAC-NEW", "name": "New Facility"},
+        data={"code": "FAC-NEW", "warehouse_key": "TEST_WH11", "name": "New Facility"},
         content_type="application/json",
         **api_headers(org_id=org.id, facility_id=None),
     )
@@ -32,8 +33,39 @@ def test_facility_routes_require_org_and_return_meta(client, org, api_headers):
     assert response.status_code == 200
     body = response.json()
     assert body["data"]["code"] == "FAC-NEW"
+    assert body["data"]["warehouse_key"] == "TEST_WH11"
     assert body["meta"]["org_id"] == org.id
     assert body["meta"]["auth_source"] == "api_key"
+
+
+def test_sku_create_serializes_uuid_id(client, org, api_headers):
+    response = client.post(
+        "/api/v1/masters/skus",
+        data={"code": "SKU-NEW", "name": "New SKU"},
+        content_type="application/json",
+        **api_headers(org_id=org.id, facility_id=None),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["code"] == "SKU-NEW"
+    assert isinstance(body["data"]["id"], str)
+    assert str(UUID(body["data"]["id"])) == body["data"]["id"]
+
+
+def test_zone_create_serializes_uuid_id(client, org, api_headers):
+    response = client.post(
+        "/api/v1/masters/zones",
+        data={"code": "ZONE-NEW", "name": "Zone New"},
+        content_type="application/json",
+        **api_headers(org_id=org.id, facility_id=None),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["code"] == "ZONE-NEW"
+    assert isinstance(body["data"]["id"], str)
+    assert str(UUID(body["data"]["id"])) == body["data"]["id"]
 
 
 def test_operations_and_inventory_flow(client, org, facility, sku, zone, location, location2, api_headers):

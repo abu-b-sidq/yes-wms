@@ -36,3 +36,22 @@ class EntityNotFoundError(AppError):
 class ValidationError(AppError):
     code = "VALIDATION_ERROR"
     status_code = 400
+
+
+class AuthorizationError(AppError):
+    code = "AUTHZ_FORBIDDEN"
+    status_code = 403
+
+    def __init__(
+        self,
+        message: str,
+        details: Any | None = None,
+        *,
+        code: str | None = None,
+        status_code: int | None = None,
+    ) -> None:
+        super().__init__(message, details=details)
+        if code is not None:
+            self.code = code
+        if status_code is not None:
+            self.status_code = status_code

@@ -41,6 +41,14 @@ def test_openapi_includes_dual_auth_security(client):
     assert {"warehouse", "Authorization", "X-API-Key"} <= org_header_params
     assert "X-Org-Id" not in org_header_params
 
+    me_get = _path(schema, "/masters/me", "/api/v1/masters/me")["get"]
+    assert me_get["security"] == [{"bearerAuth": []}]
+    me_header_params = {item["name"]: item for item in me_get["parameters"] if item["in"] == "header"}
+    assert {"warehouse", "Authorization", "X-Org-Id", "X-Facility-Id"} <= set(me_header_params)
+    assert me_header_params["Authorization"]["required"] is True
+    assert me_header_params["X-Org-Id"]["required"] is False
+    assert me_header_params["X-Facility-Id"]["required"] is False
+
     allowed_roots = {"health", "masters", "operations", "inventory"}
     actual_roots = {_root(path) for path in schema["paths"]}
     assert actual_roots <= allowed_roots

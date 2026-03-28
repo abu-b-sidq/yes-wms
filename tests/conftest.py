@@ -6,22 +6,45 @@ import pytest
 
 from app.auth.firebase_verifier import get_firebase_verifier
 from app.core.config import get_runtime_settings
-from app.masters.models import Facility, Location, Organization, SKU, Zone
+from app.masters.models import (
+    AppUser,
+    AppUserStatus,
+    Facility,
+    Location,
+    MembershipStatus,
+    Organization,
+    Role,
+    SKU,
+    UserMembershipFacility,
+    UserOrgMembership,
+    UserPlatformRole,
+    Zone,
+)
 
 os.environ.setdefault("LOG_DESTINATION", "firehose")
 
 
 class AllowVerifier:
+    def __init__(self, claims: dict | None = None):
+        self.claims = claims or {}
+
     def verify(self, token: str):
-        return {"uid": "firebase-user-1", "token": token}
+        payload = {
+            "uid": "firebase-user-1",
+            "email": "firebase-user-1@example.com",
+            "name": "Firebase User 1",
+            "token": token,
+        }
+        payload.update(self.claims)
+        return payload
 
 
 @pytest.fixture(autouse=True)
 def default_env(monkeypatch):
     monkeypatch.setenv("AUTH_FALLBACK_ENABLED", "true")
     monkeypatch.setenv("LEGACY_API_KEYS", '{"legacy_client":"legacy-secret"}')
-    monkeypatch.setenv("WAREHOUSE_CONFIG", '{"TEST_WH9":{"name":"Test Warehouse"}}')
     monkeypatch.setenv("FIREBASE_PROJECT_ID", "demo-project")
+    monkeypatch.setenv("BOOTSTRAP_PLATFORM_ADMIN_UIDS", "")
     monkeypatch.setenv("LOG_DESTINATION", "firehose")
 
     get_runtime_settings.cache_clear()
@@ -33,7 +56,11 @@ def default_env(monkeypatch):
 
 @pytest.fixture
 def allow_firebase(monkeypatch):
-    monkeypatch.setattr("app.auth.middleware.get_firebase_verifier", lambda: AllowVerifier())
+    def _allow(**claims):
+        monkeypatch.setattr("app.auth.middleware.get_firebase_verifier", lambda: AllowVerifier(claims))
+
+    _allow()
+    return _allow
 
 
 @pytest.fixture
@@ -127,6 +154,7 @@ def facility(db, org):
     return Facility.objects.create(
         org=org,
         code="FAC-001",
+        warehouse_key="TEST_WH9",
         name="Test Facility",
     )
 
@@ -136,5 +164,64 @@ def facility2(db, org):
     return Facility.objects.create(
         org=org,
         code="FAC-002",
+        warehouse_key="TEST_WH10",
         name="Test Facility 2",
     )
+
+
+@pytest.fixture
+def create_app_user(db):
+    def _create(
+        *,
+        firebase_uid: str = "firebase-user-1",
+        email: str = "firebase-user-1@example.com",
+        display_name: str = "Firebase User 1",
+        status: str = AppUserStatus.ACTIVE,
+    ) -> AppUser:
+        return AppUser.objects.create(
+            firebase_uid=firebase_uid,
+            email=email,
+            display_name=display_name,
+            status=status,
+        )
+
+    return _create
+
+
+@pytest.fixture
+def grant_org_access(db):
+    def _grant(
+        user: AppUser,
+        org: Organization,
+        *,
+        role_code: str = "org_admin",
+        facility_codes: list[str] | None = None,
+        status: str = MembershipStatus.ACTIVE,
+    ) -> UserOrgMembership:
+        role = Role.objects.get(code=role_code)
+        membership = UserOrgMembership.objects.create(
+            user=user,
+            org=org,
+            role=role,
+            status=status,
+        )
+        if facility_codes:
+            facilities = Facility.objects.filter(org=org, code__in=facility_codes)
+            UserMembershipFacility.objects.bulk_create(
+                [
+                    UserMembershipFacility(membership=membership, facility=facility)
+                    for facility in facilities
+                ]
+            )
+        return membership
+
+    return _grant
+
+
+@pytest.fixture
+def assign_platform_admin(db):
+    def _assign(user: AppUser) -> UserPlatformRole:
+        role = Role.objects.get(code="platform_admin")
+        return UserPlatformRole.objects.create(user=user, role=role)
+
+    return _assign

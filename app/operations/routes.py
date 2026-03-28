@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from ninja import Router
 
+from app.auth.authorization import authorize_request, enforce_facility_scope
+from app.auth.permissions import (
+    PERM_OPERATIONS_EXECUTE,
+    PERM_TRANSACTIONS_MANAGE,
+    PERM_TRANSACTIONS_READ,
+)
 from app.core.openapi import protected_openapi_extra, register_response_schema
 from app.core.response import success_response
 from app.core.tenant import resolve_request_tenant
@@ -97,6 +103,11 @@ ORG_WITH_REQUIRED_FACILITY = protected_openapi_extra(require_facility=True)
     openapi_extra=ORG_WITH_REQUIRED_FACILITY,
 )
 def create_transaction(request, payload: schemas.TransactionCreateIn):
+    authorize_request(
+        request,
+        PERM_TRANSACTIONS_MANAGE,
+        require_membership=True,
+    )
     org, facility = resolve_request_tenant(request, require_facility=True)
     user = _get_user(request)
     txn = services.create_transaction(org, facility, payload.dict(), user=user)
@@ -117,6 +128,12 @@ def list_transactions(
     transaction_type: str | None = None,
     status: str | None = None,
 ):
+    authorize_request(
+        request,
+        PERM_TRANSACTIONS_READ,
+        require_membership=True,
+        require_optional_facility_header=True,
+    )
     org, facility = resolve_request_tenant(request)
     txns = services.list_transactions(
         org, facility=facility, transaction_type=transaction_type, status=status
@@ -131,8 +148,14 @@ def list_transactions(
     openapi_extra=ORG_PROTECTED,
 )
 def get_transaction(request, txn_id: str):
+    access = authorize_request(
+        request,
+        PERM_TRANSACTIONS_READ,
+        require_membership=True,
+    )
     org, _ = resolve_request_tenant(request)
     txn = services.get_transaction(org, txn_id)
+    enforce_facility_scope(access, txn.facility.code)
     return success_response(request, data=_txn_out(txn))
 
 
@@ -148,8 +171,14 @@ def get_transaction(request, txn_id: str):
     openapi_extra=ORG_PROTECTED,
 )
 def execute_transaction(request, txn_id: str):
+    access = authorize_request(
+        request,
+        PERM_TRANSACTIONS_MANAGE,
+        require_membership=True,
+    )
     org, _ = resolve_request_tenant(request)
     txn = services.get_transaction(org, txn_id)
+    enforce_facility_scope(access, txn.facility.code)
     txn = services.execute_transaction(txn)
     return success_response(request, data=_txn_out(txn))
 
@@ -164,8 +193,14 @@ def execute_transaction(request, txn_id: str):
     openapi_extra=ORG_PROTECTED,
 )
 def cancel_transaction(request, txn_id: str):
+    access = authorize_request(
+        request,
+        PERM_TRANSACTIONS_MANAGE,
+        require_membership=True,
+    )
     org, _ = resolve_request_tenant(request)
     txn = services.get_transaction(org, txn_id)
+    enforce_facility_scope(access, txn.facility.code)
     txn = services.cancel_transaction(txn)
     return success_response(request, data=_txn_out(txn))
 
@@ -184,6 +219,11 @@ def cancel_transaction(request, txn_id: str):
     openapi_extra=ORG_WITH_REQUIRED_FACILITY,
 )
 def move(request, payload: schemas.MoveIn):
+    authorize_request(
+        request,
+        PERM_OPERATIONS_EXECUTE,
+        require_membership=True,
+    )
     org, facility = resolve_request_tenant(request, require_facility=True)
     user = _get_user(request)
     txn = services.create_and_execute_move(org, facility, payload.dict(), user=user)
@@ -200,6 +240,11 @@ def move(request, payload: schemas.MoveIn):
     openapi_extra=ORG_WITH_REQUIRED_FACILITY,
 )
 def grn(request, payload: schemas.GRNIn):
+    authorize_request(
+        request,
+        PERM_OPERATIONS_EXECUTE,
+        require_membership=True,
+    )
     org, facility = resolve_request_tenant(request, require_facility=True)
     user = _get_user(request)
     txn = services.create_and_execute_grn(org, facility, payload.dict(), user=user)
@@ -216,6 +261,11 @@ def grn(request, payload: schemas.GRNIn):
     openapi_extra=ORG_WITH_REQUIRED_FACILITY,
 )
 def putaway(request, payload: schemas.PutawayIn):
+    authorize_request(
+        request,
+        PERM_OPERATIONS_EXECUTE,
+        require_membership=True,
+    )
     org, facility = resolve_request_tenant(request, require_facility=True)
     user = _get_user(request)
     txn = services.create_and_execute_putaway(org, facility, payload.dict(), user=user)
@@ -232,6 +282,11 @@ def putaway(request, payload: schemas.PutawayIn):
     openapi_extra=ORG_WITH_REQUIRED_FACILITY,
 )
 def order_pick(request, payload: schemas.OrderPickIn):
+    authorize_request(
+        request,
+        PERM_OPERATIONS_EXECUTE,
+        require_membership=True,
+    )
     org, facility = resolve_request_tenant(request, require_facility=True)
     user = _get_user(request)
     txn = services.create_and_execute_order_pick(org, facility, payload.dict(), user=user)

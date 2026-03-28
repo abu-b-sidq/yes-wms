@@ -8,7 +8,6 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.utils.cache import patch_vary_headers
 
-from app.core.config import get_runtime_settings
 from app.core.context import TenantContext
 from app.core.logging_utils import (
     build_request_context,
@@ -24,6 +23,7 @@ request_logger = logging.getLogger("app.request")
 class CORSMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
+        self.allow_all_origins = getattr(settings, "CORS_ALLOW_ALL_ORIGINS", False)
         self.allowed_origins = set(getattr(settings, "CORS_ALLOWED_ORIGINS", []))
         self.allowed_origin_patterns = tuple(getattr(settings, "CORS_ALLOWED_ORIGIN_PATTERNS", []))
         self.allow_methods = getattr(
@@ -70,6 +70,9 @@ class CORSMiddleware:
     def _is_allowed_origin(self, origin: str) -> bool:
         if not origin:
             return False
+
+        if self.allow_all_origins:
+            return True
 
         if origin in self.allowed_origins:
             return True
@@ -183,7 +186,6 @@ class TenantContextMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        settings = get_runtime_settings()
         if not self._is_api_path(request.path) or self._is_exempt_path(request.path):
             return self.get_response(request)
 
@@ -199,20 +201,10 @@ class TenantContextMiddleware:
                 status_code=400,
             )
 
-        warehouse_meta = settings.warehouse_config.get(warehouse_key) if settings.warehouse_config else {}
-        if settings.warehouse_config and warehouse_meta is None:
-            return error_response(
-                request,
-                code="TENANT_UNKNOWN_WAREHOUSE",
-                message="Unknown warehouse key.",
-                status_code=400,
-            )
-
         request.tenant_context = TenantContext(
             warehouse_key=warehouse_key,
             org_id=org_id,
             facility_id=facility_id,
-            warehouse_meta=warehouse_meta or {},
         )
 
         return self.get_response(request)

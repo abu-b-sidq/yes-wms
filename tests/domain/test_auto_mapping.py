@@ -15,7 +15,12 @@ from app.masters.models import (
 class TestAutoMapping:
     def test_new_facility_maps_existing_skus(self, org, sku, sku2):
         """Creating a facility should auto-map all existing org SKUs."""
-        facility = Facility.objects.create(org=org, code="FAC-NEW", name="New Facility")
+        facility = Facility.objects.create(
+            org=org,
+            code="FAC-NEW",
+            warehouse_key="WH-FAC-NEW",
+            name="New Facility",
+        )
         mappings = FacilitySKU.objects.filter(facility=facility)
         assert mappings.count() == 2
         sku_codes = set(mappings.values_list("sku__code", flat=True))
@@ -23,13 +28,23 @@ class TestAutoMapping:
 
     def test_new_facility_maps_existing_zones(self, org, zone, zone2):
         """Creating a facility should auto-map all existing org Zones."""
-        facility = Facility.objects.create(org=org, code="FAC-NEW", name="New Facility")
+        facility = Facility.objects.create(
+            org=org,
+            code="FAC-NEW",
+            warehouse_key="WH-FAC-NEW",
+            name="New Facility",
+        )
         mappings = FacilityZone.objects.filter(facility=facility)
         assert mappings.count() == 2
 
     def test_new_facility_maps_existing_locations(self, org, zone, location, location2):
         """Creating a facility should auto-map all existing org Locations."""
-        facility = Facility.objects.create(org=org, code="FAC-NEW", name="New Facility")
+        facility = Facility.objects.create(
+            org=org,
+            code="FAC-NEW",
+            warehouse_key="WH-FAC-NEW",
+            name="New Facility",
+        )
         mappings = FacilityLocation.objects.filter(facility=facility)
         assert mappings.count() == 2
 

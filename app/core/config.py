@@ -30,9 +30,9 @@ class RuntimeSettings:
     firebase_service_account_path: str | None
     firebase_project_id: str | None
     firebase_storage_bucket: str | None
+    bootstrap_platform_admin_uids: tuple[str, ...]
     auth_fallback_enabled: bool
     legacy_api_keys: dict[str, str]
-    warehouse_config: dict[str, Any]
     document_generation_enabled: bool
     log_destination: str
     log_format: str
@@ -112,12 +112,23 @@ def _parse_legacy_api_keys(value: str | None) -> dict[str, str]:
     return {api_key: f"client_{index + 1}" for index, api_key in enumerate(keys)}
 
 
+def _parse_uid_list(value: str | None) -> tuple[str, ...]:
+    if not value:
+        return ()
+
+    try:
+        decoded = _parse_json(value, [])
+    except json.JSONDecodeError:
+        decoded = None
+
+    if isinstance(decoded, list):
+        return tuple(dict.fromkeys(str(item).strip() for item in decoded if str(item).strip()))
+
+    return tuple(dict.fromkeys(chunk.strip() for chunk in value.split(",") if chunk.strip()))
+
+
 @lru_cache(maxsize=1)
 def get_runtime_settings() -> RuntimeSettings:
-    warehouse_config = _parse_json(os.getenv("WAREHOUSE_CONFIG"), {})
-    if not isinstance(warehouse_config, dict):
-        raise ValueError("WAREHOUSE_CONFIG must be a JSON object.")
-
     # Default to baked-in path from CI (same pattern as cart: secret from GitHub → file at build)
     firebase_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
     if not firebase_path and not os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON"):
@@ -127,7 +138,7 @@ def get_runtime_settings() -> RuntimeSettings:
 
     log_destination = _parse_log_destination(os.getenv("LOG_DESTINATION"))
     log_format = _parse_log_format(os.getenv("LOG_FORMAT"))
-    log_file_path = os.getenv("LOG_FILE_PATH", "/app/logs/rozana-wms.log").strip() or "/app/logs/rozana-wms.log"
+    log_file_path = os.getenv("LOG_FILE_PATH", "/app/logs/yes-wms.log").strip() or "/app/logs/yes-wms.log"
     firehose_stream = (os.getenv("FIREHOSE_DELIVERY_STREAM_NAME") or "").strip()
     firehose_region = (os.getenv("FIREHOSE_AWS_REGION") or os.getenv("AWS_REGION") or "").strip() or None
     firehose_batch_size = max(1, min(500, _parse_int(os.getenv("FIREHOSE_BATCH_SIZE"), 10)))
@@ -144,10 +155,10 @@ def get_runtime_settings() -> RuntimeSettings:
         firebase_service_account_path=firebase_path,
         firebase_project_id=os.getenv("FIREBASE_PROJECT_ID"),
         firebase_storage_bucket=firebase_storage_bucket,
+        bootstrap_platform_admin_uids=_parse_uid_list(os.getenv("BOOTSTRAP_PLATFORM_ADMIN_UIDS")),
         auth_fallback_enabled=_parse_bool(os.getenv("AUTH_FALLBACK_ENABLED"), True),
         document_generation_enabled=_parse_bool(os.getenv("DOCUMENT_GENERATION_ENABLED"), False),
         legacy_api_keys=_parse_legacy_api_keys(os.getenv("LEGACY_API_KEYS")),
-        warehouse_config=warehouse_config,
         log_destination=log_destination,
         log_format=log_format,
         log_include_payloads=_parse_bool(os.getenv("LOG_INCLUDE_PAYLOADS"), True),

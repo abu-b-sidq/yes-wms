@@ -54,12 +54,12 @@ def sku2(db, org):
 @pytest.fixture
 def facility(db, org):
     return Facility.objects.create(
-        org=org, code="FAC-001", name="Test Facility"
+        org=org, code="FAC-001", warehouse_key="TEST_WH9", name="Test Facility"
     )
 
 
 @pytest.fixture
 def facility2(db, org):
     return Facility.objects.create(
-        org=org, code="FAC-002", name="Test Facility 2"
+        org=org, code="FAC-002", warehouse_key="TEST_WH10", name="Test Facility 2"
     )

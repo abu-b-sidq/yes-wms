@@ -196,7 +196,7 @@ def log_event(
 class JsonLogFormatter(logging.Formatter):
     def __init__(
         self,
-        service: str = "rozana-wms",
+        service: str = "yes-wms",
         environment: str | None = None,
         redact_keys: list[str] | tuple[str, ...] | str | None = None,
     ):

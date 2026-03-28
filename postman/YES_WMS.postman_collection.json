@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Rozana WMS",
-    "description": "Standalone Rozana WMS API collection for the `/api/v1` application surface.",
+    "name": "YES WMS",
+    "description": "Standalone YES WMS API collection for the `/api/v1` application surface.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -17,7 +17,7 @@
     },
     {
       "key": "org_id",
-      "value": "rozana",
+      "value": "yes",
       "type": "string"
     },
     {
@@ -136,7 +136,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"{{org_id}}\",\n  \"name\": \"Rozana Foods\"\n}"
+              "raw": "{\n  \"id\": \"{{org_id}}\",\n  \"name\": \"YES Foods\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/masters/organizations",

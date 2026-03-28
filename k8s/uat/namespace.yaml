@@ -4,4 +4,4 @@ metadata:
   name: uat
   labels:
     environment: uat
-    app: rozana-wms
+    app: yes-wms

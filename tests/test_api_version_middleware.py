@@ -47,13 +47,12 @@ def test_protected_paths_require_warehouse():
     assert body["error"]["code"] == "TENANT_MISSING_WAREHOUSE"
 
 
-def test_unknown_warehouse_is_rejected():
+def test_middleware_accepts_any_non_empty_warehouse_header():
     request = RequestFactory().get(
         "/api/v1/inventory/balances",
         HTTP_WAREHOUSE="UNKNOWN",
     )
     response = TenantContextMiddleware(_ok_response)(request)
-    body = json.loads(response.content.decode("utf-8"))
 
-    assert response.status_code == 400
-    assert body["error"]["code"] == "TENANT_UNKNOWN_WAREHOUSE"
+    assert response.status_code == 200
+    assert request.tenant_context.warehouse_key == "UNKNOWN"

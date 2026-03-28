@@ -1,8 +1,8 @@
-# Rozana WMS Application Documentation
+# YES WMS Application Documentation
 
 ## 1. Purpose and Scope
 
-Rozana WMS is a standalone Django + Django Ninja application for warehouse management.
+YES WMS is a standalone Django + Django Ninja application for warehouse management.
 
 This documentation covers the current architecture implemented in this repository:
 
@@ -69,6 +69,17 @@ Organization (org header not required):
 - `GET /organizations`
 - `GET /organizations/{org_id}`
 - `PATCH /organizations/{org_id}`
+
+User management:
+
+- `GET /me` (Firebase only; org/facility headers optional)
+- `GET /users` (`X-Org-Id` required; Firebase only)
+- `POST /users/grants` (`X-Org-Id` required; Firebase only)
+- `PATCH /users/{user_id}/grants/{grant_id}` (`X-Org-Id` required; Firebase only)
+- `DELETE /users/{user_id}/grants/{grant_id}` (`X-Org-Id` required; Firebase only)
+- `GET /users/pending` (platform admin; Firebase only)
+- `PATCH /users/{user_id}/status` (platform admin; Firebase only)
+- `PATCH /users/{user_id}/platform-role` (platform admin; Firebase only)
 
 Facility:
 
@@ -150,6 +161,9 @@ Behavior notes:
 - if Firebase token is valid, request is authenticated as `firebase`
 - if Firebase is missing/invalid and fallback is enabled, API key is attempted
 - missing or invalid credentials return `401`
+- a valid Firebase token creates or updates an app-side user record keyed by `firebase_uid`
+- first-time Firebase users are created as `PENDING` until access is granted
+- `BOOTSTRAP_PLATFORM_ADMIN_UIDS` auto-promotes listed Firebase UIDs to active platform admins
 
 ### 4.2 Warehouse Header
 
@@ -157,7 +171,8 @@ Protected routes require:
 
 - `warehouse: <warehouse_key>`
 
-When `WAREHOUSE_CONFIG` is populated, unknown warehouse keys are rejected with `TENANT_UNKNOWN_WAREHOUSE`.
+For org-scoped routes, the warehouse key must be assigned to a facility in the requested org once facilities exist.
+For facility-scoped routes, the warehouse key must match the targeted facility's `warehouse_key`.
 
 ### 4.3 Org/Facility Headers
 
@@ -175,6 +190,21 @@ Route-level tenant resolution rules:
 | Protected orgless (organization endpoints) | `warehouse` + (`Authorization` or `X-API-Key`) |
 | Protected org-scoped | `warehouse` + `X-Org-Id` + (`Authorization` or `X-API-Key`) |
 | Protected facility-scoped | `warehouse` + `X-Org-Id` + `X-Facility-Id` + (`Authorization` or `X-API-Key`) |
+| Firebase-only user management (`/masters/me`, `/masters/users*`) | `warehouse` + `Authorization`; `X-Org-Id` only where the route is org-scoped |
+
+### 4.5 Authorization Model
+
+- Application authorization is role-based with fixed seeded roles and explicit permission codes.
+- Platform role:
+  - `platform_admin`
+- Organization roles:
+  - `org_admin`
+  - `facility_manager`
+  - `operator`
+  - `viewer`
+- Org memberships may optionally be restricted to specific facilities.
+- For facility-restricted users, routes where facility scope is optional require `X-Facility-Id`.
+- Legacy API keys continue to bypass user RBAC on existing business routes only; they are rejected on Firebase-only user-management routes.
 
 ## 5. Domain Model Summary
 
@@ -287,7 +317,6 @@ Common error codes:
 - `AUTH_FIREBASE_VERIFICATION_FAILED`
 - `AUTH_API_KEY_INVALID`
 - `TENANT_MISSING_WAREHOUSE`
-- `TENANT_UNKNOWN_WAREHOUSE`
 - `TENANT_RESOLUTION_ERROR`
 - `ENTITY_NOT_FOUND`
 - `VALIDATION_ERROR`
@@ -304,6 +333,7 @@ Common error codes:
 
 ### 7.2 CORS
 
+- `CORS_ALLOW_ALL_ORIGINS` (defaults to enabled when `DEBUG=true`)
 - `CORS_ALLOWED_ORIGINS`
 - `CORS_ALLOWED_ORIGIN_PATTERNS`
 - `CORS_ALLOW_HEADERS`
@@ -315,7 +345,6 @@ Common error codes:
 - `FIREBASE_PROJECT_ID`
 - `AUTH_FALLBACK_ENABLED`
 - `LEGACY_API_KEYS`
-- `WAREHOUSE_CONFIG`
 
 `LEGACY_API_KEYS` format:
 
@@ -419,5 +448,5 @@ What these validate:
 - Tenant middleware: `app/core/middleware.py`
 - Tenant resolver: `app/core/tenant.py`
 - Domain routes: `app/masters/routes.py`, `app/operations/routes.py`, `app/inventory/routes.py`
-- Postman collection: `postman/Rozana_WMS.postman_collection.json`
+- Postman collection: `postman/YES_WMS.postman_collection.json`
 - Agent guardrails: `AGENTS.md`

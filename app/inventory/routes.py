@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from ninja import Router
 
+from app.auth.authorization import authorize_request, enforce_facility_scope
+from app.auth.permissions import PERM_INVENTORY_READ
 from app.core.openapi import protected_openapi_extra, register_response_schema
 from app.core.response import success_response
 from app.core.tenant import resolve_request_tenant
 from app.inventory import schemas, services
+from app.operations import services as operation_services
 
 router = Router(tags=["inventory"])
 
@@ -78,6 +81,12 @@ def list_balances(
     entity_type: str | None = None,
     entity_code: str | None = None,
 ):
+    authorize_request(
+        request,
+        PERM_INVENTORY_READ,
+        require_membership=True,
+        require_optional_facility_header=True,
+    )
     org, facility = resolve_request_tenant(request)
     balances = services.get_balances(
         org, facility=facility, sku_code=sku_code,
@@ -93,6 +102,11 @@ def list_balances(
     openapi_extra=protected_openapi_extra(require_facility=True),
 )
 def balances_by_location(request, code: str):
+    authorize_request(
+        request,
+        PERM_INVENTORY_READ,
+        require_membership=True,
+    )
     org, facility = resolve_request_tenant(request, require_facility=True)
     balances = services.get_balances_by_location(org, facility, code)
     return success_response(request, data=[_balance_out(b) for b in balances])
@@ -105,6 +119,11 @@ def balances_by_location(request, code: str):
     openapi_extra=protected_openapi_extra(require_facility=True),
 )
 def balances_by_sku(request, code: str):
+    authorize_request(
+        request,
+        PERM_INVENTORY_READ,
+        require_membership=True,
+    )
     org, facility = resolve_request_tenant(request, require_facility=True)
     balances = services.get_balances_by_sku(org, facility, code)
     return success_response(request, data=[_balance_out(b) for b in balances])
@@ -124,6 +143,12 @@ def list_ledger(
     sku_code: str | None = None,
     transaction_id: str | None = None,
 ):
+    authorize_request(
+        request,
+        PERM_INVENTORY_READ,
+        require_membership=True,
+        require_optional_facility_header=True,
+    )
     org, facility = resolve_request_tenant(request)
     entries = services.get_ledger(
         org, facility=facility, sku_code=sku_code, transaction_id=transaction_id,
@@ -138,7 +163,14 @@ def list_ledger(
     openapi_extra=protected_openapi_extra(),
 )
 def ledger_by_transaction(request, txn_id: str):
+    access = authorize_request(
+        request,
+        PERM_INVENTORY_READ,
+        require_membership=True,
+    )
     org, _ = resolve_request_tenant(request)
+    txn = operation_services.get_transaction(org, txn_id)
+    enforce_facility_scope(access, txn.facility.code)
     entries = services.get_ledger(org, transaction_id=txn_id)
     return success_response(request, data=[_ledger_out(e) for e in entries])
 

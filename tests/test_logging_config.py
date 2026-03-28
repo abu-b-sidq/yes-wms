@@ -16,7 +16,7 @@ def test_log_destination_defaults_to_file(monkeypatch):
     runtime = get_runtime_settings()
 
     assert runtime.log_destination == "file"
-    assert runtime.log_file_path == "/app/logs/rozana-wms.log"
+    assert runtime.log_file_path == "/app/logs/yes-wms.log"
 
 
 def test_invalid_log_destination_falls_back_to_file(monkeypatch):
@@ -93,7 +93,7 @@ def test_build_logging_handler_for_file(monkeypatch, tmp_path):
 
 def test_build_logging_handler_falls_back_to_tmp_when_directory_is_not_writable(monkeypatch):
     monkeypatch.setattr(settings_module, "LOG_DESTINATION", "file")
-    monkeypatch.setattr(settings_module, "LOG_FILE_PATH", "/app/logs/rozana-wms.log")
+    monkeypatch.setattr(settings_module, "LOG_FILE_PATH", "/app/logs/yes-wms.log")
     monkeypatch.setattr(settings_module, "LOG_FILE_MAX_BYTES", 52_428_800)
     monkeypatch.setattr(settings_module, "LOG_FILE_BACKUP_COUNT", 10)
 
@@ -104,4 +104,4 @@ def test_build_logging_handler_falls_back_to_tmp_when_directory_is_not_writable(
 
     handler = settings_module._build_logging_handler("json")
 
-    assert handler["filename"] == "/tmp/rozana-wms.log"
+    assert handler["filename"] == "/tmp/yes-wms.log"

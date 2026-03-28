@@ -7,7 +7,7 @@ WAREHOUSE_HEADER_PARAM = {
     "in": "header",
     "required": True,
     "schema": {"type": "string"},
-    "description": "Warehouse tenant key.",
+    "description": "Warehouse key assigned on the facility record.",
     "example": "TEST_WH9",
 }
 
@@ -48,6 +48,7 @@ API_KEY_HEADER_PARAM = {
 }
 
 PROTECTED_SECURITY = [{"bearerAuth": []}, {"apiKeyAuth": []}]
+FIREBASE_ONLY_SECURITY = [{"bearerAuth": []}]
 
 
 def protected_openapi_extra(
@@ -82,6 +83,40 @@ def protected_openapi_extra(
     }
 
 
+def firebase_only_openapi_extra(
+    *,
+    require_org: bool = False,
+    require_facility: bool = False,
+    include_org: bool | None = None,
+    include_facility: bool | None = None,
+) -> dict:
+    params = [
+        copy.deepcopy(WAREHOUSE_HEADER_PARAM),
+    ]
+    if include_org is None:
+        include_org = require_org
+    if include_org:
+        org_param = copy.deepcopy(ORG_HEADER_PARAM)
+        org_param["required"] = require_org
+        params.append(org_param)
+
+    if include_facility is None:
+        include_facility = require_facility
+    if include_facility:
+        facility_param = copy.deepcopy(FACILITY_HEADER_PARAM)
+        facility_param["required"] = require_facility
+        params.append(facility_param)
+
+    authorization_param = copy.deepcopy(AUTHORIZATION_HEADER_PARAM)
+    authorization_param["required"] = True
+    params.append(authorization_param)
+
+    return {
+        "security": copy.deepcopy(FIREBASE_ONLY_SECURITY),
+        "parameters": params,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Response schema components — injected globally via inject_security_schemes
 # ---------------------------------------------------------------------------
@@ -93,7 +128,7 @@ _META_SCHEMA = {
         "warehouse_key": {"type": "string"},
         "org_id": {"type": "string", "nullable": True},
         "facility_id": {"type": "string", "nullable": True},
-        "auth_source": {"type": "string", "enum": ["bearer", "api_key", "none"]},
+        "auth_source": {"type": "string", "enum": ["firebase", "api_key", "none"]},
         "uid": {"type": "string"},
         "client_name": {"type": "string"},
     },
