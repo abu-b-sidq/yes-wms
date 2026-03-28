@@ -29,6 +29,14 @@ class EntityType(models.TextChoices):
     CUSTOMER = "CUSTOMER", "Customer"
 
 
+class TaskStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    ASSIGNED = "ASSIGNED", "Assigned"
+    IN_PROGRESS = "IN_PROGRESS", "In Progress"
+    COMPLETED = "COMPLETED", "Completed"
+    CANCELLED = "CANCELLED", "Cancelled"
+
+
 class LedgerEntryType(models.TextChoices):
     PICK = "PICK", "Pick"
     DROP = "DROP", "Drop"

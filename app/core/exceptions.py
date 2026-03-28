@@ -38,6 +38,16 @@ class ValidationError(AppError):
     status_code = 400
 
 
+class TaskAlreadyClaimedError(AppError):
+    code = "TASK_ALREADY_CLAIMED"
+    status_code = 409
+
+
+class TaskNotAssignedError(AppError):
+    code = "TASK_NOT_ASSIGNED"
+    status_code = 400
+
+
 class AuthorizationError(AppError):
     code = "AUTHZ_FORBIDDEN"
     status_code = 403

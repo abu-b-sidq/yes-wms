@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     "app.operations",
     "app.inventory",
     "app.documents",
+    "app.notifications",
 ]
 
 MIDDLEWARE = [
