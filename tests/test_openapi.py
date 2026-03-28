@@ -49,7 +49,7 @@ def test_openapi_includes_dual_auth_security(client):
     assert me_header_params["X-Org-Id"]["required"] is False
     assert me_header_params["X-Facility-Id"]["required"] is False
 
-    allowed_roots = {"health", "masters", "operations", "inventory"}
+    allowed_roots = {"health", "masters", "operations", "inventory", "mobile"}
     actual_roots = {_root(path) for path in schema["paths"]}
     assert actual_roots <= allowed_roots
 

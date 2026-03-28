@@ -45,6 +45,13 @@ class AppUser(UUIDPrimaryKeyMixin, TimestampedModel):
         db_index=True,
     )
     last_login_at = models.DateTimeField(null=True, blank=True)
+    last_facility = models.ForeignKey(
+        "app_masters.Facility",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="last_active_users",
+    )
 
     class Meta:
         db_table = "app_user"

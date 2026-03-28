@@ -1,7 +1,7 @@
 from django.db import models
 
 from app.core.base_models import TenantAwareModel
-from app.core.enums import EntityType, TransactionStatus, TransactionType
+from app.core.enums import EntityType, TaskStatus, TransactionStatus, TransactionType
 
 
 class Transaction(TenantAwareModel):
@@ -62,12 +62,42 @@ class Pick(TenantAwareModel):
     quantity = models.DecimalField(max_digits=12, decimal_places=4)
     batch_number = models.CharField(max_length=100, blank=True, default="")
 
+    task_status = models.CharField(
+        max_length=20,
+        choices=TaskStatus.choices,
+        default=TaskStatus.PENDING,
+    )
+    assigned_to = models.ForeignKey(
+        "app_masters.AppUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_picks",
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    task_started_at = models.DateTimeField(null=True, blank=True)
+    task_completed_at = models.DateTimeField(null=True, blank=True)
+    locked_by = models.ForeignKey(
+        "app_masters.AppUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="locked_picks",
+    )
+    locked_at = models.DateTimeField(null=True, blank=True)
+    lock_expires_at = models.DateTimeField(null=True, blank=True)
+    points_awarded = models.PositiveIntegerField(default=0)
+
     class Meta:
         db_table = "app_pick"
         indexes = [
             models.Index(
                 fields=["transaction"],
                 name="idx_pick_txn",
+            ),
+            models.Index(
+                fields=["org", "task_status"],
+                name="idx_pick_org_task_status",
             ),
         ]
 
@@ -101,12 +131,42 @@ class Drop(TenantAwareModel):
         related_name="paired_drop",
     )
 
+    task_status = models.CharField(
+        max_length=20,
+        choices=TaskStatus.choices,
+        default=TaskStatus.PENDING,
+    )
+    assigned_to = models.ForeignKey(
+        "app_masters.AppUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_drops",
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    task_started_at = models.DateTimeField(null=True, blank=True)
+    task_completed_at = models.DateTimeField(null=True, blank=True)
+    locked_by = models.ForeignKey(
+        "app_masters.AppUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="locked_drops",
+    )
+    locked_at = models.DateTimeField(null=True, blank=True)
+    lock_expires_at = models.DateTimeField(null=True, blank=True)
+    points_awarded = models.PositiveIntegerField(default=0)
+
     class Meta:
         db_table = "app_drop"
         indexes = [
             models.Index(
                 fields=["transaction"],
                 name="idx_drop_txn",
+            ),
+            models.Index(
+                fields=["org", "task_status"],
+                name="idx_drop_org_task_status",
             ),
         ]
 
