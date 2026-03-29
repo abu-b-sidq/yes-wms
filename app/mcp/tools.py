@@ -256,6 +256,8 @@ def wms_list_transactions(
     facility_id: str | None = None,
     transaction_type: str | None = None,
     status: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
     uid: str = "",
 ) -> list[dict]:
     from app.auth.authorization import enforce_facility_scope
@@ -272,7 +274,7 @@ def wms_list_transactions(
         enforce_facility_scope(access, facility_id)
     org = _resolve_org(org_id)
     facility = _resolve_facility(org, facility_id) if facility_id else None
-    return [_txn(t) for t in list_transactions(org, facility=facility, transaction_type=transaction_type, status=status)]
+    return [_txn(t) for t in list_transactions(org, facility=facility, transaction_type=transaction_type, status=status, date_from=date_from, date_to=date_to)]
 
 
 @sync_to_async
