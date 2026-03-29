@@ -25,5 +25,31 @@ services:
     depends_on:
       - db
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: wms-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+
+  web:
+    image: node:20-alpine
+    container_name: wms-web
+    working_dir: /app
+    environment:
+      VITE_API_TARGET: http://wms-middleware:8000
+      VITE_WS_TARGET: ws://wms-middleware:8000
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    volumes:
+      - ./web:/app
+      - web_node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - wms-middleware
+
 volumes:
   pgdata:
+  ollama_data:
+  web_node_modules:
