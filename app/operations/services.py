@@ -128,6 +128,8 @@ def list_transactions(
     facility: Facility | None = None,
     transaction_type: str | None = None,
     status: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
 ) -> list[Transaction]:
     qs = Transaction.objects.filter(org=org).select_related("facility").prefetch_related(
         "picks__sku", "drops__sku"
@@ -138,6 +140,10 @@ def list_transactions(
         qs = qs.filter(transaction_type=transaction_type)
     if status:
         qs = qs.filter(status=status)
+    if date_from:
+        qs = qs.filter(created_at__gte=date_from)
+    if date_to:
+        qs = qs.filter(created_at__lte=date_to)
     return list(qs.order_by("-created_at")[:100])
 
 

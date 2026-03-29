@@ -113,6 +113,14 @@ _TOOL_DEFS: list[types.Tool] = [
                     "type": "string",
                     "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED", "PARTIALLY_COMPLETED"],
                 },
+                "date_from": {
+                    "type": "string",
+                    "description": "Filter transactions created on or after this ISO date/datetime (e.g. 2025-01-15 or 2025-01-15T00:00:00Z)",
+                },
+                "date_to": {
+                    "type": "string",
+                    "description": "Filter transactions created on or before this ISO date/datetime (e.g. 2025-01-15 or 2025-01-15T23:59:59Z)",
+                },
             },
             "required": ["org_id"],
         },
