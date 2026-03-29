@@ -13,11 +13,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api/v1': {
-        target: 'http://localhost:8010',
+        target: process.env.VITE_API_TARGET || 'http://localhost:8010',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:8010',
+        target: process.env.VITE_WS_TARGET || 'ws://localhost:8010',
         ws: true,
       },
     },
