@@ -1,0 +1,94 @@
+// Global styles for YES WMS Ops Dashboard
+
+// Import Angular Material theme
+@use '@angular/material' as mat;
+
+// Custom theme
+$ops-primary: mat.define-palette(mat.$blue-palette, 600);
+$ops-accent:  mat.define-palette(mat.$indigo-palette, A200, A100, A400);
+$ops-warn:    mat.define-palette(mat.$red-palette);
+
+$ops-theme: mat.define-light-theme((
+  color: (
+    primary: $ops-primary,
+    accent: $ops-accent,
+    warn: $ops-warn,
+  ),
+  typography: mat.define-typography-config(
+    $font-family: 'Inter, system-ui, sans-serif'
+  ),
+  density: -1
+));
+
+@include mat.all-component-themes($ops-theme);
+
+// Reset
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+// Material overrides
+.mat-mdc-button, .mat-mdc-raised-button,
+.mat-mdc-outlined-button, .mat-mdc-flat-button {
+  border-radius: 8px !important;
+  letter-spacing: 0 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.mat-mdc-form-field {
+  font-family: 'Inter', sans-serif !important;
+}
+
+.mat-mdc-snack-bar-container {
+  border-radius: 10px !important;
+}
+
+.mat-mdc-menu-panel {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  border-radius: 16px !important;
+}
+
+// Form field subscript spacing fix
+.mat-mdc-form-field-subscript-wrapper {
+  margin-top: 2px !important;
+}
+
+// Make form fields more compact
+.mat-mdc-text-field-wrapper {
+  padding: 0 12px !important;
+}
+
+// Animation utilities
+.fade-in {
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
