@@ -433,6 +433,23 @@ def wms_putaway(
     return _txn(create_and_execute_putaway(org, facility, data, user=uid))
 
 
+async def wms_semantic_search(
+    org_id: str,
+    query: str,
+    content_types: list[str] | None = None,
+    limit: int = 5,
+    uid: str = "",
+) -> list[dict]:
+    """Semantic similarity search over embedded WMS data."""
+    from app.auth.permissions import PERM_INVENTORY_READ
+    from app.ai.embeddings import embed_text, semantic_search
+    _check(uid, org_id, PERM_INVENTORY_READ)
+    types = content_types or ["transaction", "sku", "message", "knowledge"]
+    vector = await embed_text(query)
+    results = await sync_to_async(semantic_search)(vector, org_id, types, min(limit, 10))
+    return results
+
+
 @sync_to_async
 def wms_order_pick(
     org_id: str,

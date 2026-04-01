@@ -239,6 +239,15 @@ async def handle_chat_message(
     # Update conversation timestamp
     await sync_to_async(conversation.save)(update_fields=["updated_at"])
 
+    # Embed the Q+A pair for future semantic retrieval (fire-and-forget)
+    if full_text and user_message:
+        import asyncio
+        from app.ai.embeddings import upsert_embedding
+        embed_text = f"Q: {user_message}\nA: {full_text}"
+        asyncio.create_task(
+            upsert_embedding("message", str(assistant_msg.id), org_id, embed_text)
+        )
+
     yield SSEEvent("done", {"message_id": str(assistant_msg.id), "text": full_text})
 
 

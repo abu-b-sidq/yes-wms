@@ -301,6 +301,39 @@ _TOOL_DEFS: list[types.Tool] = [
             "required": ["org_id", "facility_id", "sku_code", "source_entity_code", "dest_entity_code", "quantity"],
         },
     ),
+    types.Tool(
+        name="wms_semantic_search",
+        description=(
+            "Semantic similarity search over warehouse data — transactions, SKUs, past conversations, "
+            "and the knowledge base (SOPs / procedures). Use when the user asks about historical patterns, "
+            "wants to find records by natural language description, searches for a product by name or "
+            "description (not exact code), or asks procedural questions about warehouse operations."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "query": {
+                    "type": "string",
+                    "description": "Natural language search query, e.g. 'GRNs with damaged items' or 'putaway procedure'",
+                },
+                "content_types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["transaction", "sku", "message", "knowledge"],
+                    },
+                    "description": "Which data sources to search. Omit to search all sources.",
+                },
+                "limit": {
+                    "type": "integer",
+                    "default": 5,
+                    "description": "Maximum number of results to return (1–10).",
+                },
+            },
+            "required": ["org_id", "query"],
+        },
+    ),
 ]
 
 
@@ -358,6 +391,8 @@ async def handle_call_tool(
             result = await tools.wms_putaway(**args, uid=uid)
         elif name == "wms_order_pick":
             result = await tools.wms_order_pick(**args, uid=uid)
+        elif name == "wms_semantic_search":
+            result = await tools.wms_semantic_search(**args, uid=uid)
         else:
             return _err(f"Unknown tool: {name}")
 

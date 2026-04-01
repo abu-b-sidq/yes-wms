@@ -66,6 +66,7 @@ def session_login(request, payload: schemas.SessionLoginIn):
             code=user.last_facility.code,
             name=user.last_facility.name,
             warehouse_key=user.last_facility.warehouse_key,
+            org_id=str(user.last_facility.org_id),
         )
 
     return success_response(request, data=schemas.SessionLoginOut(
@@ -109,9 +110,10 @@ def session_select_facility(request, payload: schemas.SelectFacilityIn):
             code=facility.code,
             name=facility.name,
             warehouse_key=facility.warehouse_key,
+            org_id=str(facility.org_id),
         ),
         warehouse_key=facility.warehouse_key,
-        org_id=facility.org_id,
+        org_id=str(facility.org_id),
     ).dict())
 
 
@@ -376,6 +378,7 @@ def _get_user_facilities(user: AppUser) -> list[schemas.FacilityOut]:
             code=f.code,
             name=f.name,
             warehouse_key=f.warehouse_key,
+            org_id=str(f.org_id),
         )
         for f in facilities
     ]

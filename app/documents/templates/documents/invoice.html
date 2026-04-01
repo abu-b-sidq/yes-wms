@@ -1,0 +1,59 @@
+{% extends "documents/base.html" %}
+
+{% block title %}Invoice — {% if transaction.sale_order %}{{ transaction.sale_order.so_number }}{% else %}{{ transaction.reference_number|default:transaction.id }}{% endif %}{% endblock %}
+{% block doc_title %}Invoice{% endblock %}
+
+{% block content %}
+{% if transaction.sale_order %}
+<div class="section">
+  <h2>Bill To</h2>
+  <div class="info-grid">
+    <div class="info-item"><label>Customer</label><span><strong>{{ transaction.sale_order.customer_name|default:"—" }}</strong></span></div>
+    <div class="info-item"><label>Customer Code</label><span>{{ transaction.sale_order.customer_code|default:"—" }}</span></div>
+    <div class="info-item"><label>Sale Order</label><span>{{ transaction.sale_order.so_number }}</span></div>
+    <div class="info-item"><label>Invoice Date</label><span>{{ generated_at|date:"Y-m-d" }}</span></div>
+  </div>
+</div>
+{% endif %}
+
+<div class="section">
+  <h2>Line Items</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>SKU Code</th>
+        <th>Description</th>
+        <th>Batch</th>
+        <th>Qty</th>
+        <th>UOM</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pick in transaction.picks.all %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ pick.sku.code }}</td>
+        <td>{{ pick.sku.name }}</td>
+        <td>{{ pick.batch_number|default:"—" }}</td>
+        <td><strong>{{ pick.quantity }}</strong></td>
+        <td>{{ pick.sku.unit_of_measure }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;color:#888;">No items</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section" style="margin-top:32px;">
+  <div style="display:flex; justify-content:space-between;">
+    <div style="width:45%;">
+      <div style="border-top:1px solid #333; padding-top:4px; text-align:center; font-size:11px;">Prepared By</div>
+    </div>
+    <div style="width:45%;">
+      <div style="border-top:1px solid #333; padding-top:4px; text-align:center; font-size:11px;">Authorised By</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

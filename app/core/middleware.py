@@ -180,6 +180,9 @@ class TenantContextMiddleware:
         "/api/v1/docs",
         "/api/v1/swagger",
         "/api/v1/openapi.json",
+        # Session bootstrap — called before a facility/warehouse is selected
+        "/api/v1/mobile/session/login",
+        "/api/v1/mobile/session/select-facility",
     )
 
     def __init__(self, get_response):

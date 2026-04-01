@@ -183,7 +183,7 @@ export class OrderPickComponent implements OnInit {
     this.ops.createOrderPick({
       reference: val.reference!,
       notes: val.notes || undefined,
-      items: (val.items ?? []).map((i: {sku_code: string; quantity: number; source_location: string; invoice_code: string; batch: string}) => ({
+      items: (val.items ?? []).map((i: any) => ({
         sku_code: i.sku_code, quantity: Number(i.quantity),
         source_location: i.source_location,
         invoice_code: i.invoice_code,

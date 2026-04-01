@@ -18,6 +18,7 @@ class FacilityOut(Schema):
     code: str
     name: str
     warehouse_key: str
+    org_id: str
 
 
 class SessionLoginOut(Schema):

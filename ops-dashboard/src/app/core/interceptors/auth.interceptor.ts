@@ -28,8 +28,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         headers = headers.set('X-Org-Id', session.orgId);
       }
 
-      if (session?.facility?.id && !headers.has('X-Facility-Id')) {
-        headers = headers.set('X-Facility-Id', session.facility.id);
+      if (session?.facility?.code && !headers.has('X-Facility-Id')) {
+        headers = headers.set('X-Facility-Id', session.facility.code);
       }
 
       return next(req.clone({ headers }));

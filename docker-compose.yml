@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: wms-db
     environment:
       POSTGRES_DB: yes_wms
@@ -25,21 +25,20 @@ services:
     depends_on:
       - db
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: wms-ollama
-    volumes:
-      - ollama_data:/root/.ollama
-    ports:
-      - "11434:11434"
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: wms-ollama
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   ports:
+  #     - "11434:11434"
 
   web:
     image: node:20-alpine
     container_name: wms-web
     working_dir: /app
-    environment:
-      VITE_API_TARGET: http://wms-middleware:8000
-      VITE_WS_TARGET: ws://wms-middleware:8000
+    env_file:
+      - .env
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     volumes:
       - ./web:/app
@@ -53,11 +52,10 @@ services:
     image: node:20-alpine
     container_name: wms-ops-dashboard
     working_dir: /app
+    env_file:
+      - .env
     environment:
-      # Firebase config — set these in your .env file or environment
-      FIREBASE_API_KEY: ${FIREBASE_WEB_API_KEY:-}
-      FIREBASE_AUTH_DOMAIN: ${FIREBASE_AUTH_DOMAIN:-}
-      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      API_URL: http://wms-middleware:8000
     command: sh -c "npm install && npm start"
     volumes:
       - ./ops-dashboard:/app
@@ -69,6 +67,6 @@ services:
 
 volumes:
   pgdata:
-  ollama_data:
+  # ollama_data:
   web_node_modules:
   ops_dashboard_node_modules:

@@ -82,7 +82,7 @@ const STATUS_BADGE: Record<string, { color: string; bg: string }> = {
       <app-detail-dialog
         [open]="viewDialogOpen()"
         [title]="selectedTxn()?.type ?? 'Transaction'"
-        [subtitle]="selectedTxn()?.reference ?? selectedTxn()?.id?.slice(0,8)"
+        [subtitle]="selectedTxn()?.reference ?? selectedTxn()?.id?.slice(0,8) ?? ''"
         (closed)="viewDialogOpen.set(false)">
 
         <div header-actions *ngIf="selectedTxn()">

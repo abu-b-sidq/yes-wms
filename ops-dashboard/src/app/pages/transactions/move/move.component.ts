@@ -207,7 +207,7 @@ export class MoveComponent implements OnInit {
     this.ops.createMove({
       reference: val.reference || undefined,
       notes: val.notes || undefined,
-      items: (val.items ?? []).map((i: {sku_code: string; quantity: number; source_location: string; destination_location: string; batch: string}) => ({
+      items: (val.items ?? []).map((i: any) => ({
         sku_code: i.sku_code, quantity: Number(i.quantity),
         source_location: i.source_location, destination_location: i.destination_location,
         batch: i.batch || undefined

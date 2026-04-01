@@ -1,3 +1,6 @@
+import json
+import threading
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -54,6 +57,19 @@ def auto_map_sku(sender, instance, created, **kwargs):
     ]
     if mappings:
         FacilitySKU.objects.bulk_create(mappings, ignore_conflicts=True)
+
+
+@receiver(post_save, sender=SKU)
+def embed_sku(sender, instance, **kwargs):
+    """Asynchronously embed SKU for semantic search."""
+    metadata_str = json.dumps(instance.metadata) if instance.metadata else ""
+    text = f"SKU: {instance.code} | Name: {instance.name} | UOM: {instance.unit_of_measure} | {metadata_str}".strip(" |")
+
+    def _run():
+        from app.ai.embeddings import upsert_embedding_sync
+        upsert_embedding_sync("sku", str(instance.id), str(instance.org_id), text)
+
+    threading.Thread(target=_run, daemon=True).start()
 
 
 @receiver(post_save, sender=Zone)

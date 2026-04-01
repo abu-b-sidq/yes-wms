@@ -4,6 +4,7 @@ from __future__ import annotations
 import uuid
 
 from django.db import models
+from pgvector.django import HnswIndex, VectorField
 
 from app.core.base_models import TimestampedModel, UUIDPrimaryKeyMixin
 
@@ -93,3 +94,36 @@ class Message(UUIDPrimaryKeyMixin, TimestampedModel):
 
     def __str__(self) -> str:
         return f"[{self.role}] {self.content[:80]}"
+
+
+class EmbeddingRecord(models.Model):
+    """Stores vector embeddings for semantic search over WMS data."""
+
+    class ContentType(models.TextChoices):
+        TRANSACTION = "transaction", "Transaction"
+        SKU = "sku", "SKU"
+        MESSAGE = "message", "Conversation Message"
+        KNOWLEDGE = "knowledge", "Knowledge Base"
+
+    content_type = models.CharField(max_length=20, choices=ContentType.choices, db_index=True)
+    object_id = models.CharField(max_length=255)       # UUID or file path + chunk index
+    org_id = models.CharField(max_length=255, db_index=True)
+    text = models.TextField()                          # Source text that was embedded
+    embedding = VectorField(dimensions=768)            # nomic-embed-text output dimension
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "app_ai"
+        unique_together = [("content_type", "object_id")]
+        indexes = [
+            HnswIndex(
+                name="emb_hnsw_cosine_idx",
+                fields=["embedding"],
+                m=16,
+                ef_construction=64,
+                opclasses=["vector_cosine_ops"],
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"[{self.content_type}] {self.object_id}"

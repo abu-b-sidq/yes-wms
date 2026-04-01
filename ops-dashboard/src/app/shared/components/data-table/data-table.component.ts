@@ -97,18 +97,18 @@ export interface TableAction {
               <!-- Badge type -->
               <ng-container *ngIf="col.type === 'badge'">
                 <span class="badge"
-                      [style.color]="col.badgeConfig?.[getCellValue(row, col.key)]?.color ?? '#334155'"
-                      [style.background]="col.badgeConfig?.[getCellValue(row, col.key)]?.bg ?? '#e2e8f0'">
+                      [style.color]="col.badgeConfig?.[$any(getCellValue(row, col.key))]?.color ?? '#334155'"
+                      [style.background]="col.badgeConfig?.[$any(getCellValue(row, col.key))]?.bg ?? '#e2e8f0'">
                   {{ getCellValue(row, col.key) }}
                 </span>
               </ng-container>
               <!-- Date type -->
               <ng-container *ngIf="col.type === 'date'">
-                {{ getCellValue(row, col.key) | date:'dd MMM yyyy, HH:mm' }}
+                {{ $any(getCellValue(row, col.key)) | date:'dd MMM yyyy, HH:mm' }}
               </ng-container>
               <!-- Number type -->
               <ng-container *ngIf="col.type === 'number'">
-                {{ getCellValue(row, col.key) | number }}
+                {{ $any(getCellValue(row, col.key)) | number }}
               </ng-container>
               <!-- Custom format -->
               <ng-container *ngIf="col.type === 'custom' && col.format">

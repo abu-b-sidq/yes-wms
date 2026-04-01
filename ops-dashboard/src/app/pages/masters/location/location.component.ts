@@ -52,7 +52,7 @@ import { Location, Zone } from '../../../core/models/masters.model';
       <app-detail-dialog
         [open]="viewDialogOpen()"
         [title]="selectedLocation()?.name ?? ''"
-        [subtitle]="selectedLocation()?.code"
+        [subtitle]="selectedLocation()?.code ?? ''"
         (closed)="viewDialogOpen.set(false)">
         <div header-actions>
           <button mat-icon-button color="primary" (click)="openForm(selectedLocation()!)" *ngIf="canManage">

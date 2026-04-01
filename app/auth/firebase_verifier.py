@@ -42,10 +42,14 @@ class FirebaseTokenVerifier:
         firebase_admin = self._sdk["firebase_admin"]
         credentials = self._sdk["credentials"]
 
+        # If the default app is already initialised (e.g. by another worker,
+        # the MCP server, or a hot-reload) just reuse it.
         try:
-            if firebase_admin._apps:
-                return firebase_admin.get_app()
+            return firebase_admin.get_app()
+        except ValueError:
+            pass  # No default app yet — proceed to initialise.
 
+        try:
             if settings.firebase_service_account_json:
                 try:
                     credential_payload = json.loads(settings.firebase_service_account_json)

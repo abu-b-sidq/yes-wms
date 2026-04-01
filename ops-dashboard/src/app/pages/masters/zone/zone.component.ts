@@ -54,7 +54,7 @@ const ZONE_TYPES = ['STORAGE', 'PRE_PUTAWAY', 'STAGING', 'RETURNS', 'QUARANTINE'
       <app-detail-dialog
         [open]="viewDialogOpen()"
         [title]="selectedZone()?.name ?? ''"
-        [subtitle]="selectedZone()?.code"
+        [subtitle]="selectedZone()?.code ?? ''"
         (closed)="viewDialogOpen.set(false)">
         <div header-actions>
           <button mat-icon-button color="primary" (click)="openForm(selectedZone()!)" *ngIf="canManage">

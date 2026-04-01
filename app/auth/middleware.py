@@ -15,6 +15,7 @@ from app.core.response import error_response
 class DualAuthMiddleware:
     API_PREFIX = "/api/v1/"
     EXEMPT_PATHS = (
+        "/api/v1/operations/mobile/session/login",
         "/api/v1/health",
         "/api/v1/docs",
         "/api/v1/swagger",

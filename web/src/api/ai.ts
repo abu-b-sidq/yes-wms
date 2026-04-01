@@ -35,7 +35,8 @@ export async function* streamChat(
     body.confirm_action = confirmAction;
   }
 
-  const response = await fetch('/api/v1/ai/chat', {
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8010';
+  const response = await fetch(`${apiBase}/api/v1/ai/chat`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),

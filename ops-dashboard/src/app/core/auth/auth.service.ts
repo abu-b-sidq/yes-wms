@@ -10,7 +10,7 @@ import {
   signInWithPopup
 } from 'firebase/auth';
 import { getFirebaseAuth } from './firebase.config';
-import { AppUser, Facility, SessionLoginResponse, WmsSession } from '../models/user.model';
+import { AppUser, Facility, SessionLoginData, SessionLoginResponse, WmsSession } from '../models/user.model';
 import { environment } from '../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 
@@ -75,16 +75,24 @@ export class AuthService {
       const token = await firebaseUser.getIdToken();
       const response = await firstValueFrom(
         this.http.post<SessionLoginResponse>(
-          `${environment.apiUrl}/operations/mobile/session/login`,
+          `${environment.apiUrl}/mobile/session/login`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         )
       );
-      this._availableFacilities.set(response.available_facilities);
+      const loginData: SessionLoginData = response.data;
+      const appUser: AppUser = {
+        id: loginData.user_id,
+        email: loginData.email,
+        display_name: loginData.display_name,
+        photo_url: loginData.photo_url,
+        status: 'ACTIVE',
+      };
+      this._availableFacilities.set(loginData.available_facilities);
       // Auto-select last used facility or first available
-      const facility = response.last_used_facility ?? response.available_facilities[0] ?? null;
+      const facility = loginData.last_used_facility ?? loginData.available_facilities[0] ?? null;
       if (facility && !this._session()) {
-        await this.selectFacility(facility, response.user, token);
+        await this.selectFacility(facility, appUser, token);
       } else if (!facility) {
         // No facilities — keep session null but store user for display
         this._session.set(null);
@@ -126,7 +134,7 @@ export class AuthService {
     try {
       await firstValueFrom(
         this.http.post(
-          `${environment.apiUrl}/operations/mobile/session/select-facility`,
+          `${environment.apiUrl}/mobile/session/select-facility`,
           { facility_id: facility.id },
           { headers: { Authorization: `Bearer ${token}`, warehouse: facility.warehouse_key } }
         )
@@ -145,7 +153,7 @@ export class AuthService {
     const session: WmsSession = {
       user: appUser,
       facility,
-      orgId: '', // Will be resolved from facility context
+      orgId: facility.org_id,
       warehouseKey: facility.warehouse_key,
       permissions: this.resolvePermissionsFromRoles()
     };

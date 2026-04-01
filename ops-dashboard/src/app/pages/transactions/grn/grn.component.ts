@@ -279,7 +279,7 @@ export class GrnComponent implements OnInit {
     this.ops.createGrn({
       reference: val.reference || undefined,
       notes: val.notes || undefined,
-      items: (val.items ?? []).map((item: {sku_code: string; quantity: number; batch: string; destination_zone: string}) => ({
+      items: (val.items ?? []).map((item: any) => ({
         sku_code: item.sku_code,
         quantity: Number(item.quantity),
         batch: item.batch || undefined,

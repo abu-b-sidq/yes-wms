@@ -183,7 +183,7 @@ export class PutawayComponent implements OnInit {
     const val = this.form.value;
     this.ops.createPutaway({
       reference: val.reference || undefined,
-      items: (val.items ?? []).map((i: {sku_code: string; quantity: number; source_zone: string; destination_location: string; batch: string}) => ({
+      items: (val.items ?? []).map((i: any) => ({
         sku_code: i.sku_code, quantity: Number(i.quantity),
         source_zone: i.source_zone || undefined,
         destination_location: i.destination_location,

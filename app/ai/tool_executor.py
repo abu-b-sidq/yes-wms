@@ -34,6 +34,7 @@ def _get_registry() -> dict[str, Any]:
             "wms_create_grn": tools.wms_create_grn,
             "wms_putaway": tools.wms_putaway,
             "wms_order_pick": tools.wms_order_pick,
+            "wms_semantic_search": tools.wms_semantic_search,
         }
     return _TOOL_REGISTRY
 
