@@ -8,3 +8,12 @@ app/auth/firebase_service_account.json
 /auth/
 .coverage
 htmlcov/
+
+# Editor temp files
+*.swp
+*.swo
+*~
+
+# Frontend dependencies
+/ops-dashboard/node_modules/
+/web/node_modules/
