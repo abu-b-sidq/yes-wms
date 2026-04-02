@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from django.db.models import Q
 
 from app.core.exceptions import EntityNotFoundError, ValidationError
 from app.masters.models import (
@@ -111,8 +112,14 @@ def update_sku(org: Organization, code: str, data: dict, user: str = "") -> SKU:
     return sku
 
 
-def list_skus(org: Organization) -> list[SKU]:
-    return list(SKU.objects.filter(org=org).order_by("code"))
+def list_skus(org: Organization, search: str = "") -> list[SKU]:
+    queryset = SKU.objects.filter(org=org)
+    if search:
+        term = search.strip()
+        queryset = queryset.filter(
+            Q(code__icontains=term) | Q(name__icontains=term)
+        )
+    return list(queryset.order_by("code"))
 
 
 # --- Zone ---

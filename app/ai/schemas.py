@@ -10,6 +10,8 @@ class ChatRequest(Schema):
     conversation_id: str
     message: str = ""
     confirm_action: dict[str, Any] | None = None
+    model_provider: str | None = None
+    model_name: str | None = None
 
 
 class CreateConversationRequest(Schema):

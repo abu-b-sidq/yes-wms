@@ -158,9 +158,10 @@ export interface TableAction {
   `,
   styles: [`
     .data-table-container {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: linear-gradient(180deg, rgba(37, 44, 51, 0.94) 0%, rgba(28, 33, 37, 0.98) 100%);
+      border: 1px solid var(--ops-border);
+      border-radius: 18px;
+      box-shadow: var(--ops-shadow);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -193,7 +194,7 @@ export interface TableAction {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255,255,255,0.8);
+      background: rgba(20, 25, 30, 0.72);
       z-index: 5;
     }
     .empty-state {
@@ -203,13 +204,13 @@ export interface TableAction {
       justify-content: center;
       padding: 48px 24px;
       gap: 8px;
-      color: #94a3b8;
+      color: var(--ops-text-soft);
     }
     .empty-icon {
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: #cbd5e1;
+      color: #49515a;
     }
     .empty-state p {
       font-size: 15px;
@@ -223,11 +224,11 @@ export interface TableAction {
       transition: background 0.1s;
     }
     .table-row:hover {
-      background: #f8fafc !important;
+      background: rgba(255, 255, 255, 0.04) !important;
     }
     .clickable-cell {
       font-size: 14px;
-      color: #334155;
+      color: var(--ops-text);
     }
     .badge {
       display: inline-flex;
@@ -244,8 +245,15 @@ export interface TableAction {
       font-size: 12px !important;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #64748b !important;
-      background: #f8fafc;
+      color: var(--ops-text-soft) !important;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    ::ng-deep .mat-mdc-cell {
+      border-bottom-color: var(--ops-border) !important;
+      color: var(--ops-text);
+    }
+    ::ng-deep .mat-mdc-paginator-container {
+      border-top: 1px solid var(--ops-border);
     }
     ::ng-deep .mat-mdc-row:last-child td {
       border-bottom: none;

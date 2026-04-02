@@ -38,6 +38,11 @@ class ValidationError(AppError):
     status_code = 400
 
 
+class ServiceUnavailableError(AppError):
+    code = "SERVICE_UNAVAILABLE"
+    status_code = 503
+
+
 class TaskAlreadyClaimedError(AppError):
     code = "TASK_ALREADY_CLAIMED"
     status_code = 409

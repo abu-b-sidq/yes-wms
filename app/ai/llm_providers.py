@@ -58,8 +58,32 @@ class LLMProvider(ABC):
 # ---------------------------------------------------------------------------
 
 class OllamaProvider(LLMProvider):
+    _tool_support_cache: dict[str, bool] = {}
+
     def __init__(self, base_url: str | None = None):
         self.base_url = (base_url or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")).rstrip("/")
+
+    async def _supports_tools(self, model: str) -> bool:
+        """Check if an Ollama model supports tool/function calling."""
+        if model in self._tool_support_cache:
+            return self._tool_support_cache[model]
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(
+                    f"{self.base_url}/api/show", json={"model": model}
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    # Ollama exposes a model's template; models with tool support
+                    # include a `.Tools` directive in their template.
+                    template = data.get("template", "")
+                    supported = ".Tools" in template
+                    self._tool_support_cache[model] = supported
+                    return supported
+        except Exception:
+            logger.debug("Could not check tool support for model %s, assuming supported", model)
+        self._tool_support_cache[model] = True
+        return True
 
     async def chat_completion(
         self,
@@ -75,11 +99,23 @@ class OllamaProvider(LLMProvider):
         if tools:
             payload["tools"] = tools
 
+        logger.debug("OllamaProvider.chat_completion model=%s tools=%d", model, len(tools))
+
+        if tools and not await self._supports_tools(model):
+            logger.warning("Model %s does not support tools — sending without tools", model)
+            payload.pop("tools", None)
+
         async with httpx.AsyncClient(timeout=120.0) as client:
             async with client.stream(
                 "POST", f"{self.base_url}/api/chat", json=payload
             ) as response:
-                response.raise_for_status()
+                if response.status_code >= 400:
+                    body = await response.aread()
+                    logger.error(
+                        "Ollama /api/chat error %s — model=%s body=%s",
+                        response.status_code, model, body.decode(errors="replace"),
+                    )
+                    response.raise_for_status()
                 async for line in response.aiter_lines():
                     if not line.strip():
                         continue
@@ -325,4 +361,4 @@ def get_default_provider() -> str:
 
 
 def get_default_model() -> str:
-    return os.getenv("AI_DEFAULT_MODEL", "llama3.1")
+    return os.getenv("AI_DEFAULT_MODEL", "qwen2.5:7b")

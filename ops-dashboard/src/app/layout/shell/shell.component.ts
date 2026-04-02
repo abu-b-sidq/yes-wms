@@ -45,7 +45,9 @@ import { TopbarComponent } from '../topbar/topbar.component';
       display: flex;
       height: 100vh;
       overflow: hidden;
-      background: #f8fafc;
+      background:
+        radial-gradient(circle at top right, rgba(75, 152, 235, 0.16), transparent 26%),
+        linear-gradient(180deg, #14191e 0%, #191e23 100%);
     }
     .sidebar-wrapper {
       flex-shrink: 0;
@@ -57,6 +59,7 @@ import { TopbarComponent } from '../topbar/topbar.component';
       display: flex;
       flex-direction: column;
       min-width: 0;
+      background: transparent;
       transition: margin-left 0.3s ease;
     }
     .page-content {
@@ -64,13 +67,14 @@ import { TopbarComponent } from '../topbar/topbar.component';
       overflow-y: auto;
       overflow-x: hidden;
       padding: 0;
+      background: transparent;
     }
     .mobile-sidebar {
       position: fixed;
       left: 0;
       top: 0;
       height: 100%;
-      box-shadow: 4px 0 16px rgba(0,0,0,0.2);
+      box-shadow: 16px 0 40px rgba(0,0,0,0.35);
     }
     .mobile-hidden {
       transform: translateX(-100%);
@@ -79,7 +83,8 @@ import { TopbarComponent } from '../topbar/topbar.component';
     .mobile-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(20, 25, 30, 0.78);
+      backdrop-filter: blur(6px);
       z-index: 99;
     }
 

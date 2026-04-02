@@ -59,32 +59,32 @@ interface RecentTransaction {
         <h3 class="section-title">Quick Actions</h3>
         <div class="quick-actions">
           <a class="quick-action-btn" routerLink="/transactions/grn">
-            <div class="qa-icon" style="background:#dcfce7">
-              <mat-icon style="color:#16a34a">input</mat-icon>
+            <div class="qa-icon" style="background:rgba(92,168,67,0.16)">
+              <mat-icon style="color:#8cc27c">input</mat-icon>
             </div>
             <span>New GRN</span>
           </a>
           <a class="quick-action-btn" routerLink="/transactions/move">
-            <div class="qa-icon" style="background:#fef3c7">
-              <mat-icon style="color:#d97706">swap_horiz</mat-icon>
+            <div class="qa-icon" style="background:rgba(245,184,92,0.16)">
+              <mat-icon style="color:#f3c97f">swap_horiz</mat-icon>
             </div>
             <span>Move Stock</span>
           </a>
           <a class="quick-action-btn" routerLink="/transactions/putaway">
-            <div class="qa-icon" style="background:#ede9fe">
-              <mat-icon style="color:#7c3aed">move_to_inbox</mat-icon>
+            <div class="qa-icon" style="background:rgba(118,103,214,0.16)">
+              <mat-icon style="color:#b0a5ff">move_to_inbox</mat-icon>
             </div>
             <span>Putaway</span>
           </a>
           <a class="quick-action-btn" routerLink="/transactions/order-pick">
-            <div class="qa-icon" style="background:#fee2e2">
-              <mat-icon style="color:#dc2626">shopping_cart</mat-icon>
+            <div class="qa-icon" style="background:rgba(238,107,102,0.16)">
+              <mat-icon style="color:#f2a09d">shopping_cart</mat-icon>
             </div>
             <span>Order Pick</span>
           </a>
           <a class="quick-action-btn" routerLink="/inventory">
-            <div class="qa-icon" style="background:#e0f2fe">
-              <mat-icon style="color:#0284c7">inventory</mat-icon>
+            <div class="qa-icon" style="background:rgba(75,152,235,0.16)">
+              <mat-icon style="color:#8fc0f3">inventory</mat-icon>
             </div>
             <span>Inventory</span>
           </a>
@@ -129,53 +129,57 @@ interface RecentTransaction {
   `,
   styles: [`
     .dashboard {
+      position: relative;
       padding-bottom: 24px;
     }
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
+      gap: 14px;
       padding: 0 24px 24px;
     }
     .stat-card {
-      background: white;
-      border-radius: 12px;
-      padding: 16px;
+      background: linear-gradient(180deg, rgba(37, 44, 51, 0.92) 0%, rgba(28, 33, 37, 0.96) 100%);
+      border: 1px solid var(--ops-border);
+      border-radius: 18px;
+      padding: 18px;
       display: flex;
       align-items: center;
       gap: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      box-shadow: var(--ops-shadow);
       text-decoration: none;
-      color: inherit;
-      transition: box-shadow 0.2s, transform 0.2s;
+      color: var(--ops-text);
+      transition: border-color 0.2s, transform 0.2s, background 0.2s;
       cursor: pointer;
     }
     .stat-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      border-color: rgba(75, 152, 235, 0.22);
+      background: linear-gradient(180deg, rgba(42, 50, 57, 0.96) 0%, rgba(30, 35, 40, 1) 100%);
       transform: translateY(-2px);
     }
     .stat-icon {
       width: 48px;
       height: 48px;
-      border-radius: 12px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
     .stat-content { flex: 1; }
     .stat-value {
       font-size: 22px;
       font-weight: 700;
-      color: #1e293b;
+      color: var(--ops-text);
       line-height: 1;
     }
     .stat-label {
       font-size: 12px;
-      color: #64748b;
+      color: var(--ops-text-muted);
       margin-top: 4px;
     }
-    .stat-arrow { color: #94a3b8; }
+    .stat-arrow { color: var(--ops-text-soft); }
     .section {
       padding: 0 24px 24px;
     }
@@ -188,17 +192,17 @@ interface RecentTransaction {
     .section-title {
       font-size: 16px;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--ops-text);
       margin: 0 0 12px;
     }
     .see-all {
       font-size: 13px;
-      color: #3b82f6;
+      color: var(--ops-primary);
       text-decoration: none;
     }
     .quick-actions {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       overflow-x: auto;
       padding-bottom: 4px;
     }
@@ -208,30 +212,33 @@ interface RecentTransaction {
       align-items: center;
       gap: 8px;
       padding: 16px 12px;
-      background: white;
-      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(37, 44, 51, 0.92) 0%, rgba(28, 33, 37, 0.96) 100%);
+      border: 1px solid var(--ops-border);
+      border-radius: 16px;
       text-decoration: none;
-      color: #334155;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      color: var(--ops-text);
+      box-shadow: var(--ops-shadow);
       min-width: 80px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, border-color 0.2s, background 0.2s;
       flex-shrink: 0;
     }
     .quick-action-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      border-color: rgba(75, 152, 235, 0.2);
+      background: linear-gradient(180deg, rgba(42, 50, 57, 0.96) 0%, rgba(30, 35, 40, 1) 100%);
     }
     .qa-icon {
       width: 48px;
       height: 48px;
-      border-radius: 12px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
     .quick-action-btn span {
       font-size: 12px;
-      font-weight: 500;
+      font-weight: 600;
       white-space: nowrap;
     }
     .loading-state {
@@ -240,9 +247,10 @@ interface RecentTransaction {
       padding: 32px;
     }
     .recent-list {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: linear-gradient(180deg, rgba(37, 44, 51, 0.94) 0%, rgba(28, 33, 37, 0.98) 100%);
+      border: 1px solid var(--ops-border);
+      border-radius: 18px;
+      box-shadow: var(--ops-shadow);
       overflow: hidden;
     }
     .txn-item {
@@ -250,30 +258,31 @@ interface RecentTransaction {
       align-items: center;
       gap: 12px;
       padding: 14px 16px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--ops-border);
       transition: background 0.1s;
       cursor: pointer;
     }
     .txn-item:last-child { border-bottom: none; }
-    .txn-item:hover { background: #f8fafc; }
+    .txn-item:hover { background: rgba(255, 255, 255, 0.04); }
     .txn-type-icon {
       width: 40px;
       height: 40px;
-      border-radius: 10px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
     .txn-info { flex: 1; }
     .txn-type {
       font-weight: 600;
       font-size: 14px;
-      color: #1e293b;
+      color: var(--ops-text);
     }
     .txn-ref {
       font-size: 12px;
-      color: #64748b;
+      color: var(--ops-text-muted);
       font-family: monospace;
     }
     .txn-right {
@@ -285,22 +294,23 @@ interface RecentTransaction {
     .txn-status {
       font-size: 11px;
       font-weight: 600;
-      padding: 2px 8px;
+      padding: 4px 10px;
       border-radius: 20px;
+      border: 1px solid transparent;
     }
-    .status-completed { background: #dcfce7; color: #16a34a; }
-    .status-pending { background: #fef3c7; color: #d97706; }
-    .status-in_progress { background: #dbeafe; color: #2563eb; }
-    .status-cancelled { background: #f1f5f9; color: #64748b; }
-    .status-failed { background: #fef2f2; color: #ef4444; }
-    .txn-date { font-size: 11px; color: #94a3b8; }
+    .status-completed { background: var(--ops-success-soft); color: #8cc27c; border-color: rgba(92, 168, 67, 0.22); }
+    .status-pending { background: var(--ops-warning-soft); color: #f3c97f; border-color: rgba(245, 184, 92, 0.22); }
+    .status-in_progress { background: var(--ops-primary-soft); color: #8fc0f3; border-color: rgba(75, 152, 235, 0.22); }
+    .status-cancelled { background: rgba(255, 255, 255, 0.05); color: var(--ops-text-muted); border-color: var(--ops-border); }
+    .status-failed { background: var(--ops-danger-soft); color: #f2a09d; border-color: rgba(238, 107, 102, 0.24); }
+    .txn-date { font-size: 11px; color: var(--ops-text-soft); }
     .empty-recent {
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 32px;
       gap: 8px;
-      color: #94a3b8;
+      color: var(--ops-text-soft);
     }
     .empty-recent mat-icon {
       font-size: 36px;
@@ -320,10 +330,10 @@ export class DashboardComponent implements OnInit {
   private ops = inject(OperationsService);
 
   stats = signal<StatCard[]>([
-    { label: 'SKUs', value: '—', icon: 'inventory_2', color: '#3b82f6', bg: '#eff6ff', route: '/masters/sku' },
-    { label: 'Zones', value: '—', icon: 'grid_view', color: '#8b5cf6', bg: '#f5f3ff', route: '/masters/zone' },
-    { label: 'Locations', value: '—', icon: 'location_on', color: '#10b981', bg: '#ecfdf5', route: '/masters/location' },
-    { label: 'Transactions', value: '—', icon: 'receipt_long', color: '#f59e0b', bg: '#fffbeb', route: '/transactions' },
+    { label: 'SKUs', value: '—', icon: 'inventory_2', color: '#8fc0f3', bg: 'rgba(75,152,235,0.16)', route: '/masters/sku' },
+    { label: 'Zones', value: '—', icon: 'grid_view', color: '#b0a5ff', bg: 'rgba(118,103,214,0.16)', route: '/masters/zone' },
+    { label: 'Locations', value: '—', icon: 'location_on', color: '#8cc27c', bg: 'rgba(92,168,67,0.16)', route: '/masters/location' },
+    { label: 'Transactions', value: '—', icon: 'receipt_long', color: '#f3c97f', bg: 'rgba(245,184,92,0.16)', route: '/transactions' },
   ]);
 
   recentTxns = signal<RecentTransaction[]>([]);
@@ -356,16 +366,16 @@ export class DashboardComponent implements OnInit {
 
   getTxnColor(type: string): string {
     const map: Record<string, string> = {
-      GRN: '#16a34a', MOVE: '#d97706', PUTAWAY: '#7c3aed',
-      ORDER_PICK: '#dc2626', RETURN: '#0284c7', ADJUSTMENT: '#64748b'
+      GRN: '#8cc27c', MOVE: '#f3c97f', PUTAWAY: '#b0a5ff',
+      ORDER_PICK: '#f2a09d', RETURN: '#8fc0f3', ADJUSTMENT: '#b3b5b7'
     };
     return map[type] ?? '#334155';
   }
 
   getTxnBg(type: string): string {
     const map: Record<string, string> = {
-      GRN: '#dcfce7', MOVE: '#fef3c7', PUTAWAY: '#ede9fe',
-      ORDER_PICK: '#fee2e2', RETURN: '#e0f2fe', ADJUSTMENT: '#f1f5f9'
+      GRN: 'rgba(92,168,67,0.16)', MOVE: 'rgba(245,184,92,0.16)', PUTAWAY: 'rgba(118,103,214,0.16)',
+      ORDER_PICK: 'rgba(238,107,102,0.16)', RETURN: 'rgba(75,152,235,0.16)', ADJUSTMENT: 'rgba(255,255,255,0.06)'
     };
     return map[type] ?? '#f1f5f9';
   }

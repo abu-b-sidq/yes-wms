@@ -2,6 +2,11 @@ import axios from 'axios';
 import { auth } from './firebase';
 import type { WMSSession } from '../types/wms';
 
+type ApiClientError = Error & {
+  code?: string;
+  status?: number;
+};
+
 const apiClient = axios.create({
   baseURL: `${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8010'}/api/v1`,
   timeout: 15000,
@@ -10,7 +15,12 @@ const apiClient = axios.create({
 export function getSession(): WMSSession | null {
   const raw = sessionStorage.getItem('wms_session');
   if (!raw) return null;
-  return JSON.parse(raw);
+  try {
+    return JSON.parse(raw) as WMSSession;
+  } catch {
+    clearSession();
+    return null;
+  }
 }
 
 export function saveSession(session: WMSSession): void {
@@ -19,6 +29,20 @@ export function saveSession(session: WMSSession): void {
 
 export function clearSession(): void {
   sessionStorage.removeItem('wms_session');
+}
+
+function createApiClientError(
+  message: string,
+  options: { code?: string; status?: number } = {}
+): ApiClientError {
+  const error = new Error(message) as ApiClientError;
+  if (options.code) {
+    error.code = options.code;
+  }
+  if (typeof options.status === 'number') {
+    error.status = options.status;
+  }
+  return error;
 }
 
 // Request interceptor: inject Firebase token + session headers
@@ -48,17 +72,25 @@ apiClient.interceptors.response.use(
         response.data = body.data;
       } else {
         const msg = body.error?.message || 'Request failed';
-        return Promise.reject(new Error(msg));
+        return Promise.reject(
+          createApiClientError(msg, {
+            code: body.error?.code,
+            status: response.status,
+          })
+        );
       }
     }
     return response;
   },
   (error) => {
-    const msg =
-      error.response?.data?.error?.message ||
-      error.message ||
-      'Network error';
-    return Promise.reject(new Error(msg));
+    const responseError = error.response?.data?.error;
+    const msg = responseError?.message || error.message || 'Network error';
+    return Promise.reject(
+      createApiClientError(msg, {
+        code: responseError?.code,
+        status: error.response?.status,
+      })
+    );
   }
 );
 

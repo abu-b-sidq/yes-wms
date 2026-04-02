@@ -60,19 +60,22 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
     .dialog-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(20, 25, 30, 0.82);
+      backdrop-filter: blur(8px);
       z-index: 1000;
       display: flex;
       align-items: flex-end;
     }
     .dialog-panel {
-      background: white;
+      background: linear-gradient(180deg, rgba(37, 44, 51, 0.96) 0%, rgba(28, 33, 37, 1) 100%);
+      border: 1px solid var(--ops-border);
       width: 100%;
       max-height: 92vh;
       border-radius: 20px 20px 0 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      box-shadow: var(--ops-shadow);
     }
     .dialog-header {
       display: flex;
@@ -87,17 +90,17 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
       gap: 4px;
     }
     .back-btn {
-      color: #64748b;
+      color: var(--ops-text-muted);
     }
     .dialog-title {
       font-size: 18px;
       font-weight: 600;
-      color: #1e293b;
+      color: var(--ops-text);
       margin: 0;
     }
     .dialog-subtitle {
       font-size: 13px;
-      color: #64748b;
+      color: var(--ops-text-muted);
       margin: 2px 0 0;
     }
     .dialog-header-actions {
@@ -128,7 +131,7 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
         width: 640px;
         max-width: 90vw;
         max-height: 85vh;
-        border-radius: 16px;
+        border-radius: 20px;
       }
     }
   `]

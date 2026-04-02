@@ -7,6 +7,7 @@ from app.inventory.routes import router as inventory_router
 from app.masters.routes import router as masters_router
 from app.operations.mobile_routes import router as mobile_router
 from app.ai.routes import router as ai_router
+from app.connectors.routes import router as connectors_router
 from app.operations.routes import router as operations_router
 
 
@@ -91,3 +92,4 @@ api.add_router("/operations", operations_router)
 api.add_router("/inventory", inventory_router)
 api.add_router("/mobile", mobile_router)
 api.add_router("/ai", ai_router)
+api.add_router("/connectors", connectors_router)

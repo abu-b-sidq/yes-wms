@@ -27,40 +27,42 @@ import { MatIconModule } from '@angular/material/icon';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 24px 24px 16px;
+      padding: 28px 24px 18px;
       gap: 16px;
       flex-wrap: wrap;
     }
     .header-main {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
     .header-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: #eff6ff;
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(75, 152, 235, 0.22) 0%, rgba(75, 152, 235, 0.08) 100%);
+      border: 1px solid rgba(75, 152, 235, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .header-icon mat-icon {
-      color: #3b82f6;
+      color: var(--ops-primary);
       font-size: 22px;
       width: 22px;
       height: 22px;
     }
     .header-title {
-      font-size: 22px;
+      font-size: 28px;
       font-weight: 700;
-      color: #1e293b;
+      letter-spacing: -0.04em;
+      color: var(--ops-text);
       margin: 0;
     }
     .header-desc {
-      font-size: 13px;
-      color: #64748b;
-      margin: 2px 0 0;
+      font-size: 14px;
+      color: var(--ops-text-muted);
+      margin: 4px 0 0;
     }
     .header-actions {
       display: flex;

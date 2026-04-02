@@ -9,6 +9,10 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: wms-redis
+
   wms-middleware:
     build: .
     container_name: wms-middleware
@@ -17,6 +21,8 @@ services:
       - .env
     environment:
       PYTHONPATH: /app
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
     command: sh -c "python manage.py migrate && uvicorn wms_middleware.asgi:application --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - ./:/app
@@ -24,6 +30,47 @@ services:
       - "8010:8000"
     depends_on:
       - db
+      - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  celery-worker:
+    build: .
+    container_name: wms-celery-worker
+    working_dir: /app
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    command: sh -c "celery -A wms_middleware worker --loglevel=info"
+    volumes:
+      - ./:/app
+    depends_on:
+      - db
+      - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  celery-beat:
+    build: .
+    container_name: wms-celery-beat
+    working_dir: /app
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    command: sh -c "celery -A wms_middleware beat --loglevel=info"
+    volumes:
+      - ./:/app
+    depends_on:
+      - db
+      - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # ollama:
   #   image: ollama/ollama:latest
@@ -47,6 +94,8 @@ services:
       - "5173:5173"
     depends_on:
       - wms-middleware
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   ops-dashboard:
     image: node:20-alpine
@@ -64,6 +113,8 @@ services:
       - "4200:4200"
     depends_on:
       - wms-middleware
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   pgdata:

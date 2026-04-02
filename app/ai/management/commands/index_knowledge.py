@@ -6,7 +6,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
-KNOWLEDGE_DIR = Path(__file__).resolve().parents[6] / "knowledge"
+KNOWLEDGE_DIR = Path(__file__).resolve().parents[4] / "knowledge"
 CHUNK_SIZE = 500  # approximate characters per chunk
 
 

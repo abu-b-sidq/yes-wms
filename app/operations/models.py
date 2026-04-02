@@ -4,6 +4,64 @@ from app.core.base_models import TenantAwareModel
 from app.core.enums import EntityType, TaskStatus, TransactionStatus, TransactionType
 
 
+class PurchaseOrder(TenantAwareModel):
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", "Draft"
+        CONFIRMED = "CONFIRMED", "Confirmed"
+        RECEIVED = "RECEIVED", "Received"
+        CANCELLED = "CANCELLED", "Cancelled"
+
+    facility = models.ForeignKey(
+        "app_masters.Facility",
+        on_delete=models.CASCADE,
+        related_name="purchase_orders",
+    )
+    po_number = models.CharField(max_length=100)
+    supplier_code = models.CharField(max_length=100, blank=True, default="")
+    supplier_name = models.CharField(max_length=255, blank=True, default="")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    notes = models.TextField(blank=True, default="")
+    expected_delivery_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = "app_purchase_order"
+        constraints = [
+            models.UniqueConstraint(fields=["org", "po_number"], name="uq_po_org_number"),
+        ]
+
+    def __str__(self):
+        return f"PO:{self.po_number}({self.status})"
+
+
+class SaleOrder(TenantAwareModel):
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", "Draft"
+        CONFIRMED = "CONFIRMED", "Confirmed"
+        PICKING = "PICKING", "Picking"
+        DISPATCHED = "DISPATCHED", "Dispatched"
+        CANCELLED = "CANCELLED", "Cancelled"
+
+    facility = models.ForeignKey(
+        "app_masters.Facility",
+        on_delete=models.CASCADE,
+        related_name="sale_orders",
+    )
+    so_number = models.CharField(max_length=100)
+    customer_code = models.CharField(max_length=100, blank=True, default="")
+    customer_name = models.CharField(max_length=255, blank=True, default="")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    notes = models.TextField(blank=True, default="")
+
+    class Meta:
+        db_table = "app_sale_order"
+        constraints = [
+            models.UniqueConstraint(fields=["org", "so_number"], name="uq_so_org_number"),
+        ]
+
+    def __str__(self):
+        return f"SO:{self.so_number}({self.status})"
+
+
 class Transaction(TenantAwareModel):
     facility = models.ForeignKey(
         "app_masters.Facility",
@@ -25,6 +83,21 @@ class Transaction(TenantAwareModel):
     completed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     document_url = models.URLField(max_length=500, blank=True, default="")
+    document_path = models.CharField(max_length=500, blank=True, default="")
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transactions",
+    )
+    sale_order = models.ForeignKey(
+        SaleOrder,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transactions",
+    )
 
     class Meta:
         db_table = "app_transaction"

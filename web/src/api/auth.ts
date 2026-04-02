@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { SessionLoginResponse, Facility } from '../types/wms';
+import type { SelectFacilityResponse, SessionLoginResponse } from '../types/wms';
 
 export async function sessionLogin(fcmToken: string = ''): Promise<SessionLoginResponse> {
   const resp = await apiClient.post('/mobile/session/login', {
@@ -9,7 +9,7 @@ export async function sessionLogin(fcmToken: string = ''): Promise<SessionLoginR
   return resp.data;
 }
 
-export async function selectFacility(facilityId: string): Promise<{ warehouse_key: string; org_id: string }> {
+export async function selectFacility(facilityId: string): Promise<SelectFacilityResponse> {
   const resp = await apiClient.post('/mobile/session/select-facility', {
     facility_id: facilityId,
   });

@@ -53,6 +53,34 @@ def test_sku_create_serializes_uuid_id(client, org, api_headers):
     assert str(UUID(body["data"]["id"])) == body["data"]["id"]
 
 
+def test_sku_list_supports_pagination_and_search(client, org, sku, sku2, api_headers):
+    response = client.get(
+        "/api/v1/masters/skus?page=2&size=1&search=002",
+        **api_headers(org_id=org.id, facility_id=None),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["success"] is True
+    assert body["data"]["page"] == 2
+    assert body["data"]["size"] == 1
+    assert body["data"]["total"] == 1
+    assert body["data"]["items"] == []
+
+    response = client.get(
+        "/api/v1/masters/skus?page=1&size=1&search=002",
+        **api_headers(org_id=org.id, facility_id=None),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["page"] == 1
+    assert body["data"]["size"] == 1
+    assert body["data"]["total"] == 1
+    assert len(body["data"]["items"]) == 1
+    assert body["data"]["items"][0]["code"] == sku2.code
+
+
 def test_zone_create_serializes_uuid_id(client, org, api_headers):
     response = client.post(
         "/api/v1/masters/zones",

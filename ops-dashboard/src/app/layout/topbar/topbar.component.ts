@@ -74,43 +74,51 @@ import { AuthService } from '../../core/auth/auth.service';
   `,
   styles: [`
     .topbar {
-      background: #ffffff !important;
-      color: #1e293b !important;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      background: rgba(20, 25, 30, 0.72) !important;
+      color: var(--ops-text) !important;
+      box-shadow: none;
+      border-bottom: 1px solid var(--ops-border);
+      backdrop-filter: blur(24px);
       z-index: 10;
-      height: 64px;
-      padding: 0 8px 0 16px;
+      height: 72px;
+      padding: 0 14px 0 20px;
     }
     .hamburger-btn {
-      color: #64748b;
-      margin-right: 8px;
+      color: var(--ops-text-muted);
+      margin-right: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
     }
     .page-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #1e293b;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ops-text);
     }
     .spacer { flex: 1; }
     .facility-badge {
       display: flex;
       align-items: center;
-      gap: 4px;
-      background: #f1f5f9;
-      border-radius: 20px;
-      padding: 4px 8px 4px 12px;
-      margin-right: 8px;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--ops-border);
+      border-radius: 16px;
+      padding: 5px 8px 5px 12px;
+      margin-right: 10px;
       cursor: pointer;
     }
     .facility-icon {
       font-size: 16px;
       width: 16px;
       height: 16px;
-      color: #3b82f6;
+      color: var(--ops-primary);
     }
     .facility-name {
       font-size: 13px;
-      font-weight: 500;
-      color: #334155;
+      font-weight: 600;
+      color: var(--ops-text);
       max-width: 150px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -120,7 +128,7 @@ import { AuthService } from '../../core/auth/auth.service';
       width: 28px;
       height: 28px;
       line-height: 28px;
-      color: #64748b;
+      color: var(--ops-text-muted);
     }
     .switch-btn mat-icon {
       font-size: 18px;
@@ -134,24 +142,25 @@ import { AuthService } from '../../core/auth/auth.service';
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      background: #3b82f6;
-      color: white;
+      background: linear-gradient(180deg, rgba(75, 152, 235, 0.9) 0%, rgba(67, 136, 211, 0.9) 100%);
+      color: #151821;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 12px;
+      box-shadow: 0 8px 18px rgba(75, 152, 235, 0.18);
     }
     .user-avatar-large {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: #3b82f6;
-      color: white;
+      background: linear-gradient(180deg, rgba(75, 152, 235, 0.9) 0%, rgba(67, 136, 211, 0.9) 100%);
+      color: #151821;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 14px;
     }
     .user-menu-header {
@@ -166,23 +175,23 @@ import { AuthService } from '../../core/auth/auth.service';
     .user-name {
       font-weight: 600;
       font-size: 14px;
-      color: #1e293b;
+      color: var(--ops-text);
     }
     .user-email {
       font-size: 12px;
-      color: #64748b;
+      color: var(--ops-text-muted);
     }
     .menu-header {
       padding: 8px 16px;
       font-size: 12px;
       font-weight: 600;
-      color: #64748b;
+      color: var(--ops-text-soft);
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
     .active-facility {
-      background: #eff6ff;
-      color: #3b82f6;
+      background: var(--ops-primary-soft);
+      color: var(--ops-primary);
     }
 
     @media (max-width: 600px) {

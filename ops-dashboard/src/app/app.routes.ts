@@ -76,6 +76,18 @@ export const routes: Routes = [
         path: 'inventory',
         loadComponent: () => import('./pages/inventory/inventory.component').then(m => m.InventoryComponent),
         data: { title: 'Inventory' }
+      },
+
+      // Integrations / Connectors
+      {
+        path: 'connectors',
+        loadComponent: () => import('./pages/connectors/connectors.component').then(m => m.ConnectorsComponent),
+        data: { title: 'Integrations' }
+      },
+      {
+        path: 'connectors/:id/logs',
+        loadComponent: () => import('./pages/connectors/connector-logs/connector-logs.component').then(m => m.ConnectorLogsComponent),
+        data: { title: 'Sync Logs' }
       }
     ]
   },

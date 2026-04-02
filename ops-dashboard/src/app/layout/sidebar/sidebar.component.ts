@@ -1,242 +1,254 @@
-import { Component, Input, Output, EventEmitter, computed, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
-import { MatListModule } from '@angular/material/list';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/auth/auth.service';
 
-export interface NavItem {
+type WorkspaceMode = 'operate' | 'setup';
+
+interface NavItem {
   label: string;
   icon: string;
   route?: string;
-  children?: NavItem[];
-  permission?: string;
+  badge?: string | number;
+  exact?: boolean;
+}
+
+interface NavSection {
+  label: string;
+  items: NavItem[];
 }
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
   imports: [
-    CommonModule, RouterModule,
-    MatListModule, MatIconModule, MatExpansionModule,
-    MatDividerModule, MatTooltipModule
+    CommonModule,
+    RouterModule,
+    MatIconModule,
+    MatTooltipModule
   ],
   template: `
-    <aside class="sidebar" [class.collapsed]="collapsed">
-      <!-- Logo -->
-      <div class="sidebar-logo">
-        <div class="logo-icon">
-          <mat-icon>warehouse</mat-icon>
+    <aside class="sidebar-shell" [class.collapsed]="collapsed">
+      <div class="sidebar-panel">
+        <div class="sidebar-header">
+          <div class="brand-row">
+            <div class="brand-mark">
+              <mat-icon>warehouse</mat-icon>
+            </div>
+
+            <div class="brand-copy" *ngIf="!collapsed">
+              <div class="brand-title">YES WMS</div>
+              <div class="brand-caption">Operations Console</div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="icon-button"
+            (click)="toggleCollapse.emit()"
+            [matTooltip]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+            matTooltipPosition="right">
+            <mat-icon>{{ collapsed ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left' }}</mat-icon>
+          </button>
         </div>
-        <span class="logo-text" *ngIf="!collapsed">YES WMS</span>
-      </div>
 
-      <mat-divider></mat-divider>
-
-      <!-- Navigation -->
-      <nav class="sidebar-nav">
-        <!-- Dashboard -->
-        <a mat-list-item routerLink="/dashboard" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'Dashboard' : ''" matTooltipPosition="right"
-           class="nav-item">
-          <mat-icon matListItemIcon>dashboard</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">Dashboard</span>
-        </a>
-
-        <!-- Masters -->
-        <div class="nav-section" *ngIf="!collapsed">
-          <span class="nav-section-label">Masters</span>
+        <div class="workspace-switch" *ngIf="!collapsed">
+          <button
+            type="button"
+            class="workspace-button"
+            [class.active]="workspace() === 'operate'"
+            (click)="switchWorkspace('operate')">
+            Operate
+          </button>
+          <button
+            type="button"
+            class="workspace-button"
+            [class.active]="workspace() === 'setup'"
+            (click)="switchWorkspace('setup')">
+            Setup
+          </button>
         </div>
-        <mat-divider *ngIf="collapsed"></mat-divider>
 
-        <a mat-list-item routerLink="/masters/sku" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'SKUs' : ''" matTooltipPosition="right"
-           class="nav-item">
-          <mat-icon matListItemIcon>inventory_2</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">SKUs</span>
-        </a>
+        <nav class="sidebar-nav">
+          <a
+            class="nav-item nav-item-dashboard"
+            routerLink="/dashboard"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            [matTooltip]="collapsed ? 'Dashboard' : ''"
+            matTooltipPosition="right">
+            <mat-icon class="nav-icon">dashboard</mat-icon>
+            <span class="nav-label" *ngIf="!collapsed">Dashboard</span>
+          </a>
 
-        <a mat-list-item routerLink="/masters/zone" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'Zones' : ''" matTooltipPosition="right"
-           class="nav-item">
-          <mat-icon matListItemIcon>grid_view</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">Zones</span>
-        </a>
+          <ng-container *ngFor="let section of visibleSections()">
+            <div class="nav-section">
+              <div class="nav-section-label" *ngIf="!collapsed">{{ section.label }}</div>
 
-        <a mat-list-item routerLink="/masters/location" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'Locations' : ''" matTooltipPosition="right"
-           class="nav-item">
-          <mat-icon matListItemIcon>location_on</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">Locations</span>
-        </a>
+              <a
+                class="nav-item"
+                *ngFor="let item of section.items"
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="item.exact ? { exact: true } : { exact: false }"
+                [matTooltip]="collapsed ? item.label : ''"
+                matTooltipPosition="right">
+                <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+                <span class="nav-label" *ngIf="!collapsed">{{ item.label }}</span>
+                <span class="nav-badge" *ngIf="!collapsed && item.badge">{{ item.badge }}</span>
+              </a>
+            </div>
+          </ng-container>
+        </nav>
 
-        <!-- Transactions -->
-        <div class="nav-section" *ngIf="!collapsed">
-          <span class="nav-section-label">Transactions</span>
+        <div class="sidebar-bottom">
+          <div class="account-divider"></div>
+
+          <div class="meta-pills" *ngIf="!collapsed && currentFacility()">
+            <div class="meta-pill">
+              <mat-icon>apartment</mat-icon>
+              <span>{{ currentFacility()?.code }}</span>
+            </div>
+            <div class="meta-pill meta-pill-soft">
+              <mat-icon>warehouse</mat-icon>
+              <span>{{ currentFacility()?.warehouse_key }}</span>
+            </div>
+          </div>
+
+          <div class="account-label" *ngIf="!collapsed">Account</div>
+
+          <a
+            class="nav-item"
+            routerLink="/facility-select"
+            routerLinkActive="active"
+            [matTooltip]="collapsed ? 'Facilities' : ''"
+            matTooltipPosition="right">
+            <mat-icon class="nav-icon">domain</mat-icon>
+            <span class="nav-label" *ngIf="!collapsed">Facilities</span>
+            <span class="nav-badge" *ngIf="!collapsed">{{ availableFacilitiesCount() }}</span>
+          </a>
+
+          <button
+            type="button"
+            class="nav-item nav-item-button"
+            (click)="onLogout()"
+            [matTooltip]="collapsed ? 'Logout' : ''"
+            matTooltipPosition="right">
+            <mat-icon class="nav-icon">logout</mat-icon>
+            <span class="nav-label" *ngIf="!collapsed">Logout</span>
+          </button>
+
+          <div class="profile-card" [class.profile-card-collapsed]="collapsed">
+            <div class="avatar-shell">
+              <img *ngIf="userPhotoUrl()" [src]="userPhotoUrl()!" [alt]="userName()" class="avatar-image">
+              <span *ngIf="!userPhotoUrl()" class="avatar-fallback">{{ userInitials() }}</span>
+            </div>
+
+            <div class="profile-copy" *ngIf="!collapsed">
+              <div class="profile-name">{{ userName() }}</div>
+              <div class="profile-subtitle">{{ profileSubtitle() }}</div>
+            </div>
+
+            <mat-icon class="profile-more" *ngIf="!collapsed">more_horiz</mat-icon>
+          </div>
         </div>
-        <mat-divider *ngIf="collapsed"></mat-divider>
-
-        <a mat-list-item routerLink="/transactions" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'All Transactions' : ''" matTooltipPosition="right"
-           class="nav-item">
-          <mat-icon matListItemIcon>receipt_long</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">All Transactions</span>
-        </a>
-
-        <a mat-list-item routerLink="/transactions/grn" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'GRN' : ''" matTooltipPosition="right"
-           class="nav-item nav-item-sub">
-          <mat-icon matListItemIcon>input</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">GRN - Receive</span>
-        </a>
-
-        <a mat-list-item routerLink="/transactions/move" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'Move' : ''" matTooltipPosition="right"
-           class="nav-item nav-item-sub">
-          <mat-icon matListItemIcon>swap_horiz</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">Move</span>
-        </a>
-
-        <a mat-list-item routerLink="/transactions/putaway" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'Putaway' : ''" matTooltipPosition="right"
-           class="nav-item nav-item-sub">
-          <mat-icon matListItemIcon>move_to_inbox</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">Putaway</span>
-        </a>
-
-        <a mat-list-item routerLink="/transactions/order-pick" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'Order Pick' : ''" matTooltipPosition="right"
-           class="nav-item nav-item-sub">
-          <mat-icon matListItemIcon>shopping_cart</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">Order Pick</span>
-        </a>
-
-        <!-- Inventory -->
-        <div class="nav-section" *ngIf="!collapsed">
-          <span class="nav-section-label">Inventory</span>
-        </div>
-        <mat-divider *ngIf="collapsed"></mat-divider>
-
-        <a mat-list-item routerLink="/inventory" routerLinkActive="active"
-           [matTooltip]="collapsed ? 'Inventory' : ''" matTooltipPosition="right"
-           class="nav-item">
-          <mat-icon matListItemIcon>inventory</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">Stock Balances</span>
-        </a>
-      </nav>
-
-      <!-- Bottom actions -->
-      <div class="sidebar-bottom">
-        <mat-divider></mat-divider>
-        <a mat-list-item class="nav-item" (click)="onLogout()"
-           [matTooltip]="collapsed ? 'Logout' : ''" matTooltipPosition="right">
-          <mat-icon matListItemIcon>logout</mat-icon>
-          <span matListItemTitle *ngIf="!collapsed">Logout</span>
-        </a>
       </div>
     </aside>
   `,
-  styles: [`
-    .sidebar {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      width: 240px;
-      background: #1e293b;
-      color: #e2e8f0;
-      transition: width 0.3s ease;
-      overflow: hidden;
-    }
-    .sidebar.collapsed {
-      width: 60px;
-    }
-    .sidebar-logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px;
-      height: 64px;
-      flex-shrink: 0;
-    }
-    .logo-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      background: #3b82f6;
-      border-radius: 8px;
-      flex-shrink: 0;
-    }
-    .logo-icon mat-icon {
-      color: white;
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-    }
-    .logo-text {
-      font-weight: 700;
-      font-size: 16px;
-      color: white;
-      white-space: nowrap;
-    }
-    .sidebar-nav {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 8px 0;
-    }
-    .nav-section {
-      padding: 8px 16px 4px;
-    }
-    .nav-section-label {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #64748b;
-    }
-    .nav-item {
-      color: #94a3b8 !important;
-      border-radius: 6px !important;
-      margin: 2px 8px !important;
-      transition: all 0.15s ease;
-      cursor: pointer;
-    }
-    .nav-item:hover {
-      background: rgba(59, 130, 246, 0.15) !important;
-      color: #e2e8f0 !important;
-    }
-    .nav-item.active {
-      background: rgba(59, 130, 246, 0.25) !important;
-      color: #60a5fa !important;
-    }
-    .nav-item mat-icon {
-      color: inherit !important;
-    }
-    .nav-item-sub {
-      padding-left: 24px !important;
-    }
-    .sidebar-bottom {
-      flex-shrink: 0;
-      padding: 8px 0;
-    }
-    mat-divider {
-      border-color: #334155 !important;
-      margin: 4px 0;
-    }
-  `]
+  styles: []
 })
 export class SidebarComponent {
   @Input() collapsed = false;
   @Output() toggleCollapse = new EventEmitter<void>();
 
   private auth = inject(AuthService);
+  private router = inject(Router);
+
+  readonly workspace = signal<WorkspaceMode>('operate');
+
+  readonly operateSections: NavSection[] = [
+    {
+      label: 'Transactions',
+      items: [
+        { label: 'All Transactions', icon: 'receipt_long', route: '/transactions' },
+        { label: 'GRN Receive', icon: 'input', route: '/transactions/grn' },
+        { label: 'Move Stock', icon: 'swap_horiz', route: '/transactions/move' },
+        { label: 'Putaway', icon: 'move_to_inbox', route: '/transactions/putaway' },
+        { label: 'Order Pick', icon: 'shopping_cart', route: '/transactions/order-pick' }
+      ]
+    },
+    {
+      label: 'Inventory',
+      items: [
+        { label: 'Stock Balances', icon: 'inventory', route: '/inventory' }
+      ]
+    }
+  ];
+
+  readonly setupSections: NavSection[] = [
+    {
+      label: 'Masters',
+      items: [
+        { label: 'SKUs', icon: 'inventory_2', route: '/masters/sku' },
+        { label: 'Zones', icon: 'grid_view', route: '/masters/zone' },
+        { label: 'Locations', icon: 'location_on', route: '/masters/location' }
+      ]
+    },
+    {
+      label: 'Integrations',
+      items: [
+        { label: 'Connectors', icon: 'hub', route: '/connectors' }
+      ]
+    }
+  ];
+
+  readonly visibleSections = computed(() =>
+    this.workspace() === 'operate' ? this.operateSections : this.setupSections
+  );
+
+  readonly availableFacilitiesCount = computed(() => this.auth.availableFacilities().length);
+  readonly currentFacility = computed(() => this.auth.currentFacility());
+  readonly userName = computed(() => this.auth.currentUser()?.display_name?.trim() || 'Warehouse User');
+  readonly userEmail = computed(() => this.auth.currentUser()?.email || 'ops@yeswms.local');
+  readonly userPhotoUrl = computed(() => this.auth.currentUser()?.photo_url || null);
+  readonly profileSubtitle = computed(() => this.currentFacility()?.name || this.userEmail());
+  readonly userInitials = computed(() => {
+    const parts = this.userName().split(/\s+/).filter(Boolean);
+    return (parts[0]?.[0] ?? '?').concat(parts[1]?.[0] ?? '').toUpperCase();
+  });
+
+  constructor() {
+    this.syncWorkspace(this.router.url);
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => this.syncWorkspace(event.urlAfterRedirects));
+  }
+
+  switchWorkspace(mode: WorkspaceMode): void {
+    this.workspace.set(mode);
+
+    if (mode === 'operate' && this.isSetupRoute(this.router.url)) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
+    if (mode === 'setup' && !this.isSetupRoute(this.router.url)) {
+      this.router.navigate(['/masters/sku']);
+    }
+  }
 
   onLogout(): void {
     this.auth.logout();
+  }
+
+  private syncWorkspace(url: string): void {
+    this.workspace.set(this.isSetupRoute(url) ? 'setup' : 'operate');
+  }
+
+  private isSetupRoute(url: string): boolean {
+    return url.startsWith('/masters') || url.startsWith('/connectors');
   }
 }

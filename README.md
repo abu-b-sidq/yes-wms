@@ -136,6 +136,23 @@ python3 manage.py runserver 0.0.0.0:8000
 - health: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
 - swagger: [http://localhost:8000/api/v1/swagger](http://localhost:8000/api/v1/swagger)
 
+## Web Client Auth
+
+The React client in `web/` uses Firebase Web Auth and then bootstraps its WMS session
+through the existing `/api/v1/mobile/session/login` and `/api/v1/mobile/session/select-facility`
+endpoints.
+
+Provide these Vite env vars when running the web app:
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_API_BASE_URL` if the API is not on `http://localhost:8010`
+
+To use Google sign-in on web, enable the Google provider in Firebase Authentication for
+the same project and authorize the web origin you serve the app from, such as
+`http://localhost:5173`.
+
 ## Docker
 
 The repo includes `docker-compose.yml` for local startup:

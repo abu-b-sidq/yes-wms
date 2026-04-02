@@ -2,19 +2,23 @@ export interface Facility {
   id: string;
   code: string;
   warehouse_key: string;
+  org_id: string;
   name: string;
-  is_active: boolean;
 }
 
 export interface SessionLoginResponse {
-  user: {
-    id: string;
-    email: string;
-    display_name: string;
-    status: string;
-  };
+  user_id: string;
+  email: string;
+  display_name: string;
+  photo_url: string;
   available_facilities: Facility[];
   last_used_facility: Facility | null;
+}
+
+export interface SelectFacilityResponse {
+  facility: Facility;
+  warehouse_key: string;
+  org_id: string;
 }
 
 export interface WMSSession {

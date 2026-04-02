@@ -45,6 +45,9 @@ class RuntimeSettings:
     firehose_region: str | None
     firehose_batch_size: int
     firehose_flush_interval_seconds: float
+    connector_rate_limit_max_retries: int
+    connector_rate_limit_initial_delay_seconds: int
+    connector_rate_limit_max_delay_seconds: int
 
 
 def _parse_bool(value: str | None, default: bool) -> bool:
@@ -147,6 +150,18 @@ def get_runtime_settings() -> RuntimeSettings:
     except ValueError:
         firehose_flush = 5.0
     firehose_flush_interval_seconds = max(1.0, min(300.0, firehose_flush))
+    connector_rate_limit_max_retries = max(
+        0,
+        _parse_int(os.getenv("CONNECTOR_RATE_LIMIT_MAX_RETRIES"), 5),
+    )
+    connector_rate_limit_initial_delay_seconds = max(
+        1,
+        _parse_int(os.getenv("CONNECTOR_RATE_LIMIT_INITIAL_DELAY_SECONDS"), 1),
+    )
+    connector_rate_limit_max_delay_seconds = max(
+        connector_rate_limit_initial_delay_seconds,
+        _parse_int(os.getenv("CONNECTOR_RATE_LIMIT_MAX_DELAY_SECONDS"), 30),
+    )
 
     firebase_storage_bucket = (os.getenv("FIREBASE_STORAGE_BUCKET") or "").strip() or None
 
@@ -170,4 +185,7 @@ def get_runtime_settings() -> RuntimeSettings:
         firehose_region=firehose_region,
         firehose_batch_size=firehose_batch_size,
         firehose_flush_interval_seconds=firehose_flush_interval_seconds,
+        connector_rate_limit_max_retries=connector_rate_limit_max_retries,
+        connector_rate_limit_initial_delay_seconds=connector_rate_limit_initial_delay_seconds,
+        connector_rate_limit_max_delay_seconds=connector_rate_limit_max_delay_seconds,
     )

@@ -135,6 +135,16 @@ _USER_GRANT_SCHEMA = {
     },
 }
 
+_PAGINATED_SKU_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "items": {"type": "array", "items": _SKU_SCHEMA},
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "size": {"type": "integer"},
+    },
+}
+
 _ORG_USER_SCHEMA = {
     "type": "object",
     "properties": {
@@ -194,6 +204,19 @@ _CURRENT_USER_SCHEMA = {
 
 def _list_of(schema: dict) -> dict:
     return {"type": "array", "items": schema}
+
+
+def _positive_int_param(request, key: str, default: int, *, maximum: int | None = None) -> int:
+    raw_value = request.GET.get(key)
+    try:
+        value = int(raw_value) if raw_value is not None else default
+    except (TypeError, ValueError):
+        value = default
+
+    value = max(value, 1)
+    if maximum is not None:
+        value = min(value, maximum)
+    return value
 
 
 # ---------------------------------------------------------------------------
@@ -730,10 +753,23 @@ def list_skus(request):
         require_membership=True,
     )
     org, _ = resolve_request_tenant(request)
-    skus = services.list_skus(org)
+    page = _positive_int_param(request, "page", 1)
+    size = _positive_int_param(request, "size", 25, maximum=100)
+    search = (request.GET.get("search") or "").strip()
+
+    skus = services.list_skus(org, search=search)
+    total = len(skus)
+    start = (page - 1) * size
+    end = start + size
+
     return success_response(
         request,
-        data=[_sku_out(s) for s in skus],
+        data={
+            "items": [_sku_out(s) for s in skus[start:end]],
+            "total": total,
+            "page": page,
+            "size": size,
+        },
     )
 
 
@@ -956,7 +992,7 @@ register_response_schema("app_masters_routes_update_facility_zone", _FAC_ZONE_SC
 register_response_schema("app_masters_routes_list_facility_locations", _list_of(_FAC_LOCATION_SCHEMA))
 register_response_schema("app_masters_routes_update_facility_location", _FAC_LOCATION_SCHEMA)
 register_response_schema("app_masters_routes_create_sku", _SKU_SCHEMA)
-register_response_schema("app_masters_routes_list_skus", _list_of(_SKU_SCHEMA))
+register_response_schema("app_masters_routes_list_skus", _PAGINATED_SKU_SCHEMA)
 register_response_schema("app_masters_routes_get_sku", _SKU_SCHEMA)
 register_response_schema("app_masters_routes_update_sku", _SKU_SCHEMA)
 register_response_schema("app_masters_routes_create_zone", _ZONE_SCHEMA)

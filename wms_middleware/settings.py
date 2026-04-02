@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -75,6 +76,7 @@ INSTALLED_APPS = [
     "app.documents",
     "app.notifications",
     "app.ai",
+    "app.connectors",
 ]
 
 MIDDLEWARE = [
@@ -132,6 +134,26 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_URL = "/static/"
 STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles"))
+
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_ALWAYS_EAGER = _env_bool("CELERY_TASK_ALWAYS_EAGER", False)
+CELERY_TASK_EAGER_PROPAGATES = _env_bool("CELERY_TASK_EAGER_PROPAGATES", True)
+CELERY_BEAT_SYNC_SCHEDULE_MINUTES = max(
+    1,
+    int(os.getenv("CELERY_BEAT_SYNC_SCHEDULE_MINUTES", "1")),
+)
+CELERY_BEAT_SCHEDULE = {
+    "dispatch-due-connector-syncs": {
+        "task": "app.connectors.tasks.dispatch_due_connector_syncs",
+        "schedule": timedelta(minutes=CELERY_BEAT_SYNC_SCHEDULE_MINUTES),
+    },
+}
 
 
 def _build_logging_handler(formatter_name: str) -> dict[str, Any]:

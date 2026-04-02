@@ -25,20 +25,12 @@ router = Router(tags=["ai"])
 def chat(request, payload: schemas.ChatRequest):
     """Send a message and receive a streaming SSE response."""
     authorize_request(request, require_firebase=True)
-    tenant = resolve_request_tenant(request)
+    org, facility = resolve_request_tenant(request)
     uid = request.auth_context.uid
-    org_id = tenant.org_id
-    facility_id = tenant.facility_id
+    org_id = org.id
+    facility_id = facility.code if facility else None
 
-    facility_name = None
-    if facility_id:
-        try:
-            from app.masters.models import Facility
-            fac = Facility.objects.filter(org_id=org_id, code=facility_id).first()
-            if fac:
-                facility_name = fac.name
-        except Exception:
-            pass
+    facility_name = facility.name if facility else None
 
     async def event_stream():
         from app.ai.chat_service import handle_chat_message
@@ -51,6 +43,8 @@ def chat(request, payload: schemas.ChatRequest):
                 facility_id=facility_id,
                 facility_name=facility_name,
                 confirm_action=payload.confirm_action,
+                model_provider=payload.model_provider,
+                model_name=payload.model_name,
             ):
                 yield event.encode()
         except Exception as exc:
@@ -78,19 +72,15 @@ def chat(request, payload: schemas.ChatRequest):
 def create_conversation(request, payload: schemas.CreateConversationRequest):
     """Create a new conversation."""
     authorize_request(request, require_firebase=True)
-    tenant = resolve_request_tenant(request)
+    org, facility = resolve_request_tenant(request)
     uid = request.auth_context.uid
 
     from app.ai.models import Conversation
     from app.masters.models import AppUser, Facility
 
     user = AppUser.objects.get(firebase_uid=uid)
-    facility = None
-    if tenant.facility_id:
-        facility = Facility.objects.filter(org_id=tenant.org_id, code=tenant.facility_id).first()
-
     conv = Conversation.objects.create(
-        org_id=tenant.org_id,
+        org_id=org.id,
         user=user,
         facility=facility,
         model_provider=payload.model_provider,
@@ -103,7 +93,7 @@ def create_conversation(request, payload: schemas.CreateConversationRequest):
 def list_conversations(request):
     """List conversations for the current user."""
     authorize_request(request, require_firebase=True)
-    tenant = resolve_request_tenant(request)
+    org, facility = resolve_request_tenant(request)
     uid = request.auth_context.uid
 
     from app.ai.models import Conversation
@@ -111,7 +101,7 @@ def list_conversations(request):
 
     user = AppUser.objects.get(firebase_uid=uid)
     convs = Conversation.objects.filter(
-        org_id=tenant.org_id,
+        org_id=org.id,
         user=user,
         is_active=True,
     ).order_by("-updated_at")[:50]
@@ -123,7 +113,7 @@ def list_conversations(request):
 def get_conversation(request, conversation_id: str):
     """Get a conversation with its messages."""
     authorize_request(request, require_firebase=True)
-    tenant = resolve_request_tenant(request)
+    org, facility = resolve_request_tenant(request)
     uid = request.auth_context.uid
 
     from app.ai.models import Conversation
@@ -132,7 +122,7 @@ def get_conversation(request, conversation_id: str):
     user = AppUser.objects.get(firebase_uid=uid)
     conv = Conversation.objects.get(
         id=conversation_id,
-        org_id=tenant.org_id,
+        org_id=org.id,
         user=user,
     )
     messages = list(conv.messages.order_by("created_at"))
@@ -146,7 +136,7 @@ def get_conversation(request, conversation_id: str):
 def delete_conversation(request, conversation_id: str):
     """Soft-delete a conversation."""
     authorize_request(request, require_firebase=True)
-    tenant = resolve_request_tenant(request)
+    org, facility = resolve_request_tenant(request)
     uid = request.auth_context.uid
 
     from app.ai.models import Conversation
@@ -155,7 +145,7 @@ def delete_conversation(request, conversation_id: str):
     user = AppUser.objects.get(firebase_uid=uid)
     conv = Conversation.objects.get(
         id=conversation_id,
-        org_id=tenant.org_id,
+        org_id=org.id,
         user=user,
     )
     conv.is_active = False
