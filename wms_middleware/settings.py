@@ -20,6 +20,7 @@ def _env_bool(name: str, default: bool) -> bool:
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-only-secret-key")
 DEBUG = _env_bool("DEBUG", False)
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "*").split(",") if host.strip()]
+FORCE_SCRIPT_NAME = os.getenv("FORCE_SCRIPT_NAME", "")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_DESTINATION = RUNTIME_SETTINGS.log_destination
 LOG_FORMAT = RUNTIME_SETTINGS.log_format
@@ -32,7 +33,7 @@ CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
         "CORS_ALLOWED_ORIGINS",
-        "http://localhost:4200,http://127.0.0.1:4200",
+        "http://localhost:4200,http://127.0.0.1:4200,http://localhost:5173,http://wms.yesworks.co.in",
     ).split(",")
     if origin.strip()
 ]
@@ -81,6 +82,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "app.core.middleware.CORSMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -132,7 +134,7 @@ USE_I18N = True
 USE_TZ = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-STATIC_URL = "/static/"
+STATIC_URL = f"{FORCE_SCRIPT_NAME}/static/" if FORCE_SCRIPT_NAME else "/static/"
 STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles"))
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
