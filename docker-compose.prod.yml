@@ -1,20 +1,4 @@
 services:
-  db:
-    image: pgvector/pgvector:pg16
-    container_name: wms-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: yes_wms
-      POSTGRES_USER: yes
-      POSTGRES_PASSWORD: yes
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yes -d yes_wms"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   redis:
     image: redis:7-alpine
     container_name: wms-redis
@@ -45,8 +29,6 @@ services:
                --bind 0.0.0.0:8000
                --workers 4"
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
@@ -70,8 +52,6 @@ services:
       CELERY_RESULT_BACKEND: redis://redis:6379/1
     command: celery -A wms_middleware worker --loglevel=info
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -89,8 +69,6 @@ services:
       CELERY_RESULT_BACKEND: redis://redis:6379/1
     command: celery -A wms_middleware beat --loglevel=info
     depends_on:
-      db:
-        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -117,7 +95,7 @@ services:
     container_name: wms-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8011:80"
     volumes:
       - ./nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
