@@ -4,6 +4,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from asgiref.sync import sync_to_async
+from app.core.exceptions import AuthorizationError
 
 
 # ---------------------------------------------------------------------------
@@ -38,6 +39,61 @@ def _location(loc) -> dict:
         "id": str(loc.id), "code": loc.code, "name": loc.name,
         "zone_code": loc.zone.code if loc.zone_id else None,
         "is_active": loc.is_active, "capacity": loc.capacity,
+    }
+
+
+def _facility_sku(fs) -> dict:
+    return {
+        "id": fs.id,
+        "facility_code": fs.facility.code,
+        "sku_code": fs.sku.code,
+        "is_active": fs.is_active,
+        "overrides": fs.overrides or {},
+    }
+
+
+def _facility_zone(fz) -> dict:
+    return {
+        "id": fz.id,
+        "facility_code": fz.facility.code,
+        "zone_code": fz.zone.code,
+        "is_active": fz.is_active,
+        "overrides": fz.overrides or {},
+    }
+
+
+def _facility_location(fl) -> dict:
+    return {
+        "id": fl.id,
+        "facility_code": fl.facility.code,
+        "location_code": fl.location.code,
+        "is_active": fl.is_active,
+        "overrides": fl.overrides or {},
+    }
+
+
+def _app_user(u) -> dict:
+    return {
+        "id": str(u.id),
+        "email": u.email,
+        "display_name": u.display_name,
+        "status": u.status,
+        "is_platform_admin": any(r.role.code == "platform_admin" for r in u.platform_role_assignments.all()),
+    }
+
+
+def _user_grant(membership) -> dict:
+    facility_codes = [f.facility.code for f in membership.facility_assignments.all()]
+    return {
+        "id": str(membership.id),
+        "user_id": str(membership.user_id),
+        "user_email": membership.user.email,
+        "org_id": membership.org_id,
+        "role_code": membership.role.code,
+        "status": membership.status,
+        "facility_codes": facility_codes,
+        "created_at": membership.created_at.isoformat(),
+        "updated_at": membership.updated_at.isoformat(),
     }
 
 
@@ -482,3 +538,330 @@ def wms_order_pick(
         "reference_number": reference_number,
     }
     return _txn(create_and_execute_order_pick(org, facility, data, user=uid))
+
+
+# ---------------------------------------------------------------------------
+# Masters CRUD tools (Tier 1)
+# ---------------------------------------------------------------------------
+
+@sync_to_async
+def wms_create_organization(name: str, org_id: str = "", uid: str = "") -> dict:
+    from app.auth.authorization import get_mcp_access_context
+    from app.masters.services import create_organization
+    access = get_mcp_access_context(uid, org_id=None)
+    if not access.is_platform_admin:
+        raise AuthorizationError("Only platform admins can create organizations.", code="AUTHZ_FORBIDDEN")
+    data = {"id": org_id or name, "name": name}
+    return _org(create_organization(data))
+
+
+@sync_to_async
+def wms_update_organization(org_id: str, name: str = None, is_active: bool = None, uid: str = "") -> dict:
+    from app.auth.authorization import get_mcp_access_context
+    from app.masters.services import update_organization
+    access = get_mcp_access_context(uid, org_id)
+    if not access.is_platform_admin:
+        raise AuthorizationError("Only platform admins can update organizations.", code="AUTHZ_FORBIDDEN")
+    data = {}
+    if name is not None:
+        data["name"] = name
+    if is_active is not None:
+        data["is_active"] = is_active
+    return _org(update_organization(org_id, data))
+
+
+@sync_to_async
+def wms_create_facility(org_id: str, code: str, warehouse_key: str, name: str, address: str = "", is_active: bool = True, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import create_facility
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    data = {
+        "code": code,
+        "warehouse_key": warehouse_key,
+        "name": name,
+        "address": address,
+        "is_active": is_active,
+    }
+    return _facility(create_facility(org, data, user=uid))
+
+
+@sync_to_async
+def wms_get_facility(org_id: str, facility_code: str, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_READ
+    from app.masters.services import get_facility
+    _check(uid, org_id, PERM_MASTERS_READ)
+    org = _resolve_org(org_id)
+    return _facility(get_facility(org, facility_code))
+
+
+@sync_to_async
+def wms_update_facility(org_id: str, facility_code: str, warehouse_key: str = None, name: str = None, address: str = None, is_active: bool = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import update_facility
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    data = {}
+    if warehouse_key is not None:
+        data["warehouse_key"] = warehouse_key
+    if name is not None:
+        data["name"] = name
+    if address is not None:
+        data["address"] = address
+    if is_active is not None:
+        data["is_active"] = is_active
+    return _facility(update_facility(org, facility_code, data, user=uid))
+
+
+@sync_to_async
+def wms_create_sku(org_id: str, code: str, name: str, unit_of_measure: str = "EA", is_active: bool = True, metadata: dict = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import create_sku
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    data = {
+        "code": code,
+        "name": name,
+        "unit_of_measure": unit_of_measure,
+        "is_active": is_active,
+        "metadata": metadata or {},
+    }
+    return _sku(create_sku(org, data, user=uid))
+
+
+@sync_to_async
+def wms_get_sku(org_id: str, sku_code: str, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_READ
+    from app.masters.services import get_sku
+    _check(uid, org_id, PERM_MASTERS_READ)
+    org = _resolve_org(org_id)
+    return _sku(get_sku(org, sku_code))
+
+
+@sync_to_async
+def wms_update_sku(org_id: str, sku_code: str, name: str = None, unit_of_measure: str = None, is_active: bool = None, metadata: dict = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import update_sku
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    data = {}
+    if name is not None:
+        data["name"] = name
+    if unit_of_measure is not None:
+        data["unit_of_measure"] = unit_of_measure
+    if is_active is not None:
+        data["is_active"] = is_active
+    if metadata is not None:
+        data["metadata"] = metadata
+    return _sku(update_sku(org, sku_code, data, user=uid))
+
+
+@sync_to_async
+def wms_create_zone(org_id: str, code: str, name: str, is_active: bool = True, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import create_zone
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    data = {
+        "code": code,
+        "name": name,
+        "is_active": is_active,
+    }
+    return _zone(create_zone(org, data, user=uid))
+
+
+@sync_to_async
+def wms_get_zone(org_id: str, zone_code: str, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_READ
+    from app.masters.services import get_zone
+    _check(uid, org_id, PERM_MASTERS_READ)
+    org = _resolve_org(org_id)
+    return _zone(get_zone(org, zone_code))
+
+
+@sync_to_async
+def wms_update_zone(org_id: str, zone_code: str, name: str = None, is_active: bool = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import update_zone
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    data = {}
+    if name is not None:
+        data["name"] = name
+    if is_active is not None:
+        data["is_active"] = is_active
+    return _zone(update_zone(org, zone_code, data, user=uid))
+
+
+@sync_to_async
+def wms_create_location(org_id: str, code: str, name: str, zone_code: str, capacity: int = None, is_active: bool = True, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import create_location
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    data = {
+        "code": code,
+        "name": name,
+        "zone_code": zone_code,
+        "is_active": is_active,
+    }
+    if capacity is not None:
+        data["capacity"] = capacity
+    return _location(create_location(org, data, user=uid))
+
+
+@sync_to_async
+def wms_get_location(org_id: str, location_code: str, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_READ
+    from app.masters.services import get_location
+    _check(uid, org_id, PERM_MASTERS_READ)
+    org = _resolve_org(org_id)
+    return _location(get_location(org, location_code))
+
+
+@sync_to_async
+def wms_update_location(org_id: str, location_code: str, name: str = None, zone_code: str = None, capacity: int = None, is_active: bool = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import update_location
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    data = {}
+    if name is not None:
+        data["name"] = name
+    if zone_code is not None:
+        data["zone_code"] = zone_code
+    if capacity is not None:
+        data["capacity"] = capacity
+    if is_active is not None:
+        data["is_active"] = is_active
+    return _location(update_location(org, location_code, data, user=uid))
+
+
+# ---------------------------------------------------------------------------
+# Facility Mappings tools (Tier 2)
+# ---------------------------------------------------------------------------
+
+@sync_to_async
+def wms_list_facility_skus(org_id: str, facility_code: str, uid: str = "") -> list[dict]:
+    from app.auth.permissions import PERM_MASTERS_READ
+    from app.masters.services import list_facility_skus
+    _check(uid, org_id, PERM_MASTERS_READ)
+    org = _resolve_org(org_id)
+    facility = _resolve_facility(org, facility_code)
+    return [_facility_sku(fs) for fs in list_facility_skus(facility)]
+
+
+@sync_to_async
+def wms_update_facility_sku(org_id: str, facility_code: str, sku_code: str, is_active: bool = None, overrides: dict = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import update_facility_sku
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    facility = _resolve_facility(org, facility_code)
+    data = {}
+    if is_active is not None:
+        data["is_active"] = is_active
+    if overrides is not None:
+        data["overrides"] = overrides
+    return _facility_sku(update_facility_sku(facility, sku_code, data))
+
+
+@sync_to_async
+def wms_list_facility_zones(org_id: str, facility_code: str, uid: str = "") -> list[dict]:
+    from app.auth.permissions import PERM_MASTERS_READ
+    from app.masters.services import list_facility_zones
+    _check(uid, org_id, PERM_MASTERS_READ)
+    org = _resolve_org(org_id)
+    facility = _resolve_facility(org, facility_code)
+    return [_facility_zone(fz) for fz in list_facility_zones(facility)]
+
+
+@sync_to_async
+def wms_update_facility_zone(org_id: str, facility_code: str, zone_code: str, is_active: bool = None, overrides: dict = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import update_facility_zone
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    facility = _resolve_facility(org, facility_code)
+    data = {}
+    if is_active is not None:
+        data["is_active"] = is_active
+    if overrides is not None:
+        data["overrides"] = overrides
+    return _facility_zone(update_facility_zone(facility, zone_code, data))
+
+
+@sync_to_async
+def wms_list_facility_locations(org_id: str, facility_code: str, uid: str = "") -> list[dict]:
+    from app.auth.permissions import PERM_MASTERS_READ
+    from app.masters.services import list_facility_locations
+    _check(uid, org_id, PERM_MASTERS_READ)
+    org = _resolve_org(org_id)
+    facility = _resolve_facility(org, facility_code)
+    return [_facility_location(fl) for fl in list_facility_locations(facility)]
+
+
+@sync_to_async
+def wms_update_facility_location(org_id: str, facility_code: str, location_code: str, is_active: bool = None, overrides: dict = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_MASTERS_MANAGE
+    from app.masters.services import update_facility_location
+    _check(uid, org_id, PERM_MASTERS_MANAGE)
+    org = _resolve_org(org_id)
+    facility = _resolve_facility(org, facility_code)
+    data = {}
+    if is_active is not None:
+        data["is_active"] = is_active
+    if overrides is not None:
+        data["overrides"] = overrides
+    return _facility_location(update_facility_location(facility, location_code, data))
+
+
+# ---------------------------------------------------------------------------
+# User Management tools (Tier 3)
+# ---------------------------------------------------------------------------
+
+@sync_to_async
+def wms_list_org_users(org_id: str, uid: str = "") -> list[dict]:
+    from app.auth.permissions import PERM_USERS_MANAGE_ORG
+    from app.masters.user_services import list_org_users
+    _check(uid, org_id, PERM_USERS_MANAGE_ORG)
+    org = _resolve_org(org_id)
+    return [_user_grant(m) for m in list_org_users(org)]
+
+
+@sync_to_async
+def wms_grant_org_access(org_id: str, email: str, role_code: str, facility_codes: list[str] = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_USERS_MANAGE_ORG
+    from app.masters.user_services import grant_org_access
+    _check(uid, org_id, PERM_USERS_MANAGE_ORG)
+    org = _resolve_org(org_id)
+    return _user_grant(grant_org_access(org, email=email, role_code=role_code, facility_codes=facility_codes or []))
+
+
+@sync_to_async
+def wms_update_org_access(org_id: str, user_id: str, grant_id: str, role_code: str = None, status: str = None, facility_codes: list[str] = None, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_USERS_MANAGE_ORG
+    from app.masters.user_services import update_org_access
+    _check(uid, org_id, PERM_USERS_MANAGE_ORG)
+    org = _resolve_org(org_id)
+    return _user_grant(update_org_access(org, user_id=user_id, grant_id=grant_id, role_code=role_code, status=status, facility_codes=facility_codes))
+
+
+@sync_to_async
+def wms_revoke_org_access(org_id: str, user_id: str, grant_id: str, uid: str = "") -> dict:
+    from app.auth.permissions import PERM_USERS_MANAGE_ORG
+    from app.masters.user_services import delete_org_access
+    _check(uid, org_id, PERM_USERS_MANAGE_ORG)
+    org = _resolve_org(org_id)
+    delete_org_access(org, user_id=user_id, grant_id=grant_id)
+    return {"status": "revoked"}
+
+
+@sync_to_async
+def wms_list_pending_users(uid: str = "") -> list[dict]:
+    from app.auth.authorization import get_mcp_access_context
+    from app.masters.user_services import list_pending_users
+    access = get_mcp_access_context(uid, org_id=None)
+    if not access.is_platform_admin:
+        raise AuthorizationError("Only platform admins can list pending users.", code="AUTHZ_FORBIDDEN")
+    return [_app_user(u) for u in list_pending_users()]
