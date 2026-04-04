@@ -20,6 +20,7 @@ def _env_bool(name: str, default: bool) -> bool:
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-only-secret-key")
 DEBUG = _env_bool("DEBUG", False)
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "*").split(",") if host.strip()]
+CSRF_TRUSTED_ORIGINS = [o.strip().strip("\"'") for o in os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost,http://wms.yesworks.co.in,https://wms.yesworks.co.in").split(",") if o.strip()]
 FORCE_SCRIPT_NAME = os.getenv("FORCE_SCRIPT_NAME", "")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_DESTINATION = RUNTIME_SETTINGS.log_destination
