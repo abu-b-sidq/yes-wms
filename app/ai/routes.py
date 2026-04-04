@@ -153,6 +153,28 @@ def delete_conversation(request, conversation_id: str):
     return success_response(request, {"deleted": True})
 
 
+@router.patch("/conversations/{conversation_id}", url_name="ai_update_conversation")
+def update_conversation(request, conversation_id: str, payload: schemas.UpdateConversationRequest):
+    """Update conversation settings such as the selected model."""
+    authorize_request(request, require_firebase=True)
+    org, facility = resolve_request_tenant(request)
+    uid = request.auth_context.uid
+
+    from app.ai.models import Conversation
+    from app.masters.models import AppUser
+
+    user = AppUser.objects.get(firebase_uid=uid)
+    conv = Conversation.objects.get(
+        id=conversation_id,
+        org_id=org.id,
+        user=user,
+    )
+    conv.model_provider = payload.model_provider
+    conv.model_name = payload.model_name
+    conv.save(update_fields=["model_provider", "model_name", "updated_at"])
+    return success_response(request, _serialize_conversation(conv))
+
+
 # ---------------------------------------------------------------------------
 # Models listing
 # ---------------------------------------------------------------------------

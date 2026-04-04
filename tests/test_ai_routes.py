@@ -52,3 +52,36 @@ def test_chat_passes_facility_code_to_tool_context(monkeypatch):
     assert captured["org_id"] == "testorg"
     assert captured["facility_id"] == "testfacility1"
     assert captured["facility_name"] == "Test Facility 1"
+
+
+def test_chat_passes_explicit_model_override(monkeypatch):
+    captured: dict = {}
+    org = SimpleNamespace(id="testorg")
+    facility = SimpleNamespace(
+        id="4419847f-afd5-4ca6-a7d1-bb3bf6e56b7f",
+        code="testfacility1",
+        name="Test Facility 1",
+    )
+    request = SimpleNamespace(
+        auth_context=SimpleNamespace(uid="firebase-user-1"),
+    )
+
+    async def fake_handle_chat_message(**kwargs):
+        captured.update(kwargs)
+        yield _DummyEvent()
+
+    monkeypatch.setattr("app.ai.routes.authorize_request", lambda *args, **kwargs: None)
+    monkeypatch.setattr("app.ai.routes.resolve_request_tenant", lambda *args, **kwargs: (org, facility))
+    monkeypatch.setattr("app.ai.chat_service.handle_chat_message", fake_handle_chat_message)
+    monkeypatch.setattr("app.ai.routes.StreamingHttpResponse", _DummyStreamingResponse)
+
+    payload = schemas.ChatRequest(
+        conversation_id="conv-1",
+        message="show transactions",
+        model_provider="ollama",
+        model_name="llama3.2:3b",
+    )
+    routes.chat(request, payload)
+
+    assert captured["model_provider"] == "ollama"
+    assert captured["model_name"] == "llama3.2:3b"

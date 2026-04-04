@@ -20,6 +20,32 @@ matrix, domain model, configuration, and operations), see:
 
 - [`docs/application-documentation.md`](docs/application-documentation.md)
 
+## Operational Knowledge Base
+
+The repository also includes a warehouse and supply-chain knowledge library in
+`knowledge/`. These markdown files are useful both as internal SOP references and
+as AI retrieval content for the in-app assistant.
+
+Current playbooks include:
+
+- `knowledge/receiving.md`
+- `knowledge/putaway.md`
+- `knowledge/picking.md`
+- `knowledge/inventory.md`
+- `knowledge/zones.md`
+- `knowledge/replenishment.md`
+- `knowledge/slotting.md`
+- `knowledge/dispatch.md`
+- `knowledge/returns.md`
+- `knowledge/kpis.md`
+- `knowledge/planning.md`
+
+To index the knowledge base into the AI vector store for an organization:
+
+```bash
+python3 manage.py index_knowledge --org <org_id>
+```
+
 ## Repository Layout
 
 - `app/auth/`: authentication middleware and API-key helpers

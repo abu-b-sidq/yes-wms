@@ -15,6 +15,13 @@
       "runtimeArgs": ["/Users/abs/Projects/yes-wms/ops-dashboard/node_modules/.bin/ng", "serve", "--host", "0.0.0.0", "--port", "4201"],
       "cwd": "/Users/abs/Projects/yes-wms/ops-dashboard",
       "port": 4201
+    },
+    {
+      "name": "docs",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8089"],
+      "cwd": "/Users/abs/Projects/yes-wms/docs",
+      "port": 8089
     }
   ]
 }

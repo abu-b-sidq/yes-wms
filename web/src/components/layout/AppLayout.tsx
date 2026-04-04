@@ -21,6 +21,18 @@ export default function AppLayout() {
     chat.loadConversations();
   }, [chat.loadConversations]);
 
+  useEffect(() => {
+    if (!chat.activeConversation) {
+      return;
+    }
+    setProvider(chat.activeConversation.model_provider);
+    setModel(chat.activeConversation.model_name);
+  }, [
+    chat.activeConversation?.id,
+    chat.activeConversation?.model_provider,
+    chat.activeConversation?.model_name,
+  ]);
+
   const handleNewChat = useCallback(async () => {
     await chat.startNewConversation(provider, model);
   }, [chat, provider, model]);
@@ -34,10 +46,10 @@ export default function AppLayout() {
     if (!chat.activeConversation) {
       const conv = await chat.startNewConversation(provider, model);
       if (conv) {
-        await chat.sendMessage(message, conv.id);
+        await chat.sendMessage(message, conv.id, undefined, { provider, model });
       }
     } else {
-      await chat.sendMessage(message);
+      await chat.sendMessage(message, undefined, undefined, { provider, model });
     }
   }, [chat, provider, model]);
 
@@ -46,6 +58,26 @@ export default function AppLayout() {
       await chat.sendMessage('', chat.activeConversation.id, { action, parameters });
     }
   }, [chat]);
+
+  const handleModelSelect = useCallback(async (nextProvider: string, nextModel: string) => {
+    const activeConversation = chat.activeConversation;
+    const previousProvider = activeConversation?.model_provider ?? provider;
+    const previousModel = activeConversation?.model_name ?? model;
+
+    setProvider(nextProvider);
+    setModel(nextModel);
+
+    if (
+      activeConversation &&
+      (activeConversation.model_provider !== nextProvider || activeConversation.model_name !== nextModel)
+    ) {
+      const updated = await chat.updateConversationModel(activeConversation.id, nextProvider, nextModel);
+      if (!updated) {
+        setProvider(previousProvider);
+        setModel(previousModel);
+      }
+    }
+  }, [chat, model, provider]);
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -105,7 +137,7 @@ export default function AppLayout() {
             <ModelSelector
               provider={provider}
               model={model}
-              onSelect={(p, m) => { setProvider(p); setModel(m); }}
+              onSelect={handleModelSelect}
             />
             <NotificationPanel facilityId={session?.facilityId || null} />
           </div>

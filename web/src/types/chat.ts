@@ -47,7 +47,14 @@ export interface TableComponent {
   type: 'table';
   title?: string;
   columns: string[];
-  rows: (string | number | null)[][];
+  rows: Array<
+    | (string | number | boolean | null)[]
+    | Record<string, unknown>
+    | string
+    | number
+    | boolean
+    | null
+  >;
 }
 
 export interface BarChartComponent {

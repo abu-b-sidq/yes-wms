@@ -440,6 +440,32 @@ What these validate:
 - Structured request/response events are emitted as `api.request.completed`, `api.request.exception`, and `api.error.response`
 - New work should extend the existing standalone modules instead of introducing versioned API packages
 
+### 10.1 Knowledge Base
+
+The repository contains operational knowledge files under `knowledge/` for
+warehouse and supply-chain procedures. These documents are designed for both human
+reference and AI semantic retrieval.
+
+Current knowledge topics include:
+
+- receiving and GRN control
+- putaway and storage discipline
+- picking methods and exception handling
+- inventory control and discrepancy investigation
+- zone design and location governance
+- replenishment
+- slotting optimization
+- dispatch and shipping
+- returns and reverse logistics
+- KPI and root-cause routines
+- planning and inventory policy
+
+To embed the knowledge files into the AI vector store for a given organization:
+
+```bash
+python3 manage.py index_knowledge --org <org_id>
+```
+
 ## 11. Repository References
 
 - Runtime entrypoint: `wms_middleware/urls.py`

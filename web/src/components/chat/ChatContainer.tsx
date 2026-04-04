@@ -3,6 +3,7 @@ import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ComponentRenderer from '../renderers/ComponentRenderer';
 import type { Message, UIComponent } from '../../types/chat';
+import { looksLikeStructuredAssistantContent, resolveAssistantRenderState } from '../../utils/assistantContent';
 
 interface ChatContainerProps {
   messages: Message[];
@@ -26,6 +27,13 @@ export default function ChatContainer({
   onConfirmAction,
 }: ChatContainerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const streamingRenderState = resolveAssistantRenderState(streamingText, streamingComponents);
+  const showStreamingBubble = Boolean(streamingRenderState.text);
+  const showStructuredPlaceholder =
+    streaming &&
+    !showStreamingBubble &&
+    streamingRenderState.components.length === 0 &&
+    looksLikeStructuredAssistantContent(streamingText);
 
   // Auto-scroll on new content
   useEffect(() => {
@@ -94,15 +102,15 @@ export default function ChatContainer({
                   </div>
                 )}
 
-                {streamingText && (
+                {showStreamingBubble && (
                   <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
                     <div className="whitespace-pre-wrap text-sm leading-relaxed cursor-blink">
-                      {streamingText}
+                      {streamingRenderState.text}
                     </div>
                   </div>
                 )}
 
-                {!streamingText && !activeToolCall && (
+                {!showStreamingBubble && !activeToolCall && !showStructuredPlaceholder && (
                   <div className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-2xl">
                     <div className="flex gap-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -113,9 +121,20 @@ export default function ChatContainer({
                   </div>
                 )}
 
-                {streamingComponents.length > 0 && (
+                {showStructuredPlaceholder && (
+                  <div className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-2xl text-sm text-gray-500">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                    Formatting response...
+                  </div>
+                )}
+
+                {streamingRenderState.components.length > 0 && (
                   <div className="mt-3 space-y-3">
-                    {streamingComponents.map((component, idx) => (
+                    {streamingRenderState.components.map((component, idx) => (
                       <ComponentRenderer
                         key={idx}
                         component={component}

@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YES WMS AI Working Flow</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --paper: #fffaf2;
+      --paper-strong: #ffffff;
+      --ink: #16202a;
+      --muted: #5f6d79;
+      --line: #dccfbe;
+      --line-strong: #b7a892;
+      --shadow: 0 18px 40px rgba(22, 32, 42, 0.08);
+      --ui: #0f5f7f;
+      --browser: #12796f;
+      --api: #a75a1e;
+      --orchestrator: #2253a6;
+      --provider: #8b2c2c;
+      --data: #2f6a38;
+      --memory: #556b2f;
+      --query: #d9f0ff;
+      --mutation: #fff0db;
+      --memory-bg: #eef4d9;
+      --stream: #efe8ff;
+      --warning: #ffd8cc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(15, 95, 127, 0.09), transparent 26%),
+        radial-gradient(circle at top left, rgba(18, 121, 111, 0.08), transparent 22%),
+        linear-gradient(180deg, #f8f4ec 0%, var(--bg) 100%);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1560px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(252, 245, 232, 0.95));
+      border: 1px solid rgba(183, 168, 146, 0.45);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(115deg, transparent 0%, transparent 45%, rgba(15, 95, 127, 0.05) 100%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      background: rgba(15, 95, 127, 0.09);
+      color: var(--ui);
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 4vw, 3.6rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      max-width: 860px;
+    }
+
+    .subtitle {
+      max-width: 920px;
+      margin: 16px 0 0;
+      font-size: 1.02rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr;
+      gap: 18px;
+      margin-top: 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-card,
+    .section,
+    .table-card,
+    .payload-card,
+    .step,
+    .lane,
+    .branch {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(220, 207, 190, 0.85);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 22px;
+    }
+
+    .hero-card h2,
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-card p,
+    .section-intro,
+    .detail p,
+    .payload-card p,
+    .table-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 0.96rem;
+    }
+
+    .mini-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .mini-stat {
+      padding: 16px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255, 250, 242, 0.98), rgba(244, 239, 231, 0.98));
+      border: 1px solid rgba(220, 207, 190, 0.9);
+    }
+
+    .mini-stat strong {
+      display: block;
+      font-size: 1.65rem;
+      letter-spacing: -0.04em;
+      margin-bottom: 6px;
+    }
+
+    .mini-stat span {
+      display: block;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .toc a,
+    .filter button {
+      appearance: none;
+      border: 1px solid rgba(183, 168, 146, 0.75);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .toc a:hover,
+    .filter button:hover,
+    .filter button.is-active {
+      transform: translateY(-1px);
+      border-color: var(--ink);
+      background: #ffffff;
+    }
+
+    .filter-wrap {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .filter-label {
+      font-size: 0.84rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .section {
+      margin-top: 24px;
+      padding: 26px;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .section-heading p {
+      max-width: 880px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .lane-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(210px, 1fr));
+      gap: 14px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+
+    .lane {
+      min-height: 100%;
+      padding: 18px;
+      position: relative;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 244, 236, 0.98));
+    }
+
+    .lane::before {
+      content: "";
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      top: 0;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--lane-color);
+    }
+
+    .lane small {
+      display: block;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+
+    .lane h3 {
+      margin: 8px 0 4px;
+      font-size: 1rem;
+    }
+
+    .lane-list {
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .lane-list li {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(220, 207, 190, 0.85);
+    }
+
+    .lane-list strong {
+      display: block;
+      font-size: 0.92rem;
+      margin-bottom: 4px;
+    }
+
+    .lane-list span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.55;
+    }
+
+    .flow-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(220, 207, 190, 0.9);
+    }
+
+    .chip::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--chip-color, var(--ink));
+    }
+
+    .branches {
+      display: grid;
+      gap: 18px;
+    }
+
+    .branch {
+      padding: 20px;
+    }
+
+    .branch header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .branch h3 {
+      margin: 0;
+      font-size: 1.02rem;
+    }
+
+    .branch p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      max-width: 720px;
+    }
+
+    .branch-strip {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .node {
+      min-width: 220px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(220, 207, 190, 0.85);
+      background: rgba(255, 255, 255, 0.96);
+      position: relative;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .node h4 {
+      margin: 0 0 6px;
+      font-size: 0.93rem;
+      line-height: 1.35;
+    }
+
+    .node p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.55;
+    }
+
+    .node .meta {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .arrow {
+      align-self: center;
+      font-size: 1.4rem;
+      color: var(--line-strong);
+      font-weight: 700;
+      min-width: 26px;
+      text-align: center;
+    }
+
+    .query-band { background: linear-gradient(180deg, rgba(217, 240, 255, 0.58), rgba(255, 255, 255, 0.9)); }
+    .mutation-band { background: linear-gradient(180deg, rgba(255, 240, 219, 0.78), rgba(255, 255, 255, 0.9)); }
+    .memory-band { background: linear-gradient(180deg, rgba(238, 244, 217, 0.9), rgba(255, 255, 255, 0.9)); }
+
+    .timeline {
+      display: grid;
+      gap: 16px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 94px 1fr;
+      gap: 18px;
+      padding: 18px;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .step-index {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
+      padding-top: 6px;
+    }
+
+    .step-number {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      color: #ffffff;
+      background: var(--step-color);
+      box-shadow: 0 12px 22px rgba(22, 32, 42, 0.12);
+    }
+
+    .step-lane {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 0.74rem;
+      line-height: 1.45;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--muted);
+    }
+
+    .step-body h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+    }
+
+    .step-body > p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 0.95rem;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid rgba(220, 207, 190, 0.95);
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--ink);
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .detail {
+      padding: 14px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 244, 236, 0.98));
+      border: 1px solid rgba(220, 207, 190, 0.88);
+    }
+
+    .detail span {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .detail code,
+    .payload-card code,
+    .table-card code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      background: rgba(22, 32, 42, 0.06);
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+    }
+
+    .payload-grid,
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .payload-card,
+    .table-card {
+      padding: 20px;
+    }
+
+    .payload-card h3,
+    .table-card h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    pre {
+      margin: 14px 0 0;
+      padding: 14px;
+      overflow: auto;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      line-height: 1.65;
+      background: #201d1a;
+      color: #f6f0e8;
+      border: 1px solid rgba(32, 29, 26, 0.65);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      overflow: hidden;
+      border-radius: 14px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(220, 207, 190, 0.72);
+      font-size: 0.88rem;
+      line-height: 1.55;
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .file-map {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .file-card {
+      padding: 18px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 244, 236, 0.98));
+      border: 1px solid rgba(220, 207, 190, 0.88);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .file-card h3 {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+    }
+
+    .file-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.65;
+    }
+
+    .file-card ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .file-card li {
+      margin: 6px 0;
+      line-height: 1.55;
+      font-size: 0.86rem;
+    }
+
+    .muted-item {
+      opacity: 0.2;
+      transform: scale(0.985);
+    }
+
+    footer {
+      margin-top: 22px;
+      padding: 16px 20px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(220, 207, 190, 0.78);
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1280px) {
+      .hero-grid,
+      .payload-grid,
+      .table-grid,
+      .file-map,
+      .detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 920px) {
+      .page {
+        width: min(100vw - 18px, 100%);
+        padding-top: 14px;
+      }
+
+      .hero,
+      .section {
+        padding: 20px;
+      }
+
+      .hero-grid,
+      .payload-grid,
+      .table-grid,
+      .file-map,
+      .detail-grid,
+      .mini-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .step {
+        grid-template-columns: 1fr;
+      }
+
+      .step-index {
+        flex-direction: row;
+        gap: 12px;
+        justify-content: start;
+        align-items: center;
+      }
+
+      .step-lane {
+        margin-top: 0;
+        text-align: left;
+      }
+
+      .section-heading {
+        display: block;
+      }
+
+      .section-heading p {
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="eyebrow">Low-Level Runtime Diagram</div>
+      <h1>YES WMS AI workflow from React UI to real data fetch, tool execution, and vector memory</h1>
+      <p class="subtitle">
+        This page documents the actual AI path in this repository. It follows the browser chat UI, session header construction,
+        Django streaming endpoint, LLM tool loop, WMS service calls, data reads and writes, and the embedding-backed semantic
+        memory branch. It is intentionally implementation-specific, not a generic AI architecture poster.
+      </p>
+
+      <div class="hero-grid">
+        <div class="hero-card">
+          <h2>What this diagram covers</h2>
+          <p>
+            The main request path starts in the web dashboard, streams through <code>/api/v1/ai/chat</code> as
+            <code>text/event-stream</code>, deterministically prefetches semantic context before the first model call,
+            executes read tools or waits for mutation confirmation, then persists the assistant response and asynchronously
+            embeds the final Q/A pair for future retrieval.
+          </p>
+          <div class="mini-stats">
+            <div class="mini-stat">
+              <strong>7</strong>
+              <span>runtime lanes: UI, browser, API edge, orchestration, provider, domain data, vector memory</span>
+            </div>
+            <div class="mini-stat">
+              <strong>3</strong>
+              <span>important branches: pre-LLM RAG, mutation confirmation, and post-response embedding memory</span>
+            </div>
+            <div class="mini-stat">
+              <strong>SSE</strong>
+              <span>streaming channel uses raw <code>fetch()</code> plus manual stream parsing because POST + headers are required</span>
+            </div>
+            <div class="mini-stat">
+              <strong>20</strong>
+              <span>message history cap inside the prompt plus a 5-iteration max tool loop in <code>chat_service.py</code></span>
+            </div>
+          </div>
+          <div class="toc">
+            <a href="#topology">Runtime Topology</a>
+            <a href="#branches">Execution Branches</a>
+            <a href="#timeline">Detailed Sequence</a>
+            <a href="#payloads">Payloads And Events</a>
+            <a href="#stores">Data Stores</a>
+            <a href="#files">File Map</a>
+          </div>
+        </div>
+
+        <div class="hero-card">
+          <h2>Why a separate AI document is better</h2>
+          <p>
+            The existing architecture doc is broad system-level documentation. The AI flow has enough branching and transport
+            detail that it reads better as a dedicated page: it lets us show the streaming contract, tool registry, confirmation
+            loop, and vector-search side path without burying the rest of the warehouse architecture.
+          </p>
+          <div class="flow-legend">
+            <span class="chip" style="--chip-color: var(--query);">Query flow</span>
+            <span class="chip" style="--chip-color: #f2bf7f;">Mutation flow</span>
+            <span class="chip" style="--chip-color: #c7d899;">Memory flow</span>
+            <span class="chip" style="--chip-color: #cbbcf6;">Streaming event</span>
+            <span class="chip" style="--chip-color: var(--warning);">Human confirmation needed</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-wrap">
+        <span class="filter-label">Highlight</span>
+        <div class="filter">
+          <button class="is-active" data-filter="all">All</button>
+          <button data-filter="query">Read / Query</button>
+          <button data-filter="mutation">Mutation</button>
+          <button data-filter="memory">Memory</button>
+          <button data-filter="stream">Streaming</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="topology">
+      <div class="section-heading">
+        <div>
+          <h2>Runtime Topology</h2>
+          <p class="section-intro">
+            This is the stable lane model for the AI stack. The web UI and browser session layer handle identity and streaming
+            state, Django verifies auth and tenant headers, the chat service loops through tool calls, and domain services fetch
+            live warehouse data or execute warehouse operations.
+          </p>
+        </div>
+      </div>
+
+      <div class="lane-grid">
+        <article class="lane" style="--lane-color: var(--ui);">
+          <h3>1. UI Layer</h3>
+          <small>Visible chat shell and user actions in the dashboard.</small>
+          <ul class="lane-list">
+            <li><strong>AppLayout</strong><span>Bootstraps sidebar, model selector, notification panel, and chat container.</span></li>
+            <li><strong>ConversationList</strong><span>Loads prior conversations and starts new ones before a first prompt is sent.</span></li>
+            <li><strong>ChatContainer / ChatMessage</strong><span>Renders user bubble, streaming assistant text, and structured components.</span></li>
+            <li><strong>ComponentRenderer</strong><span>Dispatches <code>stat_card</code>, <code>table</code>, <code>line_chart</code>, <code>detail_card</code>, <code>confirmation_dialog</code>, and <code>form</code>.</span></li>
+          </ul>
+        </article>
+
+        <article class="lane" style="--lane-color: var(--browser);">
+          <h3>2. Browser Session Layer</h3>
+          <small>State, headers, stream parsing, and request shape assembly.</small>
+          <ul class="lane-list">
+            <li><strong>useChat()</strong><span>Stores <code>messages</code>, <code>streamingText</code>, <code>streamingComponents</code>, <code>activeToolCall</code>, and errors.</span></li>
+            <li><strong>api/client.ts</strong><span>Axios interceptor injects Firebase bearer token plus <code>warehouse</code>, <code>X-Org-Id</code>, and <code>X-Facility-Id</code>.</span></li>
+            <li><strong>api/ai.ts::streamChat()</strong><span>Uses raw <code>fetch()</code> because EventSource cannot issue POST with custom auth/tenant headers.</span></li>
+            <li><strong>ReadableStream parser</strong><span>Decodes lines into SSE events: <code>token</code>, <code>tool_call</code>, <code>tool_result</code>, <code>components</code>, <code>error</code>, and <code>done</code>.</span></li>
+          </ul>
+        </article>
+
+        <article class="lane" style="--lane-color: var(--api);">
+          <h3>3. API Edge Layer</h3>
+          <small>Django auth, tenant resolution, and route entry points.</small>
+          <ul class="lane-list">
+            <li><strong>DualAuthMiddleware</strong><span>Verifies Firebase token, syncs the app user, and optionally falls back to <code>X-API-Key</code> on non-Firebase routes.</span></li>
+            <li><strong>authorize_request()</strong><span>Requires Firebase for AI routes and checks org membership, permissions, and facility access.</span></li>
+            <li><strong>resolve_request_tenant()</strong><span>Resolves organization and facility from headers and confirms warehouse-to-facility alignment.</span></li>
+            <li><strong>app/ai/routes.py</strong><span>Creates <code>StreamingHttpResponse</code> for chat and regular JSON CRUD for conversations and model listing.</span></li>
+          </ul>
+        </article>
+
+        <article class="lane" style="--lane-color: var(--orchestrator);">
+          <h3>4. AI Orchestration Layer</h3>
+          <small>Prompt building, message persistence, tool loop, and response shaping.</small>
+          <ul class="lane-list">
+            <li><strong>handle_chat_message()</strong><span>Loads the conversation, persists user input, streams tokens, runs tools, and saves the final assistant message.</span></li>
+            <li><strong>_prefetch_semantic_context()</strong><span>Runs deterministic semantic retrieval for every new user message before the first provider call.</span></li>
+            <li><strong>_build_messages()</strong><span>Prepends a dynamic system prompt, injects prefetched semantic context, and appends the most recent 20 messages from the conversation history.</span></li>
+            <li><strong>build_system_prompt()</strong><span>Injects org/facility context, JSON response rules, mutation constraints, and semantic-search guidance.</span></li>
+            <li><strong>_parse_response()</strong><span>Accepts final LLM output as raw JSON or JSON wrapped inside code fences and extracts <code>text</code> plus <code>components</code>.</span></li>
+          </ul>
+        </article>
+
+        <article class="lane" style="--lane-color: var(--provider);">
+          <h3>5. Provider And Tool Layer</h3>
+          <small>Model streaming plus tool-schema conversion and dispatch.</small>
+          <ul class="lane-list">
+            <li><strong>get_provider()</strong><span>Selects Ollama, OpenAI, or Claude from conversation defaults or per-request overrides.</span></li>
+            <li><strong>LLM providers</strong><span>Normalize provider-specific streaming chunks into <code>StreamChunk</code> with <code>delta_text</code> and tool calls.</span></li>
+            <li><strong>get_openai_tools()</strong><span>Builds function-call schemas from MCP tool definitions while stripping auto-injected <code>org_id</code> and <code>facility_id</code>.</span></li>
+            <li><strong>execute_tool()</strong><span>Injects <code>uid</code>, <code>org_id</code>, and scoped <code>facility_id</code>, then dispatches to <code>app/mcp/tools.py</code>.</span></li>
+          </ul>
+        </article>
+
+        <article class="lane" style="--lane-color: var(--data);">
+          <h3>6. Domain Data Layer</h3>
+          <small>Real warehouse queries and warehouse mutations.</small>
+          <ul class="lane-list">
+            <li><strong>Read tools</strong><span><code>wms_list_transactions</code>, <code>wms_get_transaction</code>, <code>wms_get_inventory_balances</code>, <code>wms_get_inventory_ledger</code>, and master-data list tools.</span></li>
+            <li><strong>Mutation tools</strong><span><code>wms_create_grn</code>, <code>wms_putaway</code>, <code>wms_move_inventory</code>, <code>wms_order_pick</code>, <code>wms_execute_transaction</code>, <code>wms_cancel_transaction</code>.</span></li>
+            <li><strong>Service layer</strong><span><code>masters.services</code>, <code>operations.services</code>, and <code>inventory.services</code> perform ORM reads plus transactional writes.</span></li>
+            <li><strong>Warehouse side effects</strong><span>Transaction execution debits and credits balances, writes ledger entries, may generate documents, and updates transaction status.</span></li>
+          </ul>
+        </article>
+
+        <article class="lane" style="--lane-color: var(--memory);">
+          <h3>7. Vector Memory Layer</h3>
+          <small>Deterministic pre-LLM recall plus embedding persistence after response generation.</small>
+          <ul class="lane-list">
+            <li><strong>Pre-LLM semantic prefetch</strong><span>Every new chat message attempts semantic retrieval before the first model call so the provider starts with memory context already attached.</span></li>
+            <li><strong>wms_semantic_search</strong><span>Embeds the natural-language query, searches <code>EmbeddingRecord</code>, and can still be called later for narrower follow-up retrieval.</span></li>
+            <li><strong>upsert_embedding()</strong><span>Asynchronously embeds the final <code>Q + A</code> pair after the assistant message is saved.</span></li>
+            <li><strong>pgvector HNSW</strong><span>Uses cosine distance over a 768-dimension vector with an HNSW index for fast nearest-neighbor search.</span></li>
+            <li><strong>Ollama embeddings endpoint</strong><span>Current implementation calls <code>/api/embeddings</code> with <code>nomic-embed-text</code>.</span></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="branches">
+      <div class="section-heading">
+        <div>
+          <h2>Execution Branches</h2>
+          <p class="section-intro">
+            The AI system is easiest to reason about if you separate the runtime into three concrete paths:
+            read-only queries, mutation requests that require explicit user confirmation, and semantic memory reads/writes.
+          </p>
+        </div>
+      </div>
+
+      <div class="branches">
+        <article class="branch query-band" data-tags="query stream">
+          <header>
+            <div>
+              <h3>Read / query path</h3>
+              <p>Used for prompts such as stock lookups, transaction history, and analytics requests.</p>
+            </div>
+          </header>
+          <div class="branch-strip">
+            <div class="node" data-tags="query stream">
+              <h4>User prompt in the dashboard</h4>
+              <p><code>useChat.sendMessage()</code> appends a temporary user message and flips the chat into streaming mode.</p>
+              <span class="meta">UI</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="query stream">
+              <h4>POST <code>/api/v1/ai/chat</code></h4>
+              <p><code>streamChat()</code> sends JSON with conversation id and message, plus Firebase + tenant headers.</p>
+              <span class="meta">Browser</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="query">
+              <h4>Conversation and prompt assembly</h4>
+              <p><code>handle_chat_message()</code> stores the user message, prefetches semantic context, and builds system prompt + recent history.</p>
+              <span class="meta">Orchestration</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="query stream">
+              <h4>LLM streams tokens and may request tools</h4>
+              <p>Provider emits <code>token</code> events immediately, and tool calls are captured when the chunk stream finishes a tool phase.</p>
+              <span class="meta">Provider</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="query">
+              <h4>Tool dispatch to WMS services</h4>
+              <p><code>execute_tool()</code> injects scoped ids and calls read tools in <code>app/mcp/tools.py</code>.</p>
+              <span class="meta">Tool Layer</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="query">
+              <h4>ORM-backed data fetch</h4>
+              <p>Services use filtered querysets, <code>select_related()</code>, and <code>prefetch_related()</code> to fetch live WMS data.</p>
+              <span class="meta">Domain Data</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="query stream">
+              <h4>Final JSON response and components</h4>
+              <p>The model turns tool summaries into <code>text</code> plus structured components. Frontend receives <code>components</code> then <code>done</code>.</p>
+              <span class="meta">UI Render</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="branch mutation-band" data-tags="mutation stream">
+          <header>
+            <div>
+              <h3>Mutation path with confirmation</h3>
+              <p>Used for warehouse-changing actions such as GRN, putaway, move, order pick, execute transaction, and cancel transaction.</p>
+            </div>
+          </header>
+          <div class="branch-strip">
+            <div class="node" data-tags="mutation">
+              <h4>LLM proposes a mutation tool</h4>
+              <p>Example: <code>wms_create_grn</code> or <code>wms_move_inventory</code>.</p>
+              <span class="meta">Provider</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="mutation stream">
+              <h4>Chat service stops execution</h4>
+              <p><code>is_mutation_tool()</code> blocks direct execution and emits <code>tool_call</code> with <code>needs_confirmation</code>.</p>
+              <span class="meta">Orchestration</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="mutation">
+              <h4>Frontend renders confirmation dialog</h4>
+              <p><code>ComponentRenderer</code> shows a confirmation component that calls back into <code>handleConfirmAction()</code>.</p>
+              <span class="meta">UI</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="mutation stream">
+              <h4>Second chat request with <code>confirm_action</code></h4>
+              <p>The browser sends the chosen action and parameters to the same chat endpoint, but with an empty normal message body.</p>
+              <span class="meta">Browser</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="mutation">
+              <h4>Mutation tool executes immediately</h4>
+              <p>The confirmation path bypasses the full LLM loop and directly runs the selected tool.</p>
+              <span class="meta">Orchestration</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="mutation">
+              <h4>Warehouse transaction side effects</h4>
+              <p>Operations services create and execute transactions, update balances, write ledger entries, and may generate documents.</p>
+              <span class="meta">Domain Data</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="mutation stream">
+              <h4>Immediate success result card</h4>
+              <p>The API streams a <code>detail_card</code> style result and then sends <code>done</code> without another model round-trip.</p>
+              <span class="meta">UI Render</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="branch memory-band" data-tags="memory">
+          <header>
+            <div>
+              <h3>Semantic memory path</h3>
+              <p>This branch now runs automatically before the first model call for every new user message, and it runs again after the answer when the final Q/A pair is embedded.</p>
+            </div>
+          </header>
+          <div class="branch-strip">
+            <div class="node" data-tags="memory">
+              <h4>Every new prompt triggers semantic prefetch</h4>
+              <p>The backend always attempts retrieval before the first provider call instead of waiting for the model to remember.</p>
+              <span class="meta">Backend rule</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="memory">
+              <h4><code>wms_semantic_search</code></h4>
+              <p>Semantic prefetch embeds the user query through Ollama and searches selected content types in <code>EmbeddingRecord</code>.</p>
+              <span class="meta">Tool Layer</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="memory">
+              <h4>Cosine similarity over pgvector</h4>
+              <p><code>semantic_search()</code> annotates cosine distance, orders by nearest neighbors, and returns top-scoring chunks.</p>
+              <span class="meta">Memory Store</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="memory">
+              <h4>Results feed back into final answer</h4>
+              <p>The LLM sees the summarized results as a tool response and can combine them with live read tools if needed.</p>
+              <span class="meta">Provider Loop</span>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node" data-tags="memory">
+              <h4>Post-response embedding write</h4>
+              <p>After the final assistant message is saved, the server asynchronously embeds <code>Q: ... A: ...</code> and upserts it.</p>
+              <span class="meta">Background Task</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="timeline">
+      <div class="section-heading">
+        <div>
+          <h2>Detailed Low-Level Sequence</h2>
+          <p class="section-intro">
+            The steps below are ordered the way they happen in the code. This is the fastest way to trace a prompt from UI event to live warehouse data and back.
+          </p>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <article class="step" data-tags="query stream" style="--step-color: var(--ui);">
+          <div class="step-index">
+            <div class="step-number">01</div>
+            <div class="step-lane">UI + Browser</div>
+          </div>
+          <div class="step-body">
+            <h3>Dashboard bootstraps the AI shell and conversation sidebar</h3>
+            <p>
+              <code>web/src/components/layout/AppLayout.tsx</code> mounts <code>useChat()</code> and immediately calls
+              <code>chat.loadConversations()</code>. That request uses Axios, not SSE, so it goes through the normal JSON envelope path and hydrates the sidebar.
+            </p>
+            <div class="tag-row">
+              <span class="tag">GET /api/v1/ai/conversations</span>
+              <span class="tag">axios interceptor path</span>
+              <span class="tag">Firebase token + tenant headers</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>web/src/components/layout/AppLayout.tsx</code><br><code>web/src/hooks/useChat.ts</code><br><code>web/src/api/client.ts</code></p></div>
+              <div class="detail"><span>Inputs</span><p>Current Firebase user plus <code>sessionStorage.wms_session</code>.</p></div>
+              <div class="detail"><span>State writes</span><p><code>conversations[]</code> in React state.</p></div>
+              <div class="detail"><span>Why separate</span><p>Conversation CRUD uses normal wrapped JSON. Only chat streaming bypasses the standard response envelope.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query" style="--step-color: var(--ui);">
+          <div class="step-index">
+            <div class="step-number">02</div>
+            <div class="step-lane">UI</div>
+          </div>
+          <div class="step-body">
+            <h3>User starts a new conversation or loads an existing thread</h3>
+            <p>
+              If there is no active conversation, <code>AppLayout.handleSend()</code> first calls <code>startNewConversation(provider, model)</code>.
+              That creates a <code>Conversation</code> row with <code>model_provider</code>, <code>model_name</code>, org, user, and optional facility.
+            </p>
+            <div class="tag-row">
+              <span class="tag">POST /api/v1/ai/conversations</span>
+              <span class="tag">Conversation model</span>
+              <span class="tag">provider/model selection</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>web/src/hooks/useChat.ts</code><br><code>app/ai/routes.py</code><br><code>app/ai/models.py</code></p></div>
+              <div class="detail"><span>DB write</span><p>New conversation row with org, user, facility, title, provider, and model.</p></div>
+              <div class="detail"><span>Facility scope</span><p>Facility is captured from current tenant selection if available.</p></div>
+              <div class="detail"><span>Result</span><p>Conversation id is returned and becomes the stream target for the first message.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query stream" style="--step-color: var(--browser);">
+          <div class="step-index">
+            <div class="step-number">03</div>
+            <div class="step-lane">UI + Browser</div>
+          </div>
+          <div class="step-body">
+            <h3>User submits a prompt and the browser builds the streaming request</h3>
+            <p>
+              <code>useChat.sendMessage()</code> inserts an optimistic temporary user bubble, resets <code>streamingText</code>,
+              clears any previous tool state, then calls <code>streamChat(conversationId, message)</code>.
+            </p>
+            <div class="tag-row">
+              <span class="tag">temporary user message</span>
+              <span class="tag">streaming=true</span>
+              <span class="tag">POST fetch path</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>web/src/hooks/useChat.ts</code><br><code>web/src/api/ai.ts</code></p></div>
+              <div class="detail"><span>Headers</span><p><code>Authorization</code>, <code>warehouse</code>, <code>X-Org-Id</code>, <code>X-Facility-Id</code>.</p></div>
+              <div class="detail"><span>Body</span><p><code>{ conversation_id, message }</code> or <code>{ conversation_id, message: "", confirm_action }</code>.</p></div>
+              <div class="detail"><span>Transport choice</span><p>Uses <code>fetch()</code> with a <code>ReadableStream</code> because native EventSource cannot do authenticated POST with custom headers.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query stream" style="--step-color: var(--api);">
+          <div class="step-index">
+            <div class="step-number">04</div>
+            <div class="step-lane">API Edge</div>
+          </div>
+          <div class="step-body">
+            <h3>Django middleware authenticates the request and syncs the app user</h3>
+            <p>
+              <code>DualAuthMiddleware</code> intercepts all <code>/api/v1/</code> routes. For AI endpoints it verifies the Firebase bearer token,
+              calls <code>sync_firebase_user()</code>, and stores an <code>AuthContext</code> on the request.
+            </p>
+            <div class="tag-row">
+              <span class="tag">Firebase required for AI routes</span>
+              <span class="tag">request.auth_context</span>
+              <span class="tag">401 on invalid token</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/auth/middleware.py</code><br><code>app/auth/user_sync.py</code></p></div>
+              <div class="detail"><span>Success path</span><p><code>uid</code>, <code>app_user_id</code>, <code>email</code>, and auth source are attached to the request.</p></div>
+              <div class="detail"><span>Fallback</span><p><code>X-API-Key</code> exists for some routes, but <code>authorize_request(... require_firebase=True)</code> blocks that path for AI chat.</p></div>
+              <div class="detail"><span>Failure mode</span><p>Missing or invalid auth becomes a structured error response before the route runs.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query stream" style="--step-color: var(--api);">
+          <div class="step-index">
+            <div class="step-number">05</div>
+            <div class="step-lane">API Edge</div>
+          </div>
+          <div class="step-body">
+            <h3>Route authorization and tenant resolution lock the request to org and facility context</h3>
+            <p>
+              <code>app/ai/routes.py::chat()</code> calls <code>authorize_request(request, require_firebase=True)</code>,
+              then <code>resolve_request_tenant()</code>. This enforces <code>X-Org-Id</code>, verifies the <code>warehouse</code> header,
+              and optionally resolves the facility by <code>X-Facility-Id</code>.
+            </p>
+            <div class="tag-row">
+              <span class="tag">X-Org-Id required</span>
+              <span class="tag">warehouse consistency check</span>
+              <span class="tag">facility optional per current route</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/routes.py</code><br><code>app/auth/authorization.py</code><br><code>app/core/tenant.py</code></p></div>
+              <div class="detail"><span>Derived context</span><p><code>uid</code>, <code>org_id</code>, <code>facility_id</code>, <code>facility_name</code>.</p></div>
+              <div class="detail"><span>Tenant writeback</span><p>Tenant data is attached to <code>request.tenant_context</code> for downstream meta and logging.</p></div>
+              <div class="detail"><span>Edge nuance</span><p>Chat streaming itself returns raw SSE, so it does not use <code>success_response()</code>.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query stream" style="--step-color: var(--api);">
+          <div class="step-index">
+            <div class="step-number">06</div>
+            <div class="step-lane">API Edge</div>
+          </div>
+          <div class="step-body">
+            <h3>The route returns a streaming response and hands execution to the async generator</h3>
+            <p>
+              The chat route wraps the async <code>event_stream()</code> generator inside <code>StreamingHttpResponse</code> with
+              <code>content_type="text/event-stream"</code>, <code>Cache-Control: no-cache</code>, and <code>X-Accel-Buffering: no</code>.
+            </p>
+            <div class="tag-row">
+              <span class="tag">SSE transport</span>
+              <span class="tag">async generator</span>
+              <span class="tag">ASGI-friendly streaming</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/routes.py</code></p></div>
+              <div class="detail"><span>Generator source</span><p><code>handle_chat_message(...)</code> yields encoded SSE frames.</p></div>
+              <div class="detail"><span>Fallback error path</span><p>Unexpected exceptions are converted into <code>event: error</code> followed by <code>event: done</code>.</p></div>
+              <div class="detail"><span>Result</span><p>The browser starts receiving stream chunks before the full model response exists.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query" style="--step-color: var(--orchestrator);">
+          <div class="step-index">
+            <div class="step-number">07</div>
+            <div class="step-lane">Orchestration</div>
+          </div>
+          <div class="step-body">
+            <h3>Chat service loads the conversation, chooses provider/model, and persists the user message</h3>
+            <p>
+              <code>handle_chat_message()</code> loads the conversation with <code>select_related("user", "facility")</code>,
+              resolves model provider and model name, then writes a <code>Message(role="user")</code>. If this is the first message, it auto-generates a title from the prompt prefix.
+            </p>
+            <div class="tag-row">
+              <span class="tag">Conversation row read</span>
+              <span class="tag">Message row write</span>
+              <span class="tag">auto-title on first message</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/chat_service.py</code><br><code>app/ai/models.py</code></p></div>
+              <div class="detail"><span>Model selection</span><p>Uses explicit request override first, else conversation defaults.</p></div>
+              <div class="detail"><span>DB writes</span><p>User message persists before the model is called, so the prompt is part of permanent history even if later tool execution fails.</p></div>
+              <div class="detail"><span>Conversation update</span><p><code>updated_at</code> and title are refreshed when needed.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query" style="--step-color: var(--orchestrator);">
+          <div class="step-index">
+            <div class="step-number">08</div>
+            <div class="step-lane">Orchestration</div>
+          </div>
+          <div class="step-body">
+            <h3>Prompt array is built from dynamic system instructions plus recent conversation history</h3>
+            <p>
+              <code>_build_messages()</code> calls <code>build_system_prompt(org_id, facility_id, facility_name)</code>,
+              injects the prefetched semantic context as an additional system message, fetches the latest 20 conversation
+              messages in reverse order, reverses them back into chronological sequence, and formats them for the provider adapter.
+            </p>
+            <div class="tag-row">
+              <span class="tag">MAX_HISTORY_MESSAGES = 20</span>
+              <span class="tag">dynamic system prompt</span>
+              <span class="tag">JSON response contract</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/chat_service.py</code><br><code>app/ai/system_prompt.py</code></p></div>
+              <div class="detail"><span>System prompt includes</span><p>Current UTC time, org/facility context, WMS domain rules, component schema, mutation rules, and guidance for using the already-prefetched semantic context.</p></div>
+              <div class="detail"><span>Tool prompt effect</span><p>The model is explicitly told not to send <code>org_id</code> or <code>facility_id</code> in arguments because those are auto-injected later.</p></div>
+              <div class="detail"><span>History format</span><p>Messages are passed in provider-neutral chat format and later adapted for Ollama, OpenAI, or Claude, with semantic matches already attached ahead of the first token.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query stream" style="--step-color: var(--provider);">
+          <div class="step-index">
+            <div class="step-number">09</div>
+            <div class="step-lane">Provider</div>
+          </div>
+          <div class="step-body">
+            <h3>The selected provider starts streaming tokens and tool-call metadata</h3>
+            <p>
+              <code>provider.chat_completion(messages, tools, model)</code> returns a provider-normalized stream of
+              <code>StreamChunk</code> objects. Each chunk may contain <code>delta_text</code>, tool-call fragments, and a finish reason.
+            </p>
+            <div class="tag-row">
+              <span class="tag">Ollama / OpenAI / Claude</span>
+              <span class="tag">provider-normalized stream</span>
+              <span class="tag">tool-aware chunk parsing</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/llm_providers.py</code></p></div>
+              <div class="detail"><span>Ollama nuance</span><p>Checks model template for tool support and may drop tool schemas if the model does not support them.</p></div>
+              <div class="detail"><span>OpenAI nuance</span><p>Accumulates partial tool-call arguments across chunks, then emits a complete tool call when finish reason becomes <code>tool_calls</code>.</p></div>
+              <div class="detail"><span>Claude nuance</span><p>Translates OpenAI-style messages into Anthropic format and maps tool result messages back into the stream.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query stream" style="--step-color: var(--orchestrator);">
+          <div class="step-index">
+            <div class="step-number">10</div>
+            <div class="step-lane">Orchestration</div>
+          </div>
+          <div class="step-body">
+            <h3>Tokens are forwarded to the browser immediately as SSE <code>token</code> events</h3>
+            <p>
+              For every streamed text delta, the service appends to <code>chunk_text</code> and yields
+              <code>event: token</code>. The browser accumulates those deltas into <code>streamingText</code> so the assistant appears to type in real time.
+            </p>
+            <div class="tag-row">
+              <span class="tag">event: token</span>
+              <span class="tag">streamingText</span>
+              <span class="tag">low-latency UI feedback</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/chat_service.py</code><br><code>web/src/hooks/useChat.ts</code></p></div>
+              <div class="detail"><span>Frontend effect</span><p><code>setState(... streamingText ...)</code> updates while the network response is still open.</p></div>
+              <div class="detail"><span>Persistence timing</span><p>No assistant message is saved yet; this is transient UI state.</p></div>
+              <div class="detail"><span>Transport detail</span><p>The custom stream parser waits for blank-line delimiters between SSE frames.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query" style="--step-color: var(--provider);">
+          <div class="step-index">
+            <div class="step-number">11</div>
+            <div class="step-lane">Provider + Tools</div>
+          </div>
+          <div class="step-body">
+            <h3>The model can request WMS tools; tool definitions come from MCP metadata converted to function schemas</h3>
+            <p>
+              <code>get_openai_tools()</code> derives the available tool contract from <code>app/mcp/server.py::_TOOL_DEFS</code>.
+              It strips auto-injected fields so the model only sees business arguments like <code>sku_code</code>, <code>quantity</code>, or <code>transaction_id</code>.
+            </p>
+            <div class="tag-row">
+              <span class="tag">tool schema projection</span>
+              <span class="tag">AUTO_INJECT_PARAMS</span>
+              <span class="tag">MCP tool source of truth</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/tool_definitions.py</code><br><code>app/mcp/server.py</code></p></div>
+              <div class="detail"><span>Read tools</span><p>Organizations, facilities, SKUs, zones, locations, inventory balances, ledger, transactions, semantic search.</p></div>
+              <div class="detail"><span>Mutation tools</span><p>Create / execute / cancel transaction, GRN, putaway, move inventory, order pick.</p></div>
+              <div class="detail"><span>Loop guard</span><p><code>MAX_TOOL_LOOPS = 5</code> prevents endless tool-calling cycles.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query stream" style="--step-color: var(--orchestrator);">
+          <div class="step-index">
+            <div class="step-number">12</div>
+            <div class="step-lane">Orchestration</div>
+          </div>
+          <div class="step-body">
+            <h3>Read-only tools execute immediately; mutation tools stop and request confirmation</h3>
+            <p>
+              Each tool call is checked by <code>is_mutation_tool()</code>. If it is read-only, the service emits
+              <code>tool_call: executing</code>, runs the tool, emits <code>tool_result</code>, and injects a summarized result back into the LLM message stack.
+              If it is a mutation, execution is skipped and a confirmation component is produced instead.
+            </p>
+            <div class="tag-row">
+              <span class="tag">event: tool_call</span>
+              <span class="tag">event: tool_result</span>
+              <span class="tag">needs_confirmation branch</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/chat_service.py</code><br><code>app/ai/tool_executor.py</code></p></div>
+              <div class="detail"><span>Tool result to LLM</span><p><code>summarize_result()</code> truncates large arrays so the model gets useful context without full payload explosion.</p></div>
+              <div class="detail"><span>Frontend tool status</span><p><code>activeToolCall</code> displays in the UI while a tool is running.</p></div>
+              <div class="detail"><span>Mutation behavior</span><p>Instead of running, the tool call is converted into a <code>confirmation_dialog</code> component and the tool loop can stop there.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query" style="--step-color: var(--data);">
+          <div class="step-index">
+            <div class="step-number">13</div>
+            <div class="step-lane">Domain Data</div>
+          </div>
+          <div class="step-body">
+            <h3>Read tools enforce permissions and fetch live warehouse data through service-layer querysets</h3>
+            <p>
+              <code>execute_tool()</code> auto-injects <code>uid</code>, <code>org_id</code>, and scoped facility context, then dispatches to
+              <code>app/mcp/tools.py</code>. That wrapper resolves access context and calls the appropriate service method.
+            </p>
+            <div class="tag-row">
+              <span class="tag">permission-aware data fetch</span>
+              <span class="tag">service layer</span>
+              <span class="tag">real ORM reads</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Inventory reads</span><p><code>inventory.services.get_balances()</code> and <code>get_ledger()</code> filter by facility, SKU, entity, and transaction id.</p></div>
+              <div class="detail"><span>Transaction reads</span><p><code>operations.services.list_transactions()</code> and <code>get_transaction()</code> use <code>select_related("facility")</code> and <code>prefetch_related("picks__sku", "drops__sku")</code>.</p></div>
+              <div class="detail"><span>Master reads</span><p><code>masters.services</code> supplies organizations, facilities, SKUs, zones, and locations.</p></div>
+              <div class="detail"><span>Authorization rule</span><p>Facility-restricted users may be forced to provide a facility id before certain tools can run.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="mutation" style="--step-color: var(--data);">
+          <div class="step-index">
+            <div class="step-number">14</div>
+            <div class="step-lane">Domain Data</div>
+          </div>
+          <div class="step-body">
+            <h3>Mutation tools create or execute warehouse transactions and write inventory side effects</h3>
+            <p>
+              When a confirmed mutation runs, operations services may create a <code>Transaction</code>, generate picks and drops,
+              transition status, debit and credit balances, write immutable inventory ledger rows, and optionally generate documents.
+            </p>
+            <div class="tag-row">
+              <span class="tag">db_transaction.atomic()</span>
+              <span class="tag">InventoryBalance write</span>
+              <span class="tag">InventoryLedger write</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/operations/services.py</code><br><code>app/inventory/services.py</code></p></div>
+              <div class="detail"><span>Examples</span><p><code>create_and_execute_grn()</code>, <code>create_and_execute_putaway()</code>, <code>create_and_execute_move()</code>, <code>create_and_execute_order_pick()</code>.</p></div>
+              <div class="detail"><span>Inventory math</span><p><code>debit_balance()</code> reduces on-hand and available; <code>credit_balance()</code> increases them and writes the after-balance snapshot.</p></div>
+              <div class="detail"><span>Extra side effects</span><p>Completed transactions may trigger document generation and worker notifications for pick tasks.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="mutation stream" style="--step-color: var(--orchestrator);">
+          <div class="step-index">
+            <div class="step-number">15</div>
+            <div class="step-lane">Orchestration</div>
+          </div>
+          <div class="step-body">
+            <h3>Mutation requests surface a confirmation dialog instead of executing immediately</h3>
+            <p>
+              For tools listed in <code>MUTATION_TOOLS</code>, the service yields a <code>confirmation_dialog</code> component and adds a synthetic
+              <code>tool</code> message to the model stack that says user confirmation is pending.
+            </p>
+            <div class="tag-row">
+              <span class="tag">confirmation_dialog</span>
+              <span class="tag">PENDING_USER_CONFIRMATION</span>
+              <span class="tag">human-in-the-loop guardrail</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/chat_service.py</code><br><code>web/src/components/renderers/ComponentRenderer.tsx</code></p></div>
+              <div class="detail"><span>Frontend result</span><p>The UI renders the dialog via <code>ConfirmationDialog</code> and exposes a confirm handler.</p></div>
+              <div class="detail"><span>Execution stop</span><p>The tool is not invoked yet, so no warehouse data changes happen at this stage.</p></div>
+              <div class="detail"><span>Reason</span><p>This prevents accidental stock movement or transaction creation from an LLM hallucination or misunderstood prompt.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="mutation stream" style="--step-color: var(--browser);">
+          <div class="step-index">
+            <div class="step-number">16</div>
+            <div class="step-lane">UI + Browser</div>
+          </div>
+          <div class="step-body">
+            <h3>When the user confirms, the browser sends a second chat request carrying <code>confirm_action</code></h3>
+            <p>
+              <code>AppLayout.handleConfirmAction()</code> calls <code>chat.sendMessage("", conversationId, { action, parameters })</code>.
+              The frontend does not create a new visible user message for this confirmation-only round trip.
+            </p>
+            <div class="tag-row">
+              <span class="tag">POST /api/v1/ai/chat</span>
+              <span class="tag">confirm_action body</span>
+              <span class="tag">same conversation id</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>web/src/components/layout/AppLayout.tsx</code><br><code>web/src/hooks/useChat.ts</code></p></div>
+              <div class="detail"><span>Request body</span><p><code>{ conversation_id, message: "", confirm_action: { action, parameters } }</code></p></div>
+              <div class="detail"><span>UI state</span><p>Streaming state is reset again so the user sees live status for the confirmed operation.</p></div>
+              <div class="detail"><span>Why reuse chat</span><p>The confirmation stays inside the same conversational audit trail and tool-execution pipe.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="mutation stream" style="--step-color: var(--orchestrator);">
+          <div class="step-index">
+            <div class="step-number">17</div>
+            <div class="step-lane">Orchestration</div>
+          </div>
+          <div class="step-body">
+            <h3>The confirmation path bypasses the full LLM loop and directly executes the chosen mutation tool</h3>
+            <p>
+              At the top of <code>handle_chat_message()</code>, the <code>confirm_action</code> branch yields a running status,
+              executes the tool, creates a direct assistant message with tool results, emits a detail-card component, and then finishes.
+            </p>
+            <div class="tag-row">
+              <span class="tag">direct execute_tool()</span>
+              <span class="tag">detail_card result</span>
+              <span class="tag">done event</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/chat_service.py</code><br><code>app/ai/tool_executor.py</code></p></div>
+              <div class="detail"><span>Assistant persistence</span><p>Stores a success message plus <code>tool_results</code> and component payload on the assistant row.</p></div>
+              <div class="detail"><span>Error handling</span><p>Any tool exception becomes <code>event: error</code> and <code>event: done</code> with a failure message.</p></div>
+              <div class="detail"><span>No second reasoning pass</span><p>The model is not re-asked to explain the result; the backend returns a deterministic success summary immediately.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="memory" style="--step-color: var(--memory);">
+          <div class="step-index">
+            <div class="step-number">18</div>
+            <div class="step-lane">Memory</div>
+          </div>
+          <div class="step-body">
+            <h3>Semantic search embeds natural-language queries and recalls relevant chunks by cosine similarity</h3>
+            <p>
+              Before the first model call, the backend runs semantic prefetch using the same embedding and nearest-neighbor path.
+              The model can still call <code>wms_semantic_search</code> later for narrower or follow-up retrieval.
+            </p>
+            <div class="tag-row">
+              <span class="tag">content_types filter</span>
+              <span class="tag">Ollama embeddings</span>
+              <span class="tag">pgvector cosine search</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/mcp/tools.py</code><br><code>app/ai/embeddings.py</code><br><code>app/ai/models.py</code></p></div>
+              <div class="detail"><span>Supported memory buckets</span><p><code>transaction</code>, <code>sku</code>, <code>message</code>, and <code>knowledge</code>.</p></div>
+              <div class="detail"><span>Returned shape</span><p>Each hit contains source text, content type, object id, and a similarity score.</p></div>
+              <div class="detail"><span>Usage pattern</span><p>Prefetch now runs for every new user message. Follow-up tool calls are still available when the model needs a narrower or conversation-shifted retrieval.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query stream" style="--step-color: var(--orchestrator);">
+          <div class="step-index">
+            <div class="step-number">19</div>
+            <div class="step-lane">Orchestration</div>
+          </div>
+          <div class="step-body">
+            <h3>Final model text is parsed as JSON, components are emitted, and the assistant message is persisted</h3>
+            <p>
+              After the tool loop completes, <code>_parse_response()</code> tries to extract a JSON object containing
+              <code>text</code> and <code>components</code>. Those components are streamed first, then the assistant message is saved with content,
+              tool call log, and structured UI components.
+            </p>
+            <div class="tag-row">
+              <span class="tag">event: components</span>
+              <span class="tag">Message(role=assistant)</span>
+              <span class="tag">tool_calls log</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/chat_service.py</code><br><code>app/ai/models.py</code></p></div>
+              <div class="detail"><span>Component types</span><p>Stat cards, tables, detail cards, line/bar/pie charts, forms, confirmation dialogs.</p></div>
+              <div class="detail"><span>Stored audit trail</span><p>The final assistant row can keep both rendered components and tool execution history.</p></div>
+              <div class="detail"><span>Conversation touch</span><p>The conversation timestamp is updated again so the thread sorts correctly in the sidebar.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="query stream" style="--step-color: var(--browser);">
+          <div class="step-index">
+            <div class="step-number">20</div>
+            <div class="step-lane">UI + Browser</div>
+          </div>
+          <div class="step-body">
+            <h3>The browser turns stream fragments into a permanent assistant chat message</h3>
+            <p>
+              When <code>event: done</code> arrives, <code>useChat()</code> creates a final assistant message from
+              <code>done.text</code> or the accumulated <code>fullText</code>, attaches any collected components, clears streaming state,
+              and updates the conversation title if this was the first meaningful turn.
+            </p>
+            <div class="tag-row">
+              <span class="tag">event: done</span>
+              <span class="tag">streaming state cleared</span>
+              <span class="tag">conversation title sync</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>web/src/hooks/useChat.ts</code><br><code>web/src/components/chat/ChatMessage.tsx</code></p></div>
+              <div class="detail"><span>Message assembly</span><p>The frontend converts ephemeral <code>streamingText</code> and <code>streamingComponents</code> into a normal message row.</p></div>
+              <div class="detail"><span>Tool status cleanup</span><p><code>activeToolCall</code> and temporary stream buffers are cleared.</p></div>
+              <div class="detail"><span>User result</span><p>The prompt now appears as a stable conversation exchange with rendered charts, cards, or tables.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="step" data-tags="memory" style="--step-color: var(--memory);">
+          <div class="step-index">
+            <div class="step-number">21</div>
+            <div class="step-lane">Memory</div>
+          </div>
+          <div class="step-body">
+            <h3>After the assistant answer is saved, the server asynchronously embeds the Q/A pair for future recall</h3>
+            <p>
+              The final part of <code>handle_chat_message()</code> creates a background task:
+              <code>upsert_embedding("message", assistant_msg.id, org_id, "Q: ... A: ...")</code>.
+              This embeds the text and upserts an <code>EmbeddingRecord</code>.
+            </p>
+            <div class="tag-row">
+              <span class="tag">asyncio.create_task()</span>
+              <span class="tag">EmbeddingRecord upsert</span>
+              <span class="tag">future conversation recall</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail"><span>Files</span><p><code>app/ai/chat_service.py</code><br><code>app/ai/embeddings.py</code><br><code>app/ai/models.py</code></p></div>
+              <div class="detail"><span>Embedding input</span><p>Combined text in the form <code>Q: {user_message}\nA: {assistant_text}</code>.</p></div>
+              <div class="detail"><span>Storage key</span><p><code>content_type="message"</code> and <code>object_id=assistant message id</code>.</p></div>
+              <div class="detail"><span>Failure behavior</span><p>Embedding errors are logged and swallowed; they do not break the user-visible chat response.</p></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="payloads">
+      <div class="section-heading">
+        <div>
+          <h2>Payloads And Event Contracts</h2>
+          <p class="section-intro">
+            These are the concrete wire shapes the browser and backend rely on. The main low-level distinction is simple:
+            CRUD endpoints use wrapped JSON; streaming chat uses raw SSE frames over an open POST response.
+          </p>
+        </div>
+      </div>
+
+      <div class="payload-grid">
+        <article class="payload-card" data-tags="query stream mutation">
+          <h3>Chat request body</h3>
+          <p>First-pass prompt request sent by <code>streamChat()</code>.</p>
+          <pre>{
+  "conversation_id": "uuid",
+  "message": "Show me available stock for SKU-RED-01 in BLR-01"
+}</pre>
+        </article>
+
+        <article class="payload-card" data-tags="mutation stream">
+          <h3>Confirmation request body</h3>
+          <p>Second-pass mutation confirmation sent after the user clicks confirm.</p>
+          <pre>{
+  "conversation_id": "uuid",
+  "message": "",
+  "confirm_action": {
+    "action": "wms_create_grn",
+    "parameters": {
+      "items": [
+        { "sku_code": "SKU-RED-01", "quantity": "100" }
+      ],
+      "reference_number": "GRN-042"
+    }
+  }
+}</pre>
+        </article>
+
+        <article class="payload-card" data-tags="query stream">
+          <h3>Required request headers</h3>
+          <p>Assembled from Firebase auth plus the selected WMS session.</p>
+          <pre>Authorization: Bearer &lt;firebase-id-token&gt;
+warehouse: &lt;warehouse-key&gt;
+X-Org-Id: &lt;org-id&gt;
+X-Facility-Id: &lt;facility-code&gt;</pre>
+        </article>
+
+        <article class="payload-card" data-tags="stream">
+          <h3>SSE event sequence</h3>
+          <p>Possible events parsed by the frontend stream reader.</p>
+          <pre>event: token
+data: {"text":"Available stock"}
+
+event: tool_call
+data: {"name":"wms_get_inventory_balances","status":"executing"}
+
+event: tool_result
+data: {"name":"wms_get_inventory_balances","status":"success","count":3}
+
+event: components
+data: [{"type":"table","title":"Balances", ...}]
+
+event: done
+data: {"message_id":"uuid","text":"There are 3 balances..."}</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="stores">
+      <div class="section-heading">
+        <div>
+          <h2>Data Stores, Service Calls, And Read/Write Surfaces</h2>
+          <p class="section-intro">
+            This table maps the most important runtime actions to their storage surface and code path, which helps when debugging latency, permissions, or incorrect answers.
+          </p>
+        </div>
+      </div>
+
+      <div class="table-grid">
+        <article class="table-card" data-tags="query mutation memory">
+          <h3>Primary persistence surfaces</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Surface</th>
+                <th>Read / Write</th>
+                <th>Used for</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>app_ai_conversation</code></td>
+                <td>Read + write</td>
+                <td>Conversation thread metadata, model provider, model name, title, active state.</td>
+              </tr>
+              <tr>
+                <td><code>app_ai_message</code></td>
+                <td>Read + write</td>
+                <td>User turns, assistant turns, stored components, tool logs, and mutation confirmation results.</td>
+              </tr>
+              <tr>
+                <td><code>app_ai_embeddingrecord</code></td>
+                <td>Read + write</td>
+                <td>Vector memory for knowledge, transactions, SKUs, and conversation recall.</td>
+              </tr>
+              <tr>
+                <td><code>InventoryBalance</code></td>
+                <td>Read + write</td>
+                <td>Current stock by SKU, facility, entity type, entity code, and batch.</td>
+              </tr>
+              <tr>
+                <td><code>InventoryLedger</code></td>
+                <td>Read + write</td>
+                <td>Immutable audit trail of debit and credit movement lines.</td>
+              </tr>
+              <tr>
+                <td><code>Transaction / Pick / Drop</code></td>
+                <td>Read + write</td>
+                <td>Warehouse operations such as GRN, move, putaway, and order pick.</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="table-card" data-tags="query mutation memory">
+          <h3>Key tool-to-service mappings</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Calls</th>
+                <th>Behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>wms_get_inventory_balances</code></td>
+                <td><code>inventory.services.get_balances()</code></td>
+                <td>Read-only filtered balance lookup with facility and SKU scope.</td>
+              </tr>
+              <tr>
+                <td><code>wms_get_inventory_ledger</code></td>
+                <td><code>inventory.services.get_ledger()</code></td>
+                <td>Read-only movement history lookup.</td>
+              </tr>
+              <tr>
+                <td><code>wms_list_transactions</code></td>
+                <td><code>operations.services.list_transactions()</code></td>
+                <td>Read-only transaction summary list with filters.</td>
+              </tr>
+              <tr>
+                <td><code>wms_get_transaction</code></td>
+                <td><code>operations.services.get_transaction()</code></td>
+                <td>Detailed transaction read with picks and drops prefetch.</td>
+              </tr>
+              <tr>
+                <td><code>wms_create_grn</code>, <code>wms_putaway</code>, <code>wms_move_inventory</code>, <code>wms_order_pick</code></td>
+                <td><code>operations.services.create_and_execute_*</code></td>
+                <td>Mutation path that creates and executes warehouse transactions.</td>
+              </tr>
+              <tr>
+                <td><code>wms_semantic_search</code></td>
+                <td><code>embed_text()</code> + <code>semantic_search()</code></td>
+                <td>Query embedding plus vector nearest-neighbor lookup.</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="files">
+      <div class="section-heading">
+        <div>
+          <h2>File Map</h2>
+          <p class="section-intro">
+            If you need to modify or debug a specific part of the AI path, start in the file group below that matches the failure mode.
+          </p>
+        </div>
+      </div>
+
+      <div class="file-map">
+        <article class="file-card" data-tags="query stream">
+          <h3>Web UI and browser state</h3>
+          <p><code>web/src/components/layout/AppLayout.tsx</code>, <code>web/src/hooks/useChat.ts</code>, <code>web/src/api/ai.ts</code>, <code>web/src/api/client.ts</code></p>
+          <ul>
+            <li>Conversation bootstrap and model selection</li>
+            <li>Streaming state, optimistic messages, and SSE parsing</li>
+            <li>Header injection from Firebase and session storage</li>
+          </ul>
+        </article>
+
+        <article class="file-card" data-tags="query stream mutation">
+          <h3>API edge and request scoping</h3>
+          <p><code>app/auth/middleware.py</code>, <code>app/auth/authorization.py</code>, <code>app/core/tenant.py</code>, <code>app/ai/routes.py</code></p>
+          <ul>
+            <li>Firebase verification and app-user sync</li>
+            <li>Org membership and facility-scope enforcement</li>
+            <li>SSE response construction</li>
+          </ul>
+        </article>
+
+        <article class="file-card" data-tags="query stream mutation memory">
+          <h3>AI orchestration core</h3>
+          <p><code>app/ai/chat_service.py</code>, <code>app/ai/system_prompt.py</code>, <code>app/ai/tool_definitions.py</code>, <code>app/ai/llm_providers.py</code></p>
+          <ul>
+            <li>Prompt assembly and history windowing</li>
+            <li>Provider abstraction and token stream normalization</li>
+            <li>Mutation confirmation routing and component emission</li>
+          </ul>
+        </article>
+
+        <article class="file-card" data-tags="query mutation memory">
+          <h3>Tool dispatch and service bridge</h3>
+          <p><code>app/ai/tool_executor.py</code>, <code>app/mcp/server.py</code>, <code>app/mcp/tools.py</code></p>
+          <ul>
+            <li>Auto-injected org and facility arguments</li>
+            <li>MCP tool registry and schema source of truth</li>
+            <li>Permission-aware tool wrappers around domain services</li>
+          </ul>
+        </article>
+
+        <article class="file-card" data-tags="query mutation">
+          <h3>Warehouse domain services</h3>
+          <p><code>app/masters/services.py</code>, <code>app/inventory/services.py</code>, <code>app/operations/services.py</code></p>
+          <ul>
+            <li>Master-data lookup services</li>
+            <li>Inventory balance and ledger reads</li>
+            <li>Transaction creation, execution, and cancellation</li>
+          </ul>
+        </article>
+
+        <article class="file-card" data-tags="memory">
+          <h3>Vector memory and semantic recall</h3>
+          <p><code>app/ai/embeddings.py</code>, <code>app/ai/models.py</code>, <code>app/ai/management/commands/index_existing_data.py</code>, <code>app/ai/management/commands/index_knowledge.py</code></p>
+          <ul>
+            <li>Embedding requests against Ollama</li>
+            <li>pgvector storage and HNSW nearest-neighbor index</li>
+            <li>Offline indexing of existing knowledge and data</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <footer>
+      Open this file directly in a browser to review the AI runtime without starting the app.
+      If you want a second version next, the best follow-up would be an operator-focused sequence page that shows only business actions and hides the implementation layer.
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const buttons = Array.from(document.querySelectorAll("[data-filter]"));
+      const filterable = Array.from(document.querySelectorAll("[data-tags]"));
+
+      function applyFilter(filter) {
+        buttons.forEach((button) => {
+          button.classList.toggle("is-active", button.dataset.filter === filter);
+        });
+
+        filterable.forEach((item) => {
+          const tags = (item.dataset.tags || "").split(/\s+/).filter(Boolean);
+          const show = filter === "all" || tags.includes(filter);
+          item.classList.toggle("muted-item", !show);
+        });
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", function () {
+          applyFilter(button.dataset.filter || "all");
+        });
+      });
+
+      applyFilter("all");
+    }());
+  </script>
+</body>
+</html>

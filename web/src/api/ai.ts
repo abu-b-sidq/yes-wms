@@ -9,7 +9,8 @@ import type { SSEEvent } from '../types/chat';
 export async function* streamChat(
   conversationId: string,
   message: string,
-  confirmAction?: { action: string; parameters: Record<string, unknown> }
+  confirmAction?: { action: string; parameters: Record<string, unknown> },
+  modelSelection?: { provider: string; model: string }
 ): AsyncGenerator<SSEEvent> {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
@@ -33,6 +34,10 @@ export async function* streamChat(
   };
   if (confirmAction) {
     body.confirm_action = confirmAction;
+  }
+  if (modelSelection) {
+    body.model_provider = modelSelection.provider;
+    body.model_name = modelSelection.model;
   }
 
   const apiBase = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8010';
@@ -115,6 +120,18 @@ export async function getConversation(id: string): Promise<Conversation> {
 
 export async function deleteConversation(id: string): Promise<void> {
   await apiClient.delete(`/ai/conversations/${id}`);
+}
+
+export async function updateConversationModel(
+  id: string,
+  modelProvider: string,
+  modelName: string
+): Promise<Conversation> {
+  const resp = await apiClient.patch(`/ai/conversations/${id}`, {
+    model_provider: modelProvider,
+    model_name: modelName,
+  });
+  return resp.data;
 }
 
 export async function listModels(): Promise<ModelInfo[]> {

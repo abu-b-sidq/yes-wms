@@ -1,5 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
-import { streamChat, createConversation, listConversations, getConversation, deleteConversation } from '../api/ai';
+import {
+  streamChat,
+  createConversation,
+  listConversations,
+  getConversation,
+  deleteConversation,
+  updateConversationModel as updateConversationModelRequest,
+} from '../api/ai';
 import type { Conversation, Message, UIComponent } from '../types/chat';
 
 interface ChatState {
@@ -80,10 +87,30 @@ export function useChat() {
     }
   }, []);
 
+  const updateConversationModel = useCallback(async (id: string, provider: string, model: string) => {
+    try {
+      const conv = await updateConversationModelRequest(id, provider, model);
+      setState(s => ({
+        ...s,
+        activeConversation: s.activeConversation?.id === id ? conv : s.activeConversation,
+        conversations: s.conversations.map(c => (c.id === id ? conv : c)),
+        error: null,
+      }));
+      return conv;
+    } catch (err) {
+      setState(s => ({
+        ...s,
+        error: err instanceof Error ? err.message : 'Failed to update conversation model',
+      }));
+      return null;
+    }
+  }, []);
+
   const sendMessage = useCallback(async (
     text: string,
     conversationId?: string,
-    confirmAction?: { action: string; parameters: Record<string, unknown> }
+    confirmAction?: { action: string; parameters: Record<string, unknown> },
+    modelSelection?: { provider: string; model: string }
   ) => {
     const convId = conversationId || state.activeConversation?.id;
     if (!convId) return;
@@ -124,7 +151,7 @@ export function useChat() {
       let fullText = '';
       const components: UIComponent[] = [];
 
-      for await (const event of streamChat(convId, text, confirmAction)) {
+      for await (const event of streamChat(convId, text, confirmAction, modelSelection)) {
         if (abortRef.current) break;
 
         switch (event.event) {
@@ -213,6 +240,7 @@ export function useChat() {
     loadConversations,
     loadConversation,
     startNewConversation,
+    updateConversationModel,
     removeConversation,
     sendMessage,
     stopStreaming,

@@ -259,26 +259,9 @@ class ClaudeProvider(LLMProvider):
 
         client = AsyncAnthropic(api_key=self.api_key)
 
-        # Convert from OpenAI format to Anthropic format
-        system_text = ""
-        anthropic_messages = []
-        for msg in messages:
-            if msg["role"] == "system":
-                system_text += msg["content"] + "\n"
-            elif msg["role"] == "tool":
-                anthropic_messages.append({
-                    "role": "user",
-                    "content": [{
-                        "type": "tool_result",
-                        "tool_use_id": msg.get("tool_call_id", ""),
-                        "content": msg["content"],
-                    }],
-                })
-            else:
-                anthropic_messages.append({
-                    "role": msg["role"],
-                    "content": msg["content"],
-                })
+        # Anthropic expects assistant tool requests as `tool_use` blocks and
+        # the matching tool results grouped into the next user message.
+        system_text, anthropic_messages = _to_anthropic_messages(messages)
 
         kwargs: dict[str, Any] = {
             "model": model,
@@ -335,6 +318,90 @@ class ClaudeProvider(LLMProvider):
             "claude-haiku-4-5-20251001",
             "claude-opus-4-20250514",
         ]
+
+
+# ---------------------------------------------------------------------------
+# Claude helpers
+# ---------------------------------------------------------------------------
+
+def _parse_tool_arguments(raw_arguments: Any) -> dict[str, Any]:
+    if isinstance(raw_arguments, dict):
+        return raw_arguments
+    if isinstance(raw_arguments, str):
+        try:
+            parsed = json.loads(raw_arguments)
+        except json.JSONDecodeError:
+            return {}
+        if isinstance(parsed, dict):
+            return parsed
+    return {}
+
+
+def _to_anthropic_messages(messages: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
+    """Convert OpenAI-style messages into Anthropic message content blocks."""
+    system_parts: list[str] = []
+    anthropic_messages: list[dict[str, Any]] = []
+    pending_tool_results: list[dict[str, Any]] = []
+
+    def flush_pending_tool_results() -> None:
+        if not pending_tool_results:
+            return
+        anthropic_messages.append({
+            "role": "user",
+            "content": pending_tool_results.copy(),
+        })
+        pending_tool_results.clear()
+
+    for msg in messages:
+        role = msg.get("role", "")
+        content = str(msg.get("content", ""))
+
+        if role == "system":
+            if content:
+                system_parts.append(content)
+            continue
+
+        if role == "tool":
+            pending_tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": msg.get("tool_call_id", ""),
+                "content": content,
+            })
+            continue
+
+        flush_pending_tool_results()
+
+        if role == "assistant" and msg.get("tool_calls"):
+            content_blocks: list[dict[str, Any]] = []
+            if content:
+                content_blocks.append({
+                    "type": "text",
+                    "text": content,
+                })
+
+            for tool_call in msg.get("tool_calls", []):
+                function = tool_call.get("function", {})
+                content_blocks.append({
+                    "type": "tool_use",
+                    "id": tool_call.get("id", ""),
+                    "name": function.get("name", ""),
+                    "input": _parse_tool_arguments(function.get("arguments", {})),
+                })
+
+            anthropic_messages.append({
+                "role": "assistant",
+                "content": content_blocks,
+            })
+            continue
+
+        anthropic_messages.append({
+            "role": role,
+            "content": content,
+        })
+
+    flush_pending_tool_results()
+
+    return "\n".join(system_parts).strip(), anthropic_messages
 
 
 # ---------------------------------------------------------------------------

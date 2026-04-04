@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YES WMS - System Architecture</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent-blue: #3b82f6;
+    --accent-purple: #8b5cf6;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-cyan: #06b6d4;
+    --accent-pink: #ec4899;
+    --accent-indigo: #6366f1;
+    --layer-clients: #1e3a5f;
+    --layer-gateway: #2d1b4e;
+    --layer-middleware: #1b3d3d;
+    --layer-core: #1e293b;
+    --layer-infra: #3b1f1f;
+    --layer-external: #2d2b1b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header p {
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-size: 0.95rem;
+  }
+
+  .diagram {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .layer {
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .layer:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .layer-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .layer-label::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .layer-clients { background: var(--layer-clients); border: 1px solid rgba(59,130,246,0.2); }
+  .layer-clients .layer-label::before { background: var(--accent-blue); }
+
+  .layer-gateway { background: var(--layer-gateway); border: 1px solid rgba(139,92,246,0.2); }
+  .layer-gateway .layer-label::before { background: var(--accent-purple); }
+
+  .layer-middleware { background: var(--layer-middleware); border: 1px solid rgba(16,185,129,0.2); }
+  .layer-middleware .layer-label::before { background: var(--accent-green); }
+
+  .layer-core { background: var(--layer-core); border: 1px solid rgba(99,102,241,0.2); }
+  .layer-core .layer-label::before { background: var(--accent-indigo); }
+
+  .layer-infra { background: var(--layer-infra); border: 1px solid rgba(239,68,68,0.2); }
+  .layer-infra .layer-label::before { background: var(--accent-red); }
+
+  .layer-external { background: var(--layer-external); border: 1px solid rgba(245,158,11,0.2); }
+  .layer-external .layer-label::before { background: var(--accent-orange); }
+
+  .components {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .component {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 18px;
+    cursor: default;
+    transition: all 0.2s ease;
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+  }
+  .component:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.2);
+    transform: translateY(-1px);
+  }
+  .component:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .component-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .component-name .icon {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+  }
+  .component-tech {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background: #0f172a;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.78rem;
+    color: var(--text);
+    white-space: normal;
+    width: 260px;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    pointer-events: none;
+    line-height: 1.5;
+  }
+  .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--border);
+  }
+
+  .connector {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+  }
+  .connector svg {
+    width: 40px;
+    height: 24px;
+    overflow: visible;
+  }
+  .connector-line {
+    stroke: var(--border);
+    stroke-width: 2;
+    stroke-dasharray: 4 3;
+  }
+  .connector-arrow {
+    fill: var(--border);
+  }
+
+  .protocol-badge {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+  .badge-http { background: rgba(59,130,246,0.2); color: #60a5fa; }
+  .badge-ws { background: rgba(16,185,129,0.2); color: #34d399; }
+  .badge-sse { background: rgba(139,92,246,0.2); color: #a78bfa; }
+  .badge-tcp { background: rgba(239,68,68,0.2); color: #f87171; }
+  .badge-async { background: rgba(245,158,11,0.2); color: #fbbf24; }
+
+  .core-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .middleware-flow {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .mw-step {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: default;
+    position: relative;
+  }
+  .mw-step:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(16,185,129,0.4);
+  }
+  .mw-step:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  .mw-arrow {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+  }
+
+  .tech-stack {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+  }
+  .tech-stack .stack-items {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .tech-stack .stack-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.72rem;
+  }
+
+  @media (max-width: 768px) {
+    .core-grid { grid-template-columns: repeat(2, 1fr); }
+    .component { min-width: 140px; }
+    .header h1 { font-size: 1.5rem; }
+    .tooltip { width: 200px; }
+  }
+  @media (max-width: 480px) {
+    .core-grid { grid-template-columns: 1fr; }
+    .components { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>YES WMS - System Architecture</h1>
+  <p>Warehouse Management System &mdash; High-Level Architecture Overview</p>
+</div>
+
+<div class="diagram">
+
+  <!-- CLIENTS -->
+  <div class="layer layer-clients">
+    <div class="layer-label">Client Layer</div>
+    <div class="components">
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F310;</span> Web App</div>
+        <div class="component-tech">React + Vite + TailwindCSS <span class="protocol-badge badge-http">HTTPS</span></div>
+        <div class="tooltip">Main web interface for warehouse management. Firebase Auth for login. Communicates with backend REST API on port 5173 (dev).</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F4F1;</span> Mobile App</div>
+        <div class="component-tech">React Native + Expo <span class="protocol-badge badge-http">HTTPS</span></div>
+        <div class="tooltip">Field operations app for warehouse staff. Handles picking, putaway, and scanning workflows on handheld devices.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F4CA;</span> Ops Dashboard</div>
+        <div class="component-tech">Angular 17 + Material <span class="protocol-badge badge-http">HTTPS</span></div>
+        <div class="tooltip">Operations monitoring dashboard. Real-time visibility into warehouse transactions, inventory levels, and worker activity.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F916;</span> Claude AI Agent</div>
+        <div class="component-tech">MCP Protocol <span class="protocol-badge badge-sse">SSE</span></div>
+        <div class="tooltip">AI agent bridge via Model Context Protocol. Claude can query inventory, create transactions, and manage warehouse data through MCP tools.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connector Arrow -->
+  <div class="connector">
+    <svg viewBox="0 0 40 24"><line x1="20" y1="0" x2="20" y2="18" class="connector-line"/><polygon points="14,16 20,24 26,16" class="connector-arrow"/></svg>
+  </div>
+
+  <!-- GATEWAY -->
+  <div class="layer layer-gateway">
+    <div class="layer-label">Gateway &amp; Routing</div>
+    <div class="components">
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F6E1;</span> Kubernetes Ingress</div>
+        <div class="component-tech">Reverse Proxy + TLS termination</div>
+        <div class="tooltip">Entry point for all traffic. Handles TLS, load balancing, and routes to the application server. Health probes at /api/v1/health.</div>
+      </div>
+      <div class="component" style="flex: 2;">
+        <div class="component-name"><span class="icon">&#x1F500;</span> ASGI Router</div>
+        <div class="component-tech">
+          <code>/api/v1/*</code> &rarr; Django &nbsp;
+          <code>/mcp</code> &rarr; Starlette &nbsp;
+          <code>/ws/*</code> &rarr; WebSocket &nbsp;
+          <code>/admin</code> &rarr; Django Admin
+        </div>
+        <div class="tooltip">ASGI application entry (wms_middleware/asgi.py). Routes traffic to Django Ninja API, MCP server (Starlette SSE), WebSocket handler, or Django Admin based on path prefix.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <svg viewBox="0 0 40 24"><line x1="20" y1="0" x2="20" y2="18" class="connector-line"/><polygon points="14,16 20,24 26,16" class="connector-arrow"/></svg>
+  </div>
+
+  <!-- MIDDLEWARE -->
+  <div class="layer layer-middleware">
+    <div class="layer-label">Middleware Pipeline</div>
+    <div class="middleware-flow">
+      <div class="mw-step">
+        CORS
+        <div class="tooltip">Cross-origin resource sharing. Allows frontend apps (ports 4200, 5173) to call the API. Credentials enabled, preflight cached 24h.</div>
+      </div>
+      <span class="mw-arrow">&rarr;</span>
+      <div class="mw-step">
+        Request ID
+        <div class="tooltip">Generates or propagates X-Request-ID header for distributed tracing across all log entries and downstream services.</div>
+      </div>
+      <span class="mw-arrow">&rarr;</span>
+      <div class="mw-step">
+        Request Logging
+        <div class="tooltip">Structured JSON logging of every request/response. Includes method, path, status, duration, org_id, facility_id. Sensitive fields auto-redacted.</div>
+      </div>
+      <span class="mw-arrow">&rarr;</span>
+      <div class="mw-step" style="border-color: rgba(245,158,11,0.3);">
+        Dual Auth
+        <div class="tooltip">Primary: Firebase ID token verification. Fallback: X-API-Key header (when AUTH_FALLBACK_ENABLED=true). Attaches auth_source to request context.</div>
+      </div>
+      <span class="mw-arrow">&rarr;</span>
+      <div class="mw-step" style="border-color: rgba(139,92,246,0.3);">
+        Tenant Context
+        <div class="tooltip">Resolves organization and facility from X-Org-Id and X-Facility-Id headers + warehouse key. Sets multi-tenant scope for the entire request.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <svg viewBox="0 0 40 24"><line x1="20" y1="0" x2="20" y2="18" class="connector-line"/><polygon points="14,16 20,24 26,16" class="connector-arrow"/></svg>
+  </div>
+
+  <!-- APPLICATION CORE -->
+  <div class="layer layer-core">
+    <div class="layer-label">Application Core &mdash; Django Ninja API (v1)</div>
+    <div class="core-grid">
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F3E2;</span> Masters</div>
+        <div class="component-tech">app.masters</div>
+        <div class="tooltip">Master data management: Organizations, Users, Facilities, SKUs, Zones, Locations, Roles, Permissions. Multi-tenant with org-scoped access control.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F4E6;</span> Operations</div>
+        <div class="component-tech">app.operations</div>
+        <div class="tooltip">Warehouse transactions: GRN (Goods Receipt), Putaway, Move, Order Pick. Tracks Picks/Drops with full lifecycle (Pending &rarr; In Progress &rarr; Completed).</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F4CB;</span> Inventory</div>
+        <div class="component-tech">app.inventory</div>
+        <div class="tooltip">Real-time inventory visibility. InventoryBalance (on-hand, reserved, available) and InventoryLedger (full IN/OUT audit trail per transaction).</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F9E0;</span> AI Chat</div>
+        <div class="component-tech">app.ai</div>
+        <div class="tooltip">AI-powered warehouse assistant. Conversations with tool-calling LLMs (Ollama, OpenAI, Claude). pgvector embeddings for semantic search over WMS data.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F517;</span> Connectors</div>
+        <div class="component-tech">app.connectors</div>
+        <div class="tooltip">External ERP/WMS integration framework. BaseConnector abstraction with Stockone provider. Syncs products, inventory, orders, suppliers, customers.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F4C4;</span> Documents</div>
+        <div class="component-tech">app.documents</div>
+        <div class="tooltip">Transaction document generation. HTML/PDF creation per configurable templates. Uploads to Firebase Storage. Per-org/facility/type config rules.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F514;</span> Notifications</div>
+        <div class="component-tech">app.notifications</div>
+        <div class="tooltip">Real-time notifications via WebSocket (facility broadcasts, user-specific events) and Firebase Cloud Messaging (FCM) push notifications to mobile devices.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F512;</span> Auth</div>
+        <div class="component-tech">app.auth</div>
+        <div class="tooltip">Authentication &amp; authorization. Firebase token verification, user sync on first login, role-based access, warehouse key validation per facility.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <svg viewBox="0 0 40 24"><line x1="20" y1="0" x2="20" y2="18" class="connector-line"/><polygon points="14,16 20,24 26,16" class="connector-arrow"/></svg>
+  </div>
+
+  <!-- INFRASTRUCTURE -->
+  <div class="layer layer-infra">
+    <div class="layer-label">Infrastructure Layer</div>
+    <div class="components">
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F418;</span> PostgreSQL 16</div>
+        <div class="component-tech">pgvector extension <span class="protocol-badge badge-tcp">TCP</span></div>
+        <div class="tooltip">Primary data store for all domain models. pgvector extension enables 768-dim HNSW-indexed vector embeddings for AI semantic search. Multi-tenant with org-scoped indices.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x26A1;</span> Redis</div>
+        <div class="component-tech">Broker (db/0) + Results (db/1) <span class="protocol-badge badge-tcp">TCP</span></div>
+        <div class="tooltip">In-memory data store. db/0 serves as Celery message broker for async task queuing. db/1 stores task execution results and status.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x2699;</span> Celery Worker</div>
+        <div class="component-tech">Async task execution <span class="protocol-badge badge-async">ASYNC</span></div>
+        <div class="tooltip">Processes async tasks: connector syncs, document generation, FCM push notifications. Consumes from Redis broker queue.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x23F0;</span> Celery Beat</div>
+        <div class="component-tech">Periodic scheduler <span class="protocol-badge badge-async">CRON</span></div>
+        <div class="tooltip">Scheduled task dispatcher. Runs dispatch_due_connector_syncs every N minutes (configurable). Enqueues tasks to Redis for worker pickup.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">
+    <svg viewBox="0 0 40 24"><line x1="20" y1="0" x2="20" y2="18" class="connector-line"/><polygon points="14,16 20,24 26,16" class="connector-arrow"/></svg>
+  </div>
+
+  <!-- EXTERNAL SERVICES -->
+  <div class="layer layer-external">
+    <div class="layer-label">External Services</div>
+    <div class="components">
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F525;</span> Firebase</div>
+        <div class="component-tech">Auth + Storage + Realtime DB</div>
+        <div class="tooltip">Google Firebase platform. Auth for identity tokens, Storage for document uploads, Realtime DB for mobile sync. Service account key required for server-side verification.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x2601;</span> AWS Firehose</div>
+        <div class="component-tech">Structured log streaming</div>
+        <div class="tooltip">Amazon Kinesis Data Firehose. Streams structured JSON logs to S3/data lake for analytics. Configurable via LOG_DESTINATION=firehose. Falls back to stdout if unconfigured.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F4AC;</span> LLM Providers</div>
+        <div class="component-tech">Ollama / OpenAI / Claude</div>
+        <div class="tooltip">Large language model backends for AI chat. Ollama for local inference, OpenAI (GPT-4o) and Anthropic Claude for cloud. Supports tool-calling for WMS data queries.</div>
+      </div>
+      <div class="component">
+        <div class="component-name"><span class="icon">&#x1F504;</span> External ERPs</div>
+        <div class="component-tech">Stockone + future providers</div>
+        <div class="tooltip">External ERP/WMS systems connected via the Connectors framework. Stockone is the first provider. Syncs products, inventory, orders, suppliers, customers on a schedule.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Tech Stack Footer -->
+<div class="tech-stack">
+  <strong>Technology Stack</strong>
+  <div class="stack-items">
+    <span class="stack-item">Python 3.12</span>
+    <span class="stack-item">Django 5.0</span>
+    <span class="stack-item">Django Ninja</span>
+    <span class="stack-item">Uvicorn / Gunicorn</span>
+    <span class="stack-item">PostgreSQL 16</span>
+    <span class="stack-item">pgvector</span>
+    <span class="stack-item">Redis 7</span>
+    <span class="stack-item">Celery 5.4</span>
+    <span class="stack-item">Firebase Admin SDK</span>
+    <span class="stack-item">React 18</span>
+    <span class="stack-item">React Native (Expo)</span>
+    <span class="stack-item">Angular 17</span>
+    <span class="stack-item">Docker</span>
+    <span class="stack-item">Kubernetes</span>
+    <span class="stack-item">AWS (ECR, Firehose)</span>
+    <span class="stack-item">MCP (Anthropic)</span>
+  </div>
+</div>
+
+</body>
+</html>

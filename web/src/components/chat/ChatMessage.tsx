@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Message } from '../../types/chat';
 import ComponentRenderer from '../renderers/ComponentRenderer';
+import { resolveAssistantRenderState } from '../../utils/assistantContent';
 
 interface ChatMessageProps {
   message: Message;
@@ -9,6 +10,17 @@ interface ChatMessageProps {
 
 export default function ChatMessage({ message, onConfirmAction }: ChatMessageProps) {
   const isUser = message.role === 'user';
+  const assistantRenderState = !isUser
+    ? resolveAssistantRenderState(message.content, message.components)
+    : null;
+  const contentToRender = isUser ? message.content : assistantRenderState?.text ?? message.content;
+  const componentsToRender = isUser ? [] : assistantRenderState?.components ?? [];
+  const showBubble = Boolean(contentToRender);
+  const showRenderFallback =
+    !isUser &&
+    Boolean(assistantRenderState?.hideRawContent) &&
+    !contentToRender &&
+    componentsToRender.length === 0;
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -19,24 +31,30 @@ export default function ChatMessage({ message, onConfirmAction }: ChatMessagePro
         </div>
 
         {/* Message bubble */}
-        <div
-          className={`rounded-2xl px-4 py-3 ${
-            isUser
-              ? 'bg-primary-600 text-white'
-              : 'bg-white border border-gray-200 text-gray-800'
-          }`}
-        >
-          {message.content && (
+        {showBubble && (
+          <div
+            className={`rounded-2xl px-4 py-3 ${
+              isUser
+                ? 'bg-primary-600 text-white'
+                : 'bg-white border border-gray-200 text-gray-800'
+            }`}
+          >
             <div className="whitespace-pre-wrap text-sm leading-relaxed">
-              {message.content}
+              {contentToRender}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {showRenderFallback && (
+          <div className="rounded-2xl px-4 py-3 bg-gray-50 border border-gray-200 text-sm text-gray-500">
+            Structured response received, but it could not be rendered.
+          </div>
+        )}
 
         {/* Dynamic components */}
-        {message.components && message.components.length > 0 && (
+        {componentsToRender.length > 0 && (
           <div className="mt-3 space-y-3">
-            {message.components.map((component, idx) => (
+            {componentsToRender.map((component, idx) => (
               <ComponentRenderer
                 key={idx}
                 component={component}

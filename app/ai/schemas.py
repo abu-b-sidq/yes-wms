@@ -19,6 +19,11 @@ class CreateConversationRequest(Schema):
     model_name: str = "llama3.1"
 
 
+class UpdateConversationRequest(Schema):
+    model_provider: str
+    model_name: str
+
+
 class ConversationOut(Schema):
     id: str
     title: str

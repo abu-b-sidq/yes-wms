@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 
 MAX_TOOL_LOOPS = 5
 MAX_HISTORY_MESSAGES = 20
+PREFETCH_RAG_LIMIT = 5
+PREFETCH_RAG_CONTENT_TYPES = ("knowledge", "transaction", "sku", "message")
+MAX_PREFETCH_TEXT_CHARS = 500
 
 
 # ---------------------------------------------------------------------------
@@ -117,8 +120,17 @@ async def handle_chat_message(
         conversation.title = title
         await sync_to_async(conversation.save)(update_fields=["title", "updated_at"])
 
+    # Always prefetch semantic context before the first LLM call for this user message.
+    prefetched_context = await _prefetch_semantic_context(user_message, uid, org_id)
+
     # Build message history
-    messages = await _build_messages(conversation, org_id, facility_id, facility_name)
+    messages = await _build_messages(
+        conversation,
+        org_id,
+        facility_id,
+        facility_name,
+        prefetched_context=prefetched_context,
+    )
     tools = get_openai_tools()
 
     # LLM tool-calling loop
@@ -150,18 +162,7 @@ async def handle_chat_message(
             break
 
         # Process tool calls
-        messages.append({
-            "role": "assistant",
-            "content": chunk_text,
-            "tool_calls": [
-                {
-                    "id": tc["id"],
-                    "type": "function",
-                    "function": {"name": tc["name"], "arguments": json.dumps(tc["arguments"])},
-                }
-                for tc in tool_calls_in_response
-            ],
-        })
+        messages.append(_build_assistant_tool_message(chunk_text, tool_calls_in_response))
 
         for tc in tool_calls_in_response:
             tool_name = tc["name"]
@@ -260,11 +261,17 @@ async def _build_messages(
     org_id: str,
     facility_id: str | None,
     facility_name: str | None,
+    prefetched_context: list[dict] | None = None,
 ) -> list[dict]:
     """Build the messages array for the LLM from conversation history."""
     system_prompt = build_system_prompt(org_id, facility_id, facility_name)
 
     messages = [{"role": "system", "content": system_prompt}]
+    if prefetched_context is not None:
+        messages.append({
+            "role": "system",
+            "content": _build_prefetched_context_prompt(prefetched_context),
+        })
 
     history = await sync_to_async(
         lambda: list(
@@ -281,6 +288,59 @@ async def _build_messages(
         messages.append(entry)
 
     return messages
+
+
+async def _prefetch_semantic_context(
+    user_message: str,
+    uid: str,
+    org_id: str,
+) -> list[dict] | None:
+    """Fetch semantic context before the first model call for a user message."""
+    query = user_message.strip()
+    if not query:
+        return None
+
+    from app.mcp.tools import wms_semantic_search
+
+    try:
+        results = await wms_semantic_search(
+            org_id=org_id,
+            query=query,
+            content_types=list(PREFETCH_RAG_CONTENT_TYPES),
+            limit=PREFETCH_RAG_LIMIT,
+            uid=uid,
+        )
+        logger.info("Prefetched semantic context for org=%s hits=%d", org_id, len(results))
+        return results
+    except Exception:
+        logger.exception("Pre-LLM semantic prefetch failed for org=%s", org_id)
+        return None
+
+
+def _build_prefetched_context_prompt(results: list[dict]) -> str:
+    """Format deterministic prefetch hits as supplemental context for the model."""
+    intro = (
+        "Semantic context has already been prefetched for the current user message "
+        "before this first model call. Treat it as supplemental context. Use live "
+        "WMS tools for authoritative current-state answers and call "
+        "`wms_semantic_search` again only if you need narrower or follow-up retrieval."
+    )
+
+    if not results:
+        return (
+            f"{intro}\n\n"
+            "Prefetched semantic context result: no relevant matches were found."
+        )
+
+    lines = [intro, "", "Prefetched semantic matches:"]
+    for idx, item in enumerate(results, start=1):
+        text = _truncate_text(str(item.get("text", "")), MAX_PREFETCH_TEXT_CHARS)
+        lines.append(
+            f"{idx}. type={item.get('type', 'unknown')} "
+            f"id={item.get('id', '')} score={item.get('score', '')}"
+        )
+        lines.append(f"   text={text}")
+    return "\n".join(lines)
 
 
 def _parse_response(text: str) -> dict | None:
@@ -304,6 +364,25 @@ def _parse_response(text: str) -> dict | None:
     except (json.JSONDecodeError, ValueError):
         pass
     return None
+
+
+def _build_assistant_tool_message(chunk_text: str, tool_calls_in_response: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build a provider-safe assistant tool-call message for the next LLM round."""
+    return {
+        "role": "assistant",
+        "content": chunk_text,
+        "tool_calls": [
+            {
+                "id": tc["id"],
+                "type": "function",
+                "function": {
+                    "name": tc["name"],
+                    "arguments": tc["arguments"],
+                },
+            }
+            for tc in tool_calls_in_response
+        ],
+    }
 
 
 def _tool_display_name(tool_name: str) -> str:
@@ -333,3 +412,11 @@ def _dict_to_fields(d: dict) -> list[dict]:
             value = json.dumps(value, default=str)
         fields.append({"label": key.replace("_", " ").title(), "value": str(value)})
     return fields
+
+
+def _truncate_text(text: str, max_chars: int) -> str:
+    """Collapse whitespace and trim long semantic matches before prompt injection."""
+    normalized = " ".join(text.split())
+    if len(normalized) <= max_chars:
+        return normalized
+    return normalized[: max_chars - 3].rstrip() + "..."
