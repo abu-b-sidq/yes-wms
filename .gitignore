@@ -15,9 +15,18 @@ htmlcov/
 *~
 
 
+logs/
+*.log
+celerybeat-schedule
+test-results/
+ops-dashboard/.angular/
+staticfiles/
+mobile/package-lock.json
+package-lock.json
+package.json
+
 # Frontend dependencies
-/ops-dashboard/node_modules/
-/web/node_modules/
+node_modules/
 ops-dashboard/.angular/*
 
 logs/*
