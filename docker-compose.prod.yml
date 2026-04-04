@@ -37,6 +37,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   celery-worker:
     build: .
@@ -54,6 +56,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   celery-beat:
     build: .
@@ -71,7 +75,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   web:
     build:
       context: ./web
