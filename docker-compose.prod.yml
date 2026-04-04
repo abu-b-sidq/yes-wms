@@ -21,13 +21,16 @@ services:
       PYTHONPATH: /app
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
-    command: >
-      sh -c "python manage.py collectstatic --noinput &&
-             python manage.py migrate &&
-             gunicorn wms_middleware.asgi:application
-               -k uvicorn.workers.UvicornWorker
-               --bind 0.0.0.0:8000
-               --workers 4"
+    command:
+      - sh
+      - -c
+      - |
+        python manage.py collectstatic --noinput &&
+        python manage.py migrate &&
+        gunicorn wms_middleware.asgi:application \
+          -k uvicorn.workers.UvicornWorker \
+          --bind 0.0.0.0:8000 \
+          --workers 4
     depends_on:
       redis:
         condition: service_healthy
