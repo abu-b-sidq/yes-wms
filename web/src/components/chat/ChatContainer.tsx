@@ -93,7 +93,7 @@ export default function ChatContainer({
         <div className="mx-auto flex h-full max-w-4xl flex-col justify-center">
           <div className="flex flex-col items-center text-center">
             <div className="pulse-soft rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(212,234,114,0.88)_0%,rgba(121,191,100,0.9)_44%,rgba(47,106,79,0.96)_100%)] p-[2px] shadow-[0_20px_60px_rgba(91,159,78,0.22)]">
-              <div className="rounded-full bg-[rgba(8,19,17,0.86)] p-2">
+              <div className="rounded-full bg-[var(--ops-card-bg)] p-2">
                 <AssistantAvatar size="md" />
               </div>
             </div>
@@ -137,7 +137,7 @@ export default function ChatContainer({
                   <button
                     key={card.title}
                     onClick={() => onSend(card.prompt)}
-                    className="ops-card-soft rounded-[22px] px-4 py-3.5 text-left transition hover:-translate-y-0.5 hover:border-[var(--ops-border-strong)] hover:bg-[rgba(255,255,255,0.06)]"
+                    className="ops-card-soft rounded-[22px] px-4 py-3.5 text-left transition hover:-translate-y-0.5 hover:border-[var(--ops-border-strong)] hover:bg-[var(--ops-subtle-fill-strong)]"
                   >
                     <p className="text-sm font-semibold text-[var(--ops-text)]">{card.title}</p>
                     <p className="mt-1.5 text-sm leading-5 text-[var(--ops-text-muted)]">{card.description}</p>
@@ -179,7 +179,7 @@ export default function ChatContainer({
                   )}
 
                   {showStreamingBubble && (
-                    <div className="rounded-[26px] border border-[var(--ops-border)] bg-[linear-gradient(180deg,rgba(20,40,34,0.96)_0%,rgba(13,28,23,0.96)_100%)] px-4 py-3.5 shadow-[0_16px_36px_rgba(3,13,10,0.18)]">
+                    <div className="ops-chat-bubble rounded-[26px] px-4 py-3.5">
                       <div className="cursor-blink whitespace-pre-wrap text-sm leading-7 text-[var(--ops-text)]">
                         {streamingRenderState.text}
                       </div>
@@ -187,7 +187,7 @@ export default function ChatContainer({
                   )}
 
                   {!showStreamingBubble && !activeToolCall && !showStructuredPlaceholder && (
-                    <div className="flex items-center gap-2 rounded-[26px] border border-[var(--ops-border)] bg-[linear-gradient(180deg,rgba(20,40,34,0.96)_0%,rgba(13,28,23,0.96)_100%)] px-4 py-3.5 shadow-[0_16px_36px_rgba(3,13,10,0.18)]">
+                    <div className="ops-chat-bubble flex items-center gap-2 rounded-[26px] px-4 py-3.5">
                       <div className="flex gap-1">
                         <div className="h-2 w-2 animate-bounce rounded-full bg-[var(--ops-text-soft)]" style={{ animationDelay: '0ms' }} />
                         <div className="h-2 w-2 animate-bounce rounded-full bg-[var(--ops-text-soft)]" style={{ animationDelay: '150ms' }} />
@@ -198,7 +198,7 @@ export default function ChatContainer({
                   )}
 
                   {showStructuredPlaceholder && (
-                    <div className="flex items-center gap-2 rounded-[26px] border border-[var(--ops-border)] bg-[linear-gradient(180deg,rgba(20,40,34,0.96)_0%,rgba(13,28,23,0.96)_100%)] px-4 py-3.5 text-sm text-[var(--ops-text-muted)] shadow-[0_16px_36px_rgba(3,13,10,0.18)]">
+                    <div className="ops-chat-bubble flex items-center gap-2 rounded-[26px] px-4 py-3.5 text-sm text-[var(--ops-text-muted)]">
                       <div className="flex gap-1">
                         <div className="h-2 w-2 animate-bounce rounded-full bg-[var(--ops-text-soft)]" style={{ animationDelay: '0ms' }} />
                         <div className="h-2 w-2 animate-bounce rounded-full bg-[var(--ops-text-soft)]" style={{ animationDelay: '150ms' }} />

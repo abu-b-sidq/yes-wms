@@ -20,7 +20,7 @@ export default function AssistantAvatar({
 }: AssistantAvatarProps) {
   return (
     <div
-      className={`relative overflow-hidden border border-[rgba(212,234,114,0.18)] bg-[radial-gradient(circle_at_18%_20%,rgba(212,234,114,0.18),transparent_34%),linear-gradient(180deg,rgba(18,38,32,0.98)_0%,rgba(11,24,20,0.99)_100%)] shadow-[0_24px_80px_rgba(3,13,10,0.3)] ${sizeClasses[size]} ${className}`}
+      className={`ops-avatar-shell relative overflow-hidden ${sizeClasses[size]} ${className}`}
     >
       <div className="pointer-events-none absolute inset-x-5 top-1 h-10 rounded-full bg-[rgba(121,191,100,0.3)] blur-2xl" />
       <img

@@ -44,7 +44,7 @@ export default function ChatInput({
       className={
         isHero
           ? 'ops-input-shell rounded-[28px] p-4'
-          : 'border-t border-[var(--ops-line-soft)] bg-[rgba(10,20,17,0.82)] p-3.5 backdrop-blur-xl'
+          : 'ops-dock-shell p-3.5'
       }
     >
       <div className={isHero ? '' : 'mx-auto flex max-w-4xl items-end gap-3'}>

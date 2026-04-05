@@ -72,7 +72,7 @@ export default function NotificationPanel({ facilityId }: NotificationPanelProps
 
           <div className="chat-scroll max-h-80 space-y-2 overflow-y-auto px-1">
             {notifications.length === 0 ? (
-              <div className="rounded-[22px] border border-dashed border-[var(--ops-border)] bg-[rgba(255,255,255,0.02)] px-4 py-8 text-center text-sm text-[var(--ops-text-soft)]">
+              <div className="rounded-[22px] border border-dashed border-[var(--ops-border)] bg-[var(--ops-subtle-fill)] px-4 py-8 text-center text-sm text-[var(--ops-text-soft)]">
                 No notifications yet
               </div>
             ) : (

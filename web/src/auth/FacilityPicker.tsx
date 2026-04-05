@@ -55,7 +55,7 @@ export default function FacilityPicker() {
                 key={facility.code}
                 onClick={() => chooseFacility(facility)}
                 disabled={facilityLoading}
-                className="ops-card-soft group w-full rounded-[22px] px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-[var(--ops-border-strong)] hover:bg-[rgba(255,255,255,0.06)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="ops-card-soft group w-full rounded-[22px] px-4 py-4 text-left transition hover:-translate-y-0.5 hover:border-[var(--ops-border-strong)] hover:bg-[var(--ops-subtle-fill-strong)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>

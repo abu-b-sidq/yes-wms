@@ -195,6 +195,28 @@ def _check(uid: str, org_id: str | None, permission: str | None = None):
     return access
 
 
+def _require_analytics_access(uid: str, org_id: str):
+    from app.auth.authorization import get_mcp_access_context
+    from app.auth.permissions import (
+        PERM_INVENTORY_READ,
+        PERM_MASTERS_READ,
+        PERM_TRANSACTIONS_READ,
+    )
+
+    access = get_mcp_access_context(uid, org_id)
+    required_permissions = {
+        PERM_MASTERS_READ,
+        PERM_INVENTORY_READ,
+        PERM_TRANSACTIONS_READ,
+    }
+    if not access.is_platform_admin and not required_permissions.issubset(access.permission_codes):
+        raise AuthorizationError(
+            "You do not have permission to access analytical tools.",
+            code="AUTHZ_FORBIDDEN",
+        )
+    return access
+
+
 # ---------------------------------------------------------------------------
 # Masters tools
 # ---------------------------------------------------------------------------
@@ -248,6 +270,51 @@ def wms_list_locations(org_id: str, uid: str = "") -> list[dict]:
     _check(uid, org_id, PERM_MASTERS_READ)
     org = _resolve_org(org_id)
     return [_location(loc) for loc in list_locations(org)]
+
+
+@sync_to_async
+def wms_describe_schema(
+    org_id: str,
+    table_names: list[str] | None = None,
+    uid: str = "",
+) -> dict:
+    from app.mcp.analytics import describe_schema
+
+    _require_analytics_access(uid, org_id)
+    return describe_schema(table_names=table_names)
+
+
+@sync_to_async
+def wms_execute_analytical_query(
+    org_id: str,
+    sql: str,
+    limit: int = 200,
+    facility_id: str | None = None,
+    uid: str = "",
+) -> dict:
+    from app.auth.authorization import enforce_facility_scope
+    from app.mcp.analytics import execute_analytical_query
+
+    access = _require_analytics_access(uid, org_id)
+    if not facility_id and access.allowed_facility_codes:
+        raise AuthorizationError(
+            "Facility-restricted users must specify facility_id.",
+            code="AUTHZ_FACILITY_SCOPE_REQUIRED",
+        )
+
+    org = _resolve_org(org_id)
+    facility = None
+    if facility_id:
+        enforce_facility_scope(access, facility_id)
+        facility = _resolve_facility(org, facility_id)
+
+    return execute_analytical_query(
+        sql=sql,
+        org_id=org_id,
+        facility_code=facility_id,
+        facility_pk=str(facility.id) if facility else None,
+        limit=limit,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -517,7 +584,7 @@ async def wms_semantic_search(
     """Semantic similarity search over embedded WMS data."""
     from app.auth.permissions import PERM_INVENTORY_READ
     from app.ai.embeddings import embed_text, semantic_search
-    _check(uid, org_id, PERM_INVENTORY_READ)
+    await sync_to_async(_check)(uid, org_id, PERM_INVENTORY_READ)
     types = content_types or ["transaction", "sku", "message", "knowledge"]
     vector = await embed_text(query)
     results = await sync_to_async(semantic_search)(vector, org_id, types, min(limit, 10))

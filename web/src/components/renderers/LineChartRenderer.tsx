@@ -10,9 +10,18 @@ export default function LineChartRenderer({ component }: { component: LineChartC
       )}
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={component.data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-          <XAxis dataKey={component.x_key} tick={{ fontSize: 12 }} />
-          <YAxis tick={{ fontSize: 12 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--ops-chart-grid)" />
+          <XAxis
+            dataKey={component.x_key}
+            tick={{ fontSize: 12, fill: 'var(--ops-text-soft)' }}
+            axisLine={{ stroke: 'var(--ops-line-soft)' }}
+            tickLine={{ stroke: 'var(--ops-line-soft)' }}
+          />
+          <YAxis
+            tick={{ fontSize: 12, fill: 'var(--ops-text-soft)' }}
+            axisLine={{ stroke: 'var(--ops-line-soft)' }}
+            tickLine={{ stroke: 'var(--ops-line-soft)' }}
+          />
           <Tooltip />
           <Line
             type="monotone"

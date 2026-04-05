@@ -129,12 +129,12 @@ export default function DataTable({ component }: { component: TableComponent }) 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-[rgba(255,255,255,0.03)]">
+            <tr className="bg-[var(--ops-subtle-fill)]">
               {derivedColumns.map((col, idx) => (
                 <th
                   key={idx}
                   onClick={() => handleSort(idx)}
-                  className="cursor-pointer select-none px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--ops-text-muted)] transition hover:bg-[rgba(255,255,255,0.04)]"
+                  className="cursor-pointer select-none px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--ops-text-muted)] transition hover:bg-[var(--ops-subtle-fill-strong)]"
                 >
                   <span className="flex items-center gap-1">
                     {col}

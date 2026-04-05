@@ -4,7 +4,10 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
+from datetime import date, datetime, time
+from decimal import Decimal
 from typing import Any, AsyncIterator
+from uuid import UUID
 
 from asgiref.sync import sync_to_async
 
@@ -12,6 +15,7 @@ from app.ai.llm_providers import StreamChunk, get_provider
 from app.ai.system_prompt import build_system_prompt
 from app.ai.tool_definitions import get_openai_tools
 from app.ai.tool_executor import execute_tool, is_mutation_tool, summarize_result
+from app.core.logging_utils import log_event
 
 logger = logging.getLogger(__name__)
 
@@ -60,196 +64,320 @@ async def handle_chat_message(
     """
     from app.ai.models import Conversation, Message
 
-    # Load conversation
-    conversation = await sync_to_async(
-        lambda: Conversation.objects.select_related("user", "facility").get(id=conversation_id)
-    )()
+    execution_log: list[dict[str, Any]] = []
+    provider_name = model_provider
+    model = model_name
+    assistant_message_id: str | None = None
+    completion_status = "completed"
+    failure: dict[str, str] | None = None
+    tool_call_log: list[dict] = []
+    components: list[dict] = []
 
-    provider_name = model_provider or conversation.model_provider
-    model = model_name or conversation.model_name
-    provider = get_provider(provider_name)
+    try:
+        # Load conversation
+        conversation = await sync_to_async(
+            lambda: Conversation.objects.select_related("user", "facility").get(id=conversation_id)
+        )()
 
-    # Handle action confirmation
-    if confirm_action:
-        yield SSEEvent("tool_call", {"name": confirm_action["action"], "status": "executing"})
-        try:
-            result = await execute_tool(
-                confirm_action["action"],
-                confirm_action.get("parameters", {}),
-                uid=uid,
-                org_id=org_id,
-                facility_id=facility_id,
+        provider_name = model_provider or conversation.model_provider
+        model = model_name or conversation.model_name
+        provider = get_provider(provider_name)
+        _append_execution_step(
+            execution_log,
+            "conversation_loaded",
+            model_provider=provider_name,
+            model_name=model,
+            has_facility=bool(conversation.facility_id),
+        )
+
+        # Handle action confirmation
+        if confirm_action:
+            _append_execution_step(
+                execution_log,
+                "confirmation_received",
+                action=confirm_action["action"],
             )
-            result_text = json.dumps(result, indent=2, default=str)
-            # Save as assistant message
-            await sync_to_async(Message.objects.create)(
-                conversation=conversation,
-                role=Message.Role.ASSISTANT,
-                content=f"Action completed successfully.",
-                tool_results=[{"tool": confirm_action["action"], "result": result}],
-                components=[{
+            yield SSEEvent("tool_call", {"name": confirm_action["action"], "status": "executing"})
+            try:
+                result = await execute_tool(
+                    confirm_action["action"],
+                    confirm_action.get("parameters", {}),
+                    uid=uid,
+                    org_id=org_id,
+                    facility_id=facility_id,
+                )
+                result_text = json.dumps(result, indent=2, default=str)
+                _append_execution_step(
+                    execution_log,
+                    "confirmation_executed",
+                    action=confirm_action["action"],
+                    result=_summarize_result_for_log(result),
+                )
+                # Save as assistant message
+                assistant_msg = await sync_to_async(Message.objects.create)(
+                    conversation=conversation,
+                    role=Message.Role.ASSISTANT,
+                    content="Action completed successfully.",
+                    tool_results=[{"tool": confirm_action["action"], "result": _json_safe(result)}],
+                    components=[{
+                        "type": "detail_card",
+                        "title": f"{confirm_action['action']} Result",
+                        "fields": _dict_to_fields(result) if isinstance(result, dict) else [{"label": "Result", "value": result_text}],
+                    }],
+                )
+                assistant_message_id = str(assistant_msg.id)
+                yield SSEEvent("tool_result", {"name": confirm_action["action"], "status": "success"})
+                yield SSEEvent("components", [{
                     "type": "detail_card",
                     "title": f"{confirm_action['action']} Result",
                     "fields": _dict_to_fields(result) if isinstance(result, dict) else [{"label": "Result", "value": result_text}],
-                }],
-            )
-            yield SSEEvent("tool_result", {"name": confirm_action["action"], "status": "success"})
-            yield SSEEvent("components", [{
-                "type": "detail_card",
-                "title": f"{confirm_action['action']} Result",
-                "fields": _dict_to_fields(result) if isinstance(result, dict) else [{"label": "Result", "value": result_text}],
-            }])
-            yield SSEEvent("done", {"message_id": "", "text": "Action completed successfully."})
-            return
-        except Exception as exc:
-            yield SSEEvent("error", {"message": str(exc)})
-            yield SSEEvent("done", {"message_id": "", "text": f"Action failed: {exc}"})
-            return
-
-    # Save user message
-    await sync_to_async(Message.objects.create)(
-        conversation=conversation,
-        role=Message.Role.USER,
-        content=user_message,
-    )
-
-    # Auto-generate title from first message
-    msg_count = await sync_to_async(conversation.messages.count)()
-    if msg_count == 1:
-        title = user_message[:100].strip()
-        conversation.title = title
-        await sync_to_async(conversation.save)(update_fields=["title", "updated_at"])
-
-    # Always prefetch semantic context before the first LLM call for this user message.
-    prefetched_context = await _prefetch_semantic_context(user_message, uid, org_id)
-
-    # Build message history
-    messages = await _build_messages(
-        conversation,
-        org_id,
-        facility_id,
-        facility_name,
-        prefetched_context=prefetched_context,
-    )
-    tools = get_openai_tools()
-
-    # LLM tool-calling loop
-    full_text = ""
-    components: list[dict] = []
-    tool_call_log: list[dict] = []
-
-    for loop_idx in range(MAX_TOOL_LOOPS):
-        tool_calls_in_response: list[dict] = []
-        chunk_text = ""
-
-        async for chunk in provider.chat_completion(messages, tools, model):
-            if chunk.delta_text:
-                chunk_text += chunk.delta_text
-                yield SSEEvent("token", {"text": chunk.delta_text})
-
-            if chunk.tool_calls:
-                for tc in chunk.tool_calls:
-                    tool_calls_in_response.append({
-                        "id": tc.id,
-                        "name": tc.name,
-                        "arguments": tc.arguments,
-                    })
-
-        full_text += chunk_text
-
-        # No tool calls — we're done
-        if not tool_calls_in_response:
-            break
-
-        # Process tool calls
-        messages.append(_build_assistant_tool_message(chunk_text, tool_calls_in_response))
-
-        for tc in tool_calls_in_response:
-            tool_name = tc["name"]
-            tool_args = tc["arguments"]
-
-            # Mutations require confirmation — don't execute, return dialog
-            if is_mutation_tool(tool_name):
-                yield SSEEvent("tool_call", {"name": tool_name, "status": "needs_confirmation", "args": tool_args})
-                confirmation_component = {
-                    "type": "confirmation_dialog",
-                    "title": _tool_display_name(tool_name),
-                    "description": _describe_mutation(tool_name, tool_args),
-                    "action": tool_name,
-                    "parameters": tool_args,
-                    "requires_confirmation": True,
-                }
-                components.append(confirmation_component)
-                # Add a tool result that tells the LLM we're waiting for confirmation
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc["id"],
-                    "content": "PENDING_USER_CONFIRMATION: This action requires user confirmation before execution. A confirmation dialog has been shown to the user.",
-                })
-                continue
-
-            yield SSEEvent("tool_call", {"name": tool_name, "status": "executing"})
-            try:
-                result = await execute_tool(
-                    tool_name, tool_args,
-                    uid=uid, org_id=org_id, facility_id=facility_id,
-                )
-                result_summary = summarize_result(result)
-                tool_call_log.append({"tool": tool_name, "args": tool_args, "result": result})
-                yield SSEEvent("tool_result", {"name": tool_name, "status": "success", "count": len(result) if isinstance(result, list) else 1})
-
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc["id"],
-                    "content": result_summary,
-                })
-
+                }])
+                yield SSEEvent("done", {"message_id": "", "text": "Action completed successfully."})
+                return
             except Exception as exc:
-                logger.exception("Tool %s failed", tool_name)
-                yield SSEEvent("tool_result", {"name": tool_name, "status": "error", "error": str(exc)})
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tc["id"],
-                    "content": f"Error: {exc}",
-                })
+                completion_status = "failed"
+                failure = {"type": exc.__class__.__name__, "message": str(exc)}
+                _append_execution_step(
+                    execution_log,
+                    "confirmation_failed",
+                    action=confirm_action["action"],
+                    error=failure,
+                )
+                yield SSEEvent("error", {"message": str(exc)})
+                yield SSEEvent("done", {"message_id": "", "text": f"Action failed: {exc}"})
+                return
 
-        # If all remaining tool calls were mutations needing confirmation, break
-        if all(is_mutation_tool(tc["name"]) for tc in tool_calls_in_response):
-            break
-
-    # Parse the final LLM response for structured components
-    parsed = _parse_response(full_text)
-    if parsed:
-        if parsed.get("text"):
-            full_text = parsed["text"]
-        if parsed.get("components"):
-            components.extend(parsed["components"])
-
-    if components:
-        yield SSEEvent("components", components)
-
-    # Save assistant message
-    assistant_msg = await sync_to_async(Message.objects.create)(
-        conversation=conversation,
-        role=Message.Role.ASSISTANT,
-        content=full_text,
-        components=components or None,
-        tool_calls=tool_call_log or None,
-    )
-
-    # Update conversation timestamp
-    await sync_to_async(conversation.save)(update_fields=["updated_at"])
-
-    # Embed the Q+A pair for future semantic retrieval (fire-and-forget)
-    if full_text and user_message:
-        import asyncio
-        from app.ai.embeddings import upsert_embedding
-        embed_text = f"Q: {user_message}\nA: {full_text}"
-        asyncio.create_task(
-            upsert_embedding("message", str(assistant_msg.id), org_id, embed_text)
+        # Save user message
+        await sync_to_async(Message.objects.create)(
+            conversation=conversation,
+            role=Message.Role.USER,
+            content=user_message,
+        )
+        _append_execution_step(
+            execution_log,
+            "user_message_saved",
+            message_chars=len(user_message),
         )
 
-    yield SSEEvent("done", {"message_id": str(assistant_msg.id), "text": full_text})
+        # Auto-generate title from first message
+        msg_count = await sync_to_async(conversation.messages.count)()
+        if msg_count == 1:
+            title = user_message[:100].strip()
+            conversation.title = title
+            await sync_to_async(conversation.save)(update_fields=["title", "updated_at"])
+            _append_execution_step(
+                execution_log,
+                "conversation_titled",
+                title=title,
+            )
+
+        # Always prefetch semantic context before the first LLM call for this user message.
+        prefetched_context = await _prefetch_semantic_context(user_message, uid, org_id)
+        _append_execution_step(
+            execution_log,
+            "semantic_context_prefetched",
+            hit_count=len(prefetched_context or []),
+        )
+
+        # Build message history
+        messages = await _build_messages(
+            conversation,
+            org_id,
+            facility_id,
+            facility_name,
+            prefetched_context=prefetched_context,
+        )
+        tools = get_openai_tools()
+        _append_execution_step(
+            execution_log,
+            "llm_context_built",
+            message_count=len(messages),
+            tool_count=len(tools),
+        )
+
+        # LLM tool-calling loop
+        full_text = ""
+
+        for loop_idx in range(MAX_TOOL_LOOPS):
+            tool_calls_in_response: list[dict] = []
+            chunk_text = ""
+
+            async for chunk in provider.chat_completion(messages, tools, model):
+                if chunk.delta_text:
+                    chunk_text += chunk.delta_text
+                    yield SSEEvent("token", {"text": chunk.delta_text})
+
+                if chunk.tool_calls:
+                    for tc in chunk.tool_calls:
+                        tool_calls_in_response.append({
+                            "id": tc.id,
+                            "name": tc.name,
+                            "arguments": tc.arguments,
+                        })
+
+            full_text += chunk_text
+            _append_execution_step(
+                execution_log,
+                "llm_round_completed",
+                round=loop_idx + 1,
+                response_chars=len(chunk_text),
+                tool_call_count=len(tool_calls_in_response),
+            )
+
+            # No tool calls — we're done
+            if not tool_calls_in_response:
+                break
+
+            # Process tool calls
+            messages.append(_build_assistant_tool_message(chunk_text, tool_calls_in_response))
+
+            for tc in tool_calls_in_response:
+                tool_name = tc["name"]
+                tool_args = tc["arguments"]
+
+                # Mutations require confirmation — don't execute, return dialog
+                if is_mutation_tool(tool_name):
+                    _append_execution_step(
+                        execution_log,
+                        "tool_confirmation_requested",
+                        tool=tool_name,
+                    )
+                    yield SSEEvent("tool_call", {"name": tool_name, "status": "needs_confirmation", "args": tool_args})
+                    confirmation_component = {
+                        "type": "confirmation_dialog",
+                        "title": _tool_display_name(tool_name),
+                        "description": _describe_mutation(tool_name, tool_args),
+                        "action": tool_name,
+                        "parameters": tool_args,
+                        "requires_confirmation": True,
+                    }
+                    components.append(confirmation_component)
+                    # Add a tool result that tells the LLM we're waiting for confirmation
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": "PENDING_USER_CONFIRMATION: This action requires user confirmation before execution. A confirmation dialog has been shown to the user.",
+                    })
+                    continue
+
+                yield SSEEvent("tool_call", {"name": tool_name, "status": "executing"})
+                try:
+                    result = await execute_tool(
+                        tool_name, tool_args,
+                        uid=uid, org_id=org_id, facility_id=facility_id,
+                    )
+                    result_summary = summarize_result(result)
+                    tool_call_log.append({
+                        "tool": tool_name,
+                        "args": _json_safe(tool_args),
+                        "result": _json_safe(result),
+                    })
+                    _append_execution_step(
+                        execution_log,
+                        "tool_executed",
+                        tool=tool_name,
+                        result=_summarize_result_for_log(result),
+                    )
+                    yield SSEEvent("tool_result", {"name": tool_name, "status": "success", "count": len(result) if isinstance(result, list) else 1})
+
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": result_summary,
+                    })
+
+                except Exception as exc:
+                    logger.exception("Tool %s failed", tool_name)
+                    _append_execution_step(
+                        execution_log,
+                        "tool_failed",
+                        tool=tool_name,
+                        error={"type": exc.__class__.__name__, "message": str(exc)},
+                    )
+                    yield SSEEvent("tool_result", {"name": tool_name, "status": "error", "error": str(exc)})
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": f"Error: {exc}",
+                    })
+
+            # If all remaining tool calls were mutations needing confirmation, break
+            if all(is_mutation_tool(tc["name"]) for tc in tool_calls_in_response):
+                break
+
+        # Parse the final LLM response for structured components
+        parsed = _parse_response(full_text)
+        if parsed:
+            if parsed.get("text"):
+                full_text = parsed["text"]
+            if parsed.get("components"):
+                components.extend(parsed["components"])
+            _append_execution_step(
+                execution_log,
+                "llm_response_parsed",
+                component_count=len(parsed.get("components") or []),
+            )
+
+        if components:
+            yield SSEEvent("components", components)
+
+        # Save assistant message
+        assistant_msg = await sync_to_async(Message.objects.create)(
+            conversation=conversation,
+            role=Message.Role.ASSISTANT,
+            content=full_text,
+            components=components or None,
+            tool_calls=tool_call_log or None,
+        )
+        assistant_message_id = str(assistant_msg.id)
+        _append_execution_step(
+            execution_log,
+            "assistant_message_saved",
+            message_id=assistant_message_id,
+            response_chars=len(full_text),
+            component_count=len(components),
+            tool_call_count=len(tool_call_log),
+        )
+
+        # Update conversation timestamp
+        await sync_to_async(conversation.save)(update_fields=["updated_at"])
+
+        # Embed the Q+A pair for future semantic retrieval (fire-and-forget)
+        if full_text and user_message:
+            import asyncio
+            from app.ai.embeddings import upsert_embedding
+            embed_text = f"Q: {user_message}\nA: {full_text}"
+            asyncio.create_task(
+                upsert_embedding("message", str(assistant_msg.id), org_id, embed_text)
+            )
+
+        yield SSEEvent("done", {"message_id": str(assistant_msg.id), "text": full_text})
+    except Exception as exc:
+        completion_status = "failed"
+        failure = {"type": exc.__class__.__name__, "message": str(exc)}
+        _append_execution_step(
+            execution_log,
+            "thread_failed",
+            error=failure,
+        )
+        raise
+    finally:
+        log_event(
+            logger,
+            logging.ERROR if completion_status == "failed" else logging.INFO,
+            "ai.thread.execution",
+            thread_id=conversation_id,
+            conversation_id=conversation_id,
+            status=completion_status,
+            uid=uid,
+            org_id=org_id,
+            facility_id=facility_id,
+            model_provider=provider_name,
+            model_name=model,
+            assistant_message_id=assistant_message_id,
+            execution_log=execution_log,
+            error=failure,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -385,6 +513,33 @@ def _build_assistant_tool_message(chunk_text: str, tool_calls_in_response: list[
     }
 
 
+def _append_execution_step(
+    execution_log: list[dict[str, Any]],
+    step: str,
+    **data: Any,
+) -> None:
+    entry = {"step": step}
+    entry.update(data)
+    execution_log.append(entry)
+
+
+def _summarize_result_for_log(result: Any) -> dict[str, Any]:
+    if isinstance(result, list):
+        return {
+            "type": "list",
+            "count": len(result),
+        }
+    if isinstance(result, dict):
+        return {
+            "type": "dict",
+            "keys": sorted(str(key) for key in result.keys())[:10],
+        }
+    return {
+        "type": type(result).__name__,
+        "preview": _truncate_text(str(result), 200),
+    }
+
+
 def _tool_display_name(tool_name: str) -> str:
     """Convert tool name to a human-readable display name."""
     return tool_name.replace("wms_", "").replace("_", " ").title()
@@ -420,3 +575,23 @@ def _truncate_text(text: str, max_chars: int) -> str:
     if len(normalized) <= max_chars:
         return normalized
     return normalized[: max_chars - 3].rstrip() + "..."
+
+
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, (datetime, date, time)):
+        return value.isoformat()
+    if isinstance(value, UUID):
+        return str(value)
+    if isinstance(value, memoryview):
+        return value.tobytes().hex()
+    if isinstance(value, bytes):
+        return value.hex()
+    return value

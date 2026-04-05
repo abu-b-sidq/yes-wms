@@ -54,10 +54,10 @@ export default function ChatMessage({ message, onConfirmAction }: ChatMessagePro
 
           {showBubble && (
             <div
-              className={`rounded-[26px] px-4 py-3.5 shadow-[0_16px_36px_rgba(3,13,10,0.18)] ${
+              className={`rounded-[26px] px-4 py-3.5 ${
                 isUser
                   ? 'border border-[rgba(212,234,114,0.14)] bg-[linear-gradient(180deg,rgba(121,191,100,0.96)_0%,rgba(95,159,78,0.96)_100%)] text-[var(--ops-primary-contrast)]'
-                  : 'border border-[var(--ops-border)] bg-[linear-gradient(180deg,rgba(20,40,34,0.96)_0%,rgba(13,28,23,0.96)_100%)] text-[var(--ops-text)]'
+                  : 'ops-chat-bubble text-[var(--ops-text)]'
               }`}
             >
               <div className="whitespace-pre-wrap text-sm leading-7">{contentToRender}</div>
@@ -65,7 +65,7 @@ export default function ChatMessage({ message, onConfirmAction }: ChatMessagePro
           )}
 
           {showRenderFallback && (
-            <div className="rounded-[26px] border border-[var(--ops-border)] bg-[rgba(255,255,255,0.03)] px-4 py-3 text-sm text-[var(--ops-text-muted)]">
+            <div className="rounded-[26px] border border-[var(--ops-border)] bg-[var(--ops-subtle-fill)] px-4 py-3 text-sm text-[var(--ops-text-muted)]">
               Structured response received, but it could not be rendered.
             </div>
           )}

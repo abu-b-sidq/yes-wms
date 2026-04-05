@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>handle_chat_message Flow — YES WMS</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #263348;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent-blue: #3b82f6;
+    --accent-blue-dim: #1d4ed8;
+    --accent-green: #10b981;
+    --accent-green-dim: #065f46;
+    --accent-amber: #f59e0b;
+    --accent-amber-dim: #78350f;
+    --accent-red: #ef4444;
+    --accent-red-dim: #7f1d1d;
+    --accent-cyan: #06b6d4;
+    --accent-purple: #8b5cf6;
+    --accent-indigo: #6366f1;
+    --connector: #475569;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 32px 24px 64px;
+  }
+
+  /* ── Header ──────────────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .header h1 span { color: var(--accent-blue); }
+  .header .subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .entry-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--accent-cyan);
+    font-family: 'Courier New', monospace;
+  }
+  .entry-badge .method {
+    background: var(--accent-green-dim);
+    color: var(--accent-green);
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .entry-badge .resp-type {
+    background: #0d1d33;
+    color: var(--accent-blue);
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 11px;
+  }
+  .entry-badge .sep { color: var(--border); }
+
+  /* ── Layout ──────────────────────────────────────────── */
+  .diagram-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 230px;
+    gap: 24px;
+    max-width: 1120px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  /* ── Flow column ─────────────────────────────────────── */
+  .flow-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Node ────────────────────────────────────────────── */
+  .node {
+    width: 100%;
+    border-radius: 10px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    transition: box-shadow 0.15s ease;
+  }
+  .node:hover {
+    box-shadow: 0 0 0 1px rgba(99,102,241,0.25), 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .node-hd {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+  }
+  .node-title {
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .node-body {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .node-body ul { list-style: none; }
+  .node-body ul li::before { content: '›  '; color: var(--accent-blue); font-weight: 700; }
+
+  /* node colour variants */
+  .nb { border-color: var(--accent-blue);   background: #0d1e38; }
+  .ng { border-color: var(--accent-green);  background: #041e14; }
+  .na { border-color: var(--accent-amber);  background: #1c1100; }
+  .np { border-color: var(--accent-purple); background: #100c22; }
+  .nc { border-color: var(--accent-cyan);   background: #031218; }
+  .ni { border-color: var(--accent-indigo); background: #0a0c22; }
+  .nf { border-color: #22c55e;              background: #021509; }
+
+  .nb .node-title { color: var(--accent-blue); }
+  .ng .node-title { color: var(--accent-green); }
+  .na .node-title { color: var(--accent-amber); }
+  .np .node-title { color: var(--accent-purple); }
+  .nc .node-title { color: var(--accent-cyan); }
+  .ni .node-title { color: var(--accent-indigo); }
+  .nf .node-title { color: #22c55e; }
+
+  /* ── Connector ───────────────────────────────────────── */
+  .conn {
+    width: 2px;
+    height: 22px;
+    background: var(--connector);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .conn::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--connector);
+  }
+
+  /* ── Decision diamond ────────────────────────────────── */
+  .diamond-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 0;
+  }
+  .diamond-wrap svg { overflow: visible; }
+
+  /* ── Branch 2-col ────────────────────────────────────── */
+  .branches {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .branch-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .branch-lbl {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding-bottom: 2px;
+  }
+  .bl-yes { color: var(--accent-green); }
+  .bl-no  { color: var(--accent-red); }
+  .branch-node {
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-size: 12px;
+    flex: 1;
+    transition: box-shadow 0.15s;
+  }
+  .branch-node:hover { box-shadow: 0 0 0 1px rgba(99,102,241,0.2), 0 4px 16px rgba(0,0,0,0.4); }
+  .branch-node .bt { font-weight: 600; font-size: 12px; margin-bottom: 3px; }
+  .branch-node .bb { color: var(--text-muted); }
+
+  /* ── Loop box ────────────────────────────────────────── */
+  .loop-box {
+    width: 100%;
+    border: 2px dashed var(--accent-indigo);
+    border-radius: 12px;
+    padding: 16px 14px 12px;
+    background: #07091a;
+    position: relative;
+  }
+  .loop-lbl {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--bg);
+    padding: 0 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent-indigo);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .loop-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* ── Loop-back arrow ─────────────────────────────────── */
+  .loop-back {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border-top: 1px dashed #2d3555;
+    margin-top: 10px;
+  }
+  .loop-back span {
+    font-size: 10px;
+    color: var(--accent-indigo);
+  }
+
+  /* ── Tool tags ───────────────────────────────────────── */
+  .tool-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .ttag {
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-family: 'Courier New', monospace;
+  }
+  .tr { background: #051e10; color: var(--accent-green);  border: 1px solid #1a5c38; }
+  .tm { background: #1f1000; color: var(--accent-amber);  border: 1px solid #7c3800; }
+
+  /* ── Provider badges ─────────────────────────────────── */
+  .providers { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+  .pb { border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .p-ollama { background: #0d1e10; color: var(--accent-green); border: 1px solid var(--accent-green); }
+  .p-openai { background: #001a18; color: #19c37d; border: 1px solid #19c37d; }
+  .p-claude { background: #140e26; color: #c084fc; border: 1px solid #c084fc; }
+
+  /* ── Inline code ─────────────────────────────────────── */
+  code {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--accent-cyan);
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────── */
+  .sidebar { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .panel {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .panel-hd {
+    background: #0d1d33;
+    border-bottom: 1px solid var(--border);
+    padding: 9px 14px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .panel-body { padding: 10px 12px; }
+
+  /* SSE events */
+  .sse-ev {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 12px;
+    border-bottom: 1px solid #1e2c3e;
+  }
+  .sse-ev:last-child { border-bottom: none; }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+  .sse-name { font-size: 11px; font-weight: 700; font-family: 'Courier New', monospace; }
+  .sse-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+  /* ── Legend ──────────────────────────────────────────── */
+  .legend {
+    max-width: 1120px;
+    margin: 32px auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .legend-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .legend-grid { display: flex; flex-wrap: wrap; gap: 14px; }
+  .li { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-muted); }
+  .ls { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border); flex-shrink: 0; }
+  .ls-diamond {
+    width: 16px; height: 16px; flex-shrink: 0;
+    background: #1c1100; border: 1.5px solid var(--accent-amber);
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  }
+  .ls-loop {
+    width: 16px; height: 16px; flex-shrink: 0;
+    border-radius: 3px; border: 1.5px dashed var(--accent-indigo);
+  }
+
+  /* ── Footer ──────────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    margin-top: 36px;
+    font-size: 11px;
+    color: #475569;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════ HEADER ════════════════════════ -->
+<div class="header">
+  <h1>handle_chat_message <span>Flow</span></h1>
+  <div class="subtitle">AI Chat Orchestration &nbsp;·&nbsp; YES WMS</div>
+  <div class="entry-badge">
+    <span class="method">POST</span>
+    <span>/ai/chat/</span>
+    <span class="sep">→</span>
+    <span class="resp-type">StreamingHttpResponse (SSE)</span>
+    <span class="sep">·</span>
+    <span style="color:var(--text-muted);font-size:11px;">app/ai/chat_service.py</span>
+  </div>
+</div>
+
+<!-- ════════════════════════ MAIN ════════════════════════ -->
+<div class="diagram-wrapper">
+
+  <!-- ─── LEFT: flow column ──────────────────────────────── -->
+  <div class="flow-col">
+
+    <!-- ENTRY -->
+    <div class="node nb" style="width:100%">
+      <div class="node-hd">
+        <span class="step">ENTRY</span>
+        <span class="node-title">Request Extraction</span>
+      </div>
+      <div class="node-body">
+        <ul>
+          <li>Parse body: <code>uid</code>, <code>org_id</code>, <code>facility_id</code>, <code>message</code>, <code>conversation_id</code>, <code>confirm_action</code></li>
+          <li>Authenticate user, resolve org &amp; facility context</li>
+          <li>Open SSE stream — <code>Content-Type: text/event-stream</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="conn"></div>
+
+    <!-- PHASE 1 -->
+    <div class="node nc" style="width:100%">
+      <div class="node-hd">
+        <span class="step">PHASE 1</span>
+        <span class="node-title">Init — Load Conversation &amp; Resolve LLM Provider</span>
+      </div>
+      <div class="node-body">
+        <ul>
+          <li>Load or create <code>Conversation</code> record from DB</li>
+          <li>Resolve model provider from org/conversation settings</li>
+          <li>Instantiate provider client and init execution log</li>
+        </ul>
+        <div class="providers">
+          <span class="pb p-ollama">Ollama</span>
+          <span class="pb p-openai">OpenAI</span>
+          <span class="pb p-claude">Claude / Anthropic</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="conn"></div>
+
+    <!-- DECISION 1: confirm_action? -->
+    <div class="diamond-wrap">
+      <svg width="230" height="72" viewBox="0 0 230 72">
+        <polygon points="115,4 226,36 115,68 4,36" fill="#1c1100" stroke="#f59e0b" stroke-width="2"/>
+        <text x="115" y="32" text-anchor="middle" font-size="11" font-weight="700" fill="#f59e0b" font-family="Segoe UI, sans-serif">confirm_action</text>
+        <text x="115" y="47" text-anchor="middle" font-size="11" font-weight="700" fill="#f59e0b" font-family="Segoe UI, sans-serif">provided?</text>
+      </svg>
+    </div>
+
+    <!-- BRANCHES -->
+    <div class="branches" style="margin-top:8px;">
+
+      <!-- YES -->
+      <div class="branch-col">
+        <div class="branch-lbl bl-yes">✓ YES — early exit</div>
+        <div class="branch-node" style="border-color:var(--accent-green);background:#031a0c;">
+          <div class="bt" style="color:var(--accent-green);">Execute Mutation Immediately</div>
+          <div class="bb">
+            Bypass LLM entirely.<br>
+            Call confirmed tool directly.<br>
+            Auto-inject <code>uid</code> / <code>org_id</code> / <code>facility_id</code>.<br>
+            Emit <code>tool_result</code> SSE.<br>
+            <strong style="color:#22c55e;">→ DONE (stream closed)</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- NO -->
+      <div class="branch-col">
+        <div class="branch-lbl bl-no">✗ NO — continue</div>
+        <div class="branch-node" style="border-color:var(--accent-blue);background:#0a1a2e;">
+          <div class="bt" style="color:var(--accent-blue);">Normal Chat Flow</div>
+          <div class="bb">No pending confirmation — proceed to save user message and invoke LLM.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="conn" style="margin-top:6px;"></div>
+
+    <!-- PHASE 2 -->
+    <div class="node ng" style="width:100%">
+      <div class="node-hd">
+        <span class="step">PHASE 2</span>
+        <span class="node-title">Save User Message</span>
+      </div>
+      <div class="node-body">
+        <ul>
+          <li>Create <code>Message(role=USER)</code> linked to conversation in DB</li>
+          <li>Auto-generate conversation title from first message if untitled</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="conn"></div>
+
+    <!-- PHASE 3 -->
+    <div class="node np" style="width:100%">
+      <div class="node-hd">
+        <span class="step">PHASE 3</span>
+        <span class="node-title">Prefetch RAG Context — <code>wms_semantic_search</code></span>
+      </div>
+      <div class="node-body">
+        <ul>
+          <li>Semantic search across 4 content types simultaneously:</li>
+        </ul>
+        <div class="tool-grid" style="margin-top:4px;">
+          <span class="ttag tr">knowledge</span>
+          <span class="ttag tr">transaction</span>
+          <span class="ttag tr">sku</span>
+          <span class="ttag tr">message</span>
+        </div>
+        <div style="margin-top:6px;">Limit 5 results · 500 chars each · <strong style="color:var(--accent-purple);">async / non-blocking</strong> (failures silently logged)</div>
+      </div>
+    </div>
+
+    <div class="conn"></div>
+
+    <!-- PHASE 4 -->
+    <div class="node nb" style="width:100%">
+      <div class="node-hd">
+        <span class="step">PHASE 4</span>
+        <span class="node-title">Build LLM Context</span>
+      </div>
+      <div class="node-body">
+        <ul>
+          <li>System prompt — facility &amp; org context, response format rules, component schema</li>
+          <li>RAG results appended as additional system message</li>
+          <li>Message history — last <strong style="color:var(--accent-blue);">20 messages</strong> from conversation</li>
+          <li>Tool definitions — <strong style="color:var(--accent-blue);">17 WMS tools</strong> registered (auto-injected params stripped)</li>
+        </ul>
+        <div style="margin-top:7px;font-size:11px;color:var(--text-muted);">Read-only tools:</div>
+        <div class="tool-grid">
+          <span class="ttag tr">wms_get_inventory_balances</span>
+          <span class="ttag tr">wms_list_skus</span>
+          <span class="ttag tr">wms_get_transaction</span>
+          <span class="ttag tr">wms_list_locations</span>
+          <span class="ttag tr">wms_semantic_search</span>
+          <span class="ttag tr">+ 3 more</span>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--text-muted);">Mutation tools (require confirmation):</div>
+        <div class="tool-grid">
+          <span class="ttag tm">wms_create_grn</span>
+          <span class="ttag tm">wms_putaway</span>
+          <span class="ttag tm">wms_move_inventory</span>
+          <span class="ttag tm">wms_order_pick</span>
+          <span class="ttag tm">wms_create_transaction</span>
+          <span class="ttag tm">wms_execute_transaction</span>
+          <span class="ttag tm">wms_cancel_transaction</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="conn"></div>
+
+    <!-- PHASE 5: LOOP -->
+    <div class="loop-box" style="width:100%;">
+      <div class="loop-lbl">PHASE 5 &nbsp;·&nbsp; Tool-Calling Loop — max 5 iterations</div>
+      <div class="loop-inner">
+
+        <!-- 5a: Call LLM -->
+        <div class="node ni" style="width:100%;margin-top:6px;">
+          <div class="node-hd">
+            <span class="step">5a</span>
+            <span class="node-title">Call LLM Provider → Stream Response</span>
+          </div>
+          <div class="node-body">
+            Emit <code>token</code> SSE events in real time as text delta chunks arrive from LLM.
+          </div>
+        </div>
+
+        <div class="conn"></div>
+
+        <!-- Decision 2: tool calls? -->
+        <div class="diamond-wrap">
+          <svg width="200" height="64" viewBox="0 0 200 64">
+            <polygon points="100,4 196,32 100,60 4,32" fill="#1c1100" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="100" y="28" text-anchor="middle" font-size="10" font-weight="700" fill="#f59e0b" font-family="Segoe UI, sans-serif">Tool calls</text>
+            <text x="100" y="42" text-anchor="middle" font-size="10" font-weight="700" fill="#f59e0b" font-family="Segoe UI, sans-serif">in response?</text>
+          </svg>
+        </div>
+
+        <!-- Inner branches -->
+        <div class="branches" style="margin-top:8px;width:100%;">
+
+          <!-- NO: break -->
+          <div class="branch-col">
+            <div class="branch-lbl bl-no" style="font-size:9px;">✗ NO TOOL CALLS</div>
+            <div class="branch-node" style="border-color:var(--accent-green);background:#031a0c;">
+              <div class="bt" style="color:var(--accent-green);font-size:11px;">Break Loop</div>
+              <div class="bb" style="font-size:11px;">Response is final text — proceed to parse &amp; save.</div>
+            </div>
+          </div>
+
+          <!-- YES: nested decision -->
+          <div class="branch-col">
+            <div class="branch-lbl bl-yes" style="font-size:9px;">✓ HAS TOOL CALLS</div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;">
+
+              <!-- Decision 3: mutation? -->
+              <svg width="170" height="56" viewBox="0 0 170 56" style="overflow:visible;">
+                <polygon points="85,3 167,28 85,53 3,28" fill="#1c1100" stroke="#f59e0b" stroke-width="1.5"/>
+                <text x="85" y="25" text-anchor="middle" font-size="9" font-weight="700" fill="#f59e0b" font-family="Segoe UI, sans-serif">Mutation</text>
+                <text x="85" y="38" text-anchor="middle" font-size="9" font-weight="700" fill="#f59e0b" font-family="Segoe UI, sans-serif">tool?</text>
+              </svg>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;">
+                <div class="branch-node" style="border-color:var(--accent-amber);background:#1c1100;">
+                  <div class="bt" style="color:var(--accent-amber);font-size:10px;">MUTATION</div>
+                  <div class="bb" style="font-size:10px;">
+                    Emit <code style="font-size:9px;">needs_confirmation</code><br>
+                    Mark as PENDING<br>
+                    Break if all pending
+                  </div>
+                </div>
+                <div class="branch-node" style="border-color:var(--accent-green);background:#031a0c;">
+                  <div class="bt" style="color:var(--accent-green);font-size:10px;">READ-ONLY</div>
+                  <div class="bb" style="font-size:10px;">
+                    Execute immediately<br>
+                    Inject uid/org/facility<br>
+                    Append result → loop
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Loop back -->
+        <div class="loop-back">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7 C2 3.5 12 3.5 12 7 C12 10.5 2 10.5 2 7" stroke="#6366f1" stroke-width="1.5" fill="none" stroke-dasharray="2.5 2"/>
+            <polygon points="3,4.5 1,7 5,7" fill="#6366f1"/>
+          </svg>
+          <span>Append tool results to messages array → loop back to LLM call (up to 5×)</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="conn"></div>
+
+    <!-- PHASE 6 -->
+    <div class="node nc" style="width:100%">
+      <div class="node-hd">
+        <span class="step">PHASE 6</span>
+        <span class="node-title">Parse LLM Response → Extract JSON Components</span>
+      </div>
+      <div class="node-body">
+        <ul>
+          <li>Attempt to extract JSON from markdown code block in response text</li>
+          <li>Validate <code>text</code> + <code>components</code> keys — fall back to raw text on failure</li>
+          <li>Component types: <code>table</code>, <code>stat_card</code>, <code>bar_chart</code>, <code>line_chart</code>, <code>detail_card</code>, <code>confirmation_dialog</code>, <code>form</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="conn"></div>
+
+    <!-- PHASE 7 -->
+    <div class="node ng" style="width:100%">
+      <div class="node-hd">
+        <span class="step">PHASE 7</span>
+        <span class="node-title">Save Assistant Message</span>
+      </div>
+      <div class="node-body">
+        <ul>
+          <li>Create <code>Message(role=ASSISTANT)</code> in DB</li>
+          <li>Store full text, parsed components, tool calls, and tool results</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="conn"></div>
+
+    <!-- PHASE 8 -->
+    <div class="node np" style="width:100%">
+      <div class="node-hd">
+        <span class="step">PHASE 8</span>
+        <span class="node-title">Fire-and-Forget Embeddings</span>
+      </div>
+      <div class="node-body">
+        <ul>
+          <li>Async <code>asyncio.create_task</code> — embeds Q+A pair (user + assistant message)</li>
+          <li>Stored as <code>EmbeddingRecord</code> (pgvector HNSW) for future RAG retrieval</li>
+          <li><strong style="color:var(--accent-purple);">Non-blocking</strong> — failures are logged, response is not affected</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="conn"></div>
+
+    <!-- PHASE 9 -->
+    <div class="node nf" style="width:100%">
+      <div class="node-hd">
+        <span class="step">PHASE 9</span>
+        <span class="node-title">Emit Final SSE Events &amp; Close Stream</span>
+      </div>
+      <div class="node-body">
+        <ul>
+          <li>Emit <code>components</code> event — full structured UI payload for client rendering</li>
+          <li>Emit <code>done</code> event — includes final <code>message_id</code> and complete text</li>
+          <li>Django generator exhausted → <code>StreamingHttpResponse</code> closes connection</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /flow-col -->
+
+  <!-- ─── RIGHT: sidebar ─────────────────────────────────── -->
+  <div class="sidebar">
+
+    <!-- SSE Events -->
+    <div class="panel">
+      <div class="panel-hd">SSE Event Stream</div>
+
+      <div class="sse-ev">
+        <div class="dot" style="background:var(--accent-blue);"></div>
+        <div>
+          <div class="sse-name" style="color:var(--accent-blue);">token</div>
+          <div class="sse-desc">LLM text chunk streamed in real time</div>
+        </div>
+      </div>
+      <div class="sse-ev">
+        <div class="dot" style="background:var(--accent-purple);"></div>
+        <div>
+          <div class="sse-name" style="color:var(--accent-purple);">tool_call</div>
+          <div class="sse-desc">LLM invoked a tool — name &amp; args</div>
+        </div>
+      </div>
+      <div class="sse-ev">
+        <div class="dot" style="background:var(--accent-green);"></div>
+        <div>
+          <div class="sse-name" style="color:var(--accent-green);">tool_result</div>
+          <div class="sse-desc">Read-only tool executed successfully</div>
+        </div>
+      </div>
+      <div class="sse-ev">
+        <div class="dot" style="background:var(--accent-amber);"></div>
+        <div>
+          <div class="sse-name" style="color:var(--accent-amber);">needs_confirmation</div>
+          <div class="sse-desc">Mutation detected — awaiting user confirm</div>
+        </div>
+      </div>
+      <div class="sse-ev">
+        <div class="dot" style="background:var(--accent-cyan);"></div>
+        <div>
+          <div class="sse-name" style="color:var(--accent-cyan);">components</div>
+          <div class="sse-desc">Structured UI payload (tables, charts…)</div>
+        </div>
+      </div>
+      <div class="sse-ev">
+        <div class="dot" style="background:var(--accent-red);"></div>
+        <div>
+          <div class="sse-name" style="color:var(--accent-red);">error</div>
+          <div class="sse-desc">Unhandled exception — stream closed</div>
+        </div>
+      </div>
+      <div class="sse-ev">
+        <div class="dot" style="background:#22c55e;"></div>
+        <div>
+          <div class="sse-name" style="color:#22c55e;">done</div>
+          <div class="sse-desc">Terminal — client closes SSE connection</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LLM Providers -->
+    <div class="panel">
+      <div class="panel-hd">LLM Providers</div>
+      <div class="panel-body" style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="pb p-ollama">Ollama</span>
+          <span style="font-size:11px;color:var(--text-muted);">Self-hosted, local</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="pb p-openai">OpenAI</span>
+          <span style="font-size:11px;color:var(--text-muted);">GPT-4o / GPT-3.5</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="pb p-claude">Claude</span>
+          <span style="font-size:11px;color:var(--text-muted);">Sonnet · Haiku · Opus</span>
+        </div>
+        <div style="font-size:10px;color:var(--border);margin-top:2px;">All implement <code style="font-size:9px;">chat_completion()</code> + <code style="font-size:9px;">list_models()</code></div>
+      </div>
+    </div>
+
+    <!-- Tool Registry -->
+    <div class="panel">
+      <div class="panel-hd">Tool Registry</div>
+      <div class="panel-body" style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-size:11px;color:var(--text-muted);">Total registered</span>
+          <strong style="font-size:13px;">17</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span class="ttag tr" style="font-size:10px;">Read-only</span>
+          <strong style="color:var(--accent-green);">10</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span class="ttag tm" style="font-size:10px;">Mutation</span>
+          <strong style="color:var(--accent-amber);">7</strong>
+        </div>
+        <div style="height:5px;background:#1e293b;border-radius:99px;overflow:hidden;margin-top:2px;">
+          <div style="height:100%;width:59%;background:var(--accent-green);border-radius:99px;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--border);margin-top:2px;">Served via MCP server · auto-injected params hidden from LLM schema</div>
+      </div>
+    </div>
+
+    <!-- RAG Config -->
+    <div class="panel">
+      <div class="panel-hd">RAG Config</div>
+      <div class="panel-body" style="display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--text-muted);">
+        <div style="display:flex;justify-content:space-between;"><span>Content types</span><strong style="color:var(--text);">4</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span>Max results each</span><strong style="color:var(--text);">5</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span>Char limit each</span><strong style="color:var(--text);">500</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span>History window</span><strong style="color:var(--text);">20 msgs</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span>Mode</span><strong style="color:var(--accent-purple);">async</strong></div>
+        <div style="display:flex;justify-content:space-between;"><span>Max tool loops</span><strong style="color:var(--text);">5</strong></div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+</div><!-- /diagram-wrapper -->
+
+<!-- ════════════════════════ LEGEND ════════════════════════ -->
+<div class="legend">
+  <div class="legend-title">Legend</div>
+  <div class="legend-grid">
+    <div class="li"><div class="ls" style="background:#0d1e38;border-color:var(--accent-blue);"></div><span>Process / Action node</span></div>
+    <div class="li"><div class="ls-diamond"></div><span>Decision / Branch point</span></div>
+    <div class="li"><div class="ls-loop"></div><span>Iterative loop (max 5)</span></div>
+    <div class="li"><div class="ls" style="background:#041e14;border-color:var(--accent-green);"></div><span>DB write / Persistence</span></div>
+    <div class="li"><div class="ls" style="background:#100c22;border-color:var(--accent-purple);"></div><span>Async / Non-blocking</span></div>
+    <div class="li"><div class="ls" style="background:#1c1100;border-color:var(--accent-amber);"></div><span>Mutation / Confirmation required</span></div>
+    <div class="li"><div class="ls" style="background:#021509;border-color:#22c55e;"></div><span>Terminal / Final emit</span></div>
+    <div class="li"><div class="dot" style="background:var(--accent-cyan);width:10px;height:10px;flex-shrink:0;"></div><span>SSE event type</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════ FOOTER ════════════════════════ -->
+<div class="footer">
+  YES WMS &nbsp;·&nbsp; AI Orchestration Layer &nbsp;·&nbsp; <code style="font-size:10px;background:transparent;border:none;color:inherit;">handle_chat_message()</code> &nbsp;·&nbsp; app/ai/chat_service.py
+</div>
+
+</body>
+</html>

@@ -43,10 +43,29 @@
     --ops-glass-soft: rgba(255, 255, 255, 0.04);
     --ops-glass-hover: rgba(255, 255, 255, 0.08);
     --ops-field-surface: rgba(17, 36, 32, 0.72);
+    --ops-input-shell-bg: rgba(10, 20, 17, 0.72);
+    --ops-dock-bg: rgba(10, 20, 17, 0.82);
     --ops-overlay: rgba(8, 19, 17, 0.78);
     --ops-line-soft: rgba(255, 255, 255, 0.06);
     --ops-line-softer: rgba(255, 255, 255, 0.05);
     --ops-row-hover: rgba(255, 255, 255, 0.04);
+    --ops-subtle-fill: rgba(255, 255, 255, 0.03);
+    --ops-subtle-fill-strong: rgba(255, 255, 255, 0.06);
+    --ops-note-card-border: rgba(121, 191, 100, 0.2);
+    --ops-note-card-bg:
+      radial-gradient(circle at top right, rgba(212, 234, 114, 0.12), transparent 36%),
+      linear-gradient(180deg, rgba(20, 40, 34, 0.98) 0%, rgba(11, 24, 20, 0.98) 100%);
+    --ops-assistant-bubble-bg: linear-gradient(180deg, rgba(20, 40, 34, 0.96) 0%, rgba(13, 28, 23, 0.96) 100%);
+    --ops-assistant-bubble-shadow: 0 16px 36px rgba(3, 13, 10, 0.18);
+    --ops-avatar-shell-border: rgba(212, 234, 114, 0.18);
+    --ops-avatar-shell-bg:
+      radial-gradient(circle at 18% 20%, rgba(212, 234, 114, 0.18), transparent 34%),
+      linear-gradient(180deg, rgba(18, 38, 32, 0.98) 0%, rgba(11, 24, 20, 0.99) 100%);
+    --ops-avatar-shell-shadow: 0 24px 80px rgba(3, 13, 10, 0.3);
+    --ops-warning-card-border: rgba(228, 180, 82, 0.22);
+    --ops-warning-card-bg: linear-gradient(180deg, rgba(68, 48, 18, 0.4) 0%, rgba(40, 28, 12, 0.36) 100%);
+    --ops-warning-icon-bg: rgba(228, 180, 82, 0.14);
+    --ops-chart-grid: rgba(255, 255, 255, 0.08);
     --ops-primary-shadow: 0 16px 36px rgba(91, 159, 78, 0.28);
   }
 
@@ -87,10 +106,29 @@
     --ops-glass-soft: rgba(255, 255, 255, 0.76);
     --ops-glass-hover: rgba(255, 255, 255, 0.96);
     --ops-field-surface: rgba(255, 253, 248, 0.82);
+    --ops-input-shell-bg: rgba(255, 255, 252, 0.88);
+    --ops-dock-bg: rgba(246, 249, 241, 0.9);
     --ops-overlay: rgba(228, 236, 225, 0.74);
     --ops-line-soft: rgba(15, 35, 24, 0.08);
     --ops-line-softer: rgba(15, 35, 24, 0.06);
     --ops-row-hover: rgba(31, 106, 79, 0.06);
+    --ops-subtle-fill: rgba(31, 106, 79, 0.05);
+    --ops-subtle-fill-strong: rgba(31, 106, 79, 0.09);
+    --ops-note-card-border: rgba(31, 106, 79, 0.16);
+    --ops-note-card-bg:
+      radial-gradient(circle at top right, rgba(184, 215, 62, 0.18), transparent 34%),
+      linear-gradient(180deg, rgba(244, 248, 240, 0.98) 0%, rgba(229, 237, 223, 0.98) 100%);
+    --ops-assistant-bubble-bg: linear-gradient(180deg, rgba(255, 255, 252, 0.99) 0%, rgba(241, 246, 237, 0.99) 100%);
+    --ops-assistant-bubble-shadow: 0 16px 28px rgba(12, 31, 20, 0.08);
+    --ops-avatar-shell-border: rgba(31, 106, 79, 0.14);
+    --ops-avatar-shell-bg:
+      radial-gradient(circle at 18% 20%, rgba(184, 215, 62, 0.22), transparent 34%),
+      linear-gradient(180deg, rgba(244, 248, 240, 0.99) 0%, rgba(229, 237, 223, 0.99) 100%);
+    --ops-avatar-shell-shadow: 0 24px 56px rgba(12, 31, 20, 0.12);
+    --ops-warning-card-border: rgba(176, 122, 24, 0.22);
+    --ops-warning-card-bg: linear-gradient(180deg, rgba(255, 244, 220, 0.88) 0%, rgba(250, 236, 205, 0.9) 100%);
+    --ops-warning-icon-bg: rgba(176, 122, 24, 0.12);
+    --ops-chart-grid: rgba(15, 35, 24, 0.08);
     --ops-primary-shadow: 0 16px 32px rgba(31, 106, 79, 0.18);
   }
 
@@ -176,10 +214,8 @@
   }
 
   .ops-note-card {
-    border: 1px solid rgba(121, 191, 100, 0.2);
-    background:
-      radial-gradient(circle at top right, rgba(212, 234, 114, 0.12), transparent 36%),
-      linear-gradient(180deg, rgba(20, 40, 34, 0.98) 0%, rgba(11, 24, 20, 0.98) 100%);
+    border: 1px solid var(--ops-note-card-border);
+    background: var(--ops-note-card-bg);
     box-shadow: var(--ops-shadow-soft);
   }
 
@@ -197,7 +233,7 @@
 
   .ops-input-shell {
     border: 1px solid var(--ops-border);
-    background: rgba(10, 20, 17, 0.72);
+    background: var(--ops-input-shell-bg);
     box-shadow: var(--ops-shadow-soft);
   }
 
@@ -247,6 +283,33 @@
 
   .ops-divider {
     background: linear-gradient(90deg, transparent, var(--ops-line-soft), transparent);
+  }
+
+  .ops-avatar-shell {
+    border: 1px solid var(--ops-avatar-shell-border);
+    background: var(--ops-avatar-shell-bg);
+    box-shadow: var(--ops-avatar-shell-shadow);
+  }
+
+  .ops-chat-bubble {
+    border: 1px solid var(--ops-border);
+    background: var(--ops-assistant-bubble-bg);
+    box-shadow: var(--ops-assistant-bubble-shadow);
+  }
+
+  .ops-dock-shell {
+    border-top: 1px solid var(--ops-line-soft);
+    background: var(--ops-dock-bg);
+    backdrop-filter: blur(24px);
+  }
+
+  .ops-warning-card {
+    border: 1px solid var(--ops-warning-card-border);
+    background: var(--ops-warning-card-bg);
+  }
+
+  .ops-warning-icon {
+    background: var(--ops-warning-icon-bg);
   }
 }
 

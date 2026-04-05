@@ -334,6 +334,52 @@ _TOOL_DEFS: list[types.Tool] = [
             "required": ["org_id", "query"],
         },
     ),
+    types.Tool(
+        name="wms_describe_schema",
+        description=(
+            "Describe the analytics-safe warehouse schema, including tables, columns, keys, scope hints, "
+            "and business meaning. Use before writing joins or aggregation queries."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "table_names": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional subset of analytics-safe table names to describe.",
+                },
+            },
+            "required": ["org_id"],
+        },
+    ),
+    types.Tool(
+        name="wms_execute_analytical_query",
+        description=(
+            "Run a guarded read-only SQL analytics query over analytics-safe warehouse tables. "
+            "The tool automatically scopes data to the current organization and active facility context."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "facility_id": {
+                    "type": "string",
+                    "description": "Active facility code for facility-scoped analytics (optional).",
+                },
+                "sql": {
+                    "type": "string",
+                    "description": "A single read-only SELECT or WITH...SELECT query over analytics-safe app_* tables.",
+                },
+                "limit": {
+                    "type": "integer",
+                    "default": 200,
+                    "description": "Maximum number of result rows to return (1-500).",
+                },
+            },
+            "required": ["org_id", "sql"],
+        },
+    ),
     # --- Masters CRUD Tools (Tier 1) ---
     types.Tool(
         name="wms_create_organization",
@@ -736,6 +782,10 @@ async def handle_call_tool(
             result = await tools.wms_order_pick(**args, uid=uid)
         elif name == "wms_semantic_search":
             result = await tools.wms_semantic_search(**args, uid=uid)
+        elif name == "wms_describe_schema":
+            result = await tools.wms_describe_schema(**args, uid=uid)
+        elif name == "wms_execute_analytical_query":
+            result = await tools.wms_execute_analytical_query(**args, uid=uid)
         # --- Masters CRUD Tools (Tier 1) ---
         elif name == "wms_create_organization":
             result = await tools.wms_create_organization(**args, uid=uid)

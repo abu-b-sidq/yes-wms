@@ -23,6 +23,8 @@ def _get_registry() -> dict[str, Any]:
             "wms_list_skus": tools.wms_list_skus,
             "wms_list_zones": tools.wms_list_zones,
             "wms_list_locations": tools.wms_list_locations,
+            "wms_describe_schema": tools.wms_describe_schema,
+            "wms_execute_analytical_query": tools.wms_execute_analytical_query,
             "wms_get_inventory_balances": tools.wms_get_inventory_balances,
             "wms_get_inventory_ledger": tools.wms_get_inventory_ledger,
             "wms_list_transactions": tools.wms_list_transactions,
@@ -92,6 +94,10 @@ def summarize_result(result: Any, max_items: int = 10) -> str:
     For large result sets, truncates to max_items and notes the total count.
     Full data goes to the frontend via components, but the LLM only sees the summary.
     """
+    if isinstance(result, dict):
+        from app.mcp.analytics import summarize_analytics_result
+
+        return json.dumps(summarize_analytics_result(result, max_rows=max_items), indent=2, default=str)
     if isinstance(result, list):
         total = len(result)
         truncated = result[:max_items]

@@ -41,7 +41,7 @@ export default function ConversationList({
               className={`group cursor-pointer rounded-[24px] px-4 py-4 transition ${
                 isActive
                   ? 'ops-note-card'
-                  : 'ops-card-soft hover:-translate-y-0.5 hover:border-[var(--ops-border-strong)] hover:bg-[rgba(255,255,255,0.06)]'
+                  : 'ops-card-soft hover:-translate-y-0.5 hover:border-[var(--ops-border-strong)] hover:bg-[var(--ops-subtle-fill-strong)]'
               }`}
             >
               <div className="flex items-start gap-3">
@@ -73,7 +73,7 @@ export default function ConversationList({
         })}
 
         {conversations.length === 0 && (
-          <div className="rounded-[24px] border border-dashed border-[var(--ops-border)] bg-[rgba(255,255,255,0.02)] px-4 py-8 text-center text-sm text-[var(--ops-text-soft)]">
+          <div className="rounded-[24px] border border-dashed border-[var(--ops-border)] bg-[var(--ops-subtle-fill)] px-4 py-8 text-center text-sm text-[var(--ops-text-soft)]">
             No matching conversations yet
           </div>
         )}
