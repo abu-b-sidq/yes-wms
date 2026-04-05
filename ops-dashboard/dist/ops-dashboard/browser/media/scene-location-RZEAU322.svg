@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" fill="none">
+  <defs>
+    <linearGradient id="locA" x1="278" y1="188" x2="844" y2="644" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7B57CF" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#79BF64" stop-opacity=".12"/>
+    </linearGradient>
+  </defs>
+  <rect x="278" y="188" width="566" height="386" rx="48" fill="url(#locA)" stroke="#1F6A4F" stroke-opacity=".14" stroke-width="8"/>
+  <g stroke="#1F6A4F" stroke-opacity=".22" stroke-width="10" stroke-linecap="round">
+    <path d="M356 256V510"/>
+    <path d="M458 256V510"/>
+    <path d="M560 256V510"/>
+    <path d="M662 256V510"/>
+    <path d="M320 314H806"/>
+    <path d="M320 394H806"/>
+    <path d="M320 474H806"/>
+  </g>
+  <rect x="336" y="330" width="104" height="44" rx="16" fill="#D4EA72" fill-opacity=".68"/>
+  <rect x="542" y="250" width="104" height="44" rx="16" fill="#2F7DE1" fill-opacity=".3"/>
+  <rect x="642" y="410" width="104" height="44" rx="16" fill="#79BF64" fill-opacity=".46"/>
+  <path d="M944 232C944 196 973 168 1008 168C1043 168 1072 196 1072 232C1072 284 1008 338 1008 338C1008 338 944 284 944 232Z" fill="#F7FBF7" fill-opacity=".14" stroke="#1F6A4F" stroke-opacity=".22" stroke-width="8"/>
+  <circle cx="1008" cy="232" r="24" fill="#7B57CF" fill-opacity=".52"/>
+  <path d="M920 462H1092" stroke="#1F6A4F" stroke-opacity=".18" stroke-width="12" stroke-linecap="round"/>
+  <path d="M956 426H1056" stroke="#7B57CF" stroke-opacity=".34" stroke-width="12" stroke-linecap="round"/>
+  <path d="M988 498H1056" stroke="#79BF64" stroke-opacity=".42" stroke-width="12" stroke-linecap="round"/>
+</svg>

@@ -27,7 +27,7 @@ import { MatIconModule } from '@angular/material/icon';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 28px 24px 18px;
+      padding: 30px 24px 20px;
       gap: 16px;
       flex-wrap: wrap;
     }
@@ -40,11 +40,12 @@ import { MatIconModule } from '@angular/material/icon';
       width: 46px;
       height: 46px;
       border-radius: 14px;
-      background: linear-gradient(180deg, rgba(75, 152, 235, 0.22) 0%, rgba(75, 152, 235, 0.08) 100%);
-      border: 1px solid rgba(75, 152, 235, 0.2);
+      background: linear-gradient(180deg, var(--ops-primary-soft-strong) 0%, transparent 100%);
+      border: 1px solid var(--ops-border);
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: var(--ops-shadow-soft);
     }
     .header-icon mat-icon {
       color: var(--ops-primary);

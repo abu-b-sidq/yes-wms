@@ -1,0 +1,31 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - img [ref=e8]: warehouse
+    - heading "YES WMS" [level=1] [ref=e9]
+    - paragraph [ref=e10]: Operations Dashboard
+  - generic [ref=e11]:
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - text: Email
+        - generic [ref=e16]: "*"
+      - img [ref=e18]: email
+      - textbox "Email" [ref=e20]:
+        - /placeholder: you@example.com
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - text: Password
+        - generic [ref=e26]: "*"
+      - img [ref=e28]: lock
+      - textbox "Password" [ref=e30]
+      - button [ref=e32] [cursor=pointer]:
+        - img [ref=e33]: visibility
+    - button "Sign In" [ref=e37]:
+      - generic [ref=e38]: Sign In
+  - generic [ref=e41]:
+    - separator [ref=e42]
+    - generic [ref=e43]: or
+    - separator [ref=e44]
+  - button "Google Continue with Google" [ref=e45]:
+    - generic [ref=e46]:
+      - img "Google" [ref=e47]
+      - text: Continue with Google

@@ -27,6 +27,10 @@ import { Transaction } from '../../../core/models/operations.model';
   template: `
     <div class="page-container">
       <app-page-header title="Move Stock" description="Transfer stock between locations" icon="swap_horiz">
+        <button mat-stroked-button type="button" (click)="goToTransactions()">
+          <mat-icon>arrow_back</mat-icon>
+          Back to Transactions
+        </button>
       </app-page-header>
 
       <!-- Success state -->
@@ -126,34 +130,35 @@ import { Transaction } from '../../../core/models/operations.model';
     .page-container { min-height: 100%; }
     .form-area { padding: 0 24px 24px; }
     .form-card {
-      background: white; border-radius: 12px; padding: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: var(--ops-card-bg); border-radius: 12px; padding: 16px;
+      box-shadow: var(--ops-shadow-soft); border: 1px solid var(--ops-card-border);
       display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px;
     }
-    .card-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--ops-text-primary); margin-bottom: 8px; }
     .card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .full-width { width: 100%; }
     .move-line {
-      background: #f8fafc; border-radius: 10px; padding: 12px;
+      background: var(--ops-card-bg-soft); border-radius: 10px; padding: 12px;
       margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;
     }
     .line-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .line-num { font-size: 13px; font-weight: 600; color: #3b82f6; }
+    .line-num { font-size: 13px; font-weight: 600; color: var(--ops-primary); }
     .row-2 { display: flex; gap: 8px; align-items: center; }
     .flex-1 { flex: 1; }
-    .arrow-icon { color: #94a3b8; flex-shrink: 0; }
+    .arrow-icon { color: var(--ops-text-soft); flex-shrink: 0; }
     .submit-area { display: flex; justify-content: flex-end; }
     .submit-btn { height: 48px; padding: 0 32px; font-size: 15px; font-weight: 600; gap: 8px; }
     .success-card {
-      margin: 0 24px 24px; background: white; border-radius: 16px;
-      padding: 40px 24px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      margin: 0 24px 24px; background: var(--ops-card-bg); border-radius: 16px;
+      padding: 40px 24px; text-align: center; box-shadow: var(--ops-shadow-soft);
+      border: 1px solid var(--ops-card-border);
     }
-    .success-icon mat-icon { font-size: 64px; width: 64px; height: 64px; color: #16a34a; }
-    h3 { font-size: 20px; font-weight: 700; color: #1e293b; margin: 16px 0 8px; }
-    p { color: #64748b; margin: 4px 0; }
+    .success-icon mat-icon { font-size: 64px; width: 64px; height: 64px; color: var(--ops-success); }
+    h3 { font-size: 20px; font-weight: 700; color: var(--ops-text-primary); margin: 16px 0 8px; }
+    p { color: var(--ops-text-secondary); margin: 4px 0; }
     .mono { font-family: monospace; font-size: 13px; }
     .badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-    .badge.completed { background: #dcfce7; color: #16a34a; }
+    .badge.completed { background: var(--ops-success-soft); color: var(--ops-success); }
     .success-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
     @media (max-width: 600px) {
       .form-area { padding: 0 12px 16px; }
@@ -226,5 +231,9 @@ export class MoveComponent implements OnInit {
     this.form.reset();
     while (this.items.length > 1) this.items.removeAt(1);
     this.items.at(0).patchValue({ quantity: 1 });
+  }
+
+  goToTransactions(): void {
+    this.router.navigate(['/transactions']);
   }
 }

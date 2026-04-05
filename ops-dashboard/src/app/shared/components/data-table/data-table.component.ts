@@ -97,8 +97,8 @@ export interface TableAction {
               <!-- Badge type -->
               <ng-container *ngIf="col.type === 'badge'">
                 <span class="badge"
-                      [style.color]="col.badgeConfig?.[$any(getCellValue(row, col.key))]?.color ?? '#334155'"
-                      [style.background]="col.badgeConfig?.[$any(getCellValue(row, col.key))]?.bg ?? '#e2e8f0'">
+                      [style.color]="col.badgeConfig?.[$any(getCellValue(row, col.key))]?.color ?? 'var(--ops-text-muted)'"
+                      [style.background]="col.badgeConfig?.[$any(getCellValue(row, col.key))]?.bg ?? 'var(--ops-item-active)'">
                   {{ getCellValue(row, col.key) }}
                 </span>
               </ng-container>
@@ -158,7 +158,7 @@ export interface TableAction {
   `,
   styles: [`
     .data-table-container {
-      background: linear-gradient(180deg, rgba(37, 44, 51, 0.94) 0%, rgba(28, 33, 37, 0.98) 100%);
+      background: var(--ops-elevated-bg);
       border: 1px solid var(--ops-border);
       border-radius: 18px;
       box-shadow: var(--ops-shadow);
@@ -194,7 +194,7 @@ export interface TableAction {
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(20, 25, 30, 0.72);
+      background: var(--ops-glass);
       z-index: 5;
     }
     .empty-state {
@@ -210,7 +210,7 @@ export interface TableAction {
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: #49515a;
+      color: var(--ops-muted-strong);
     }
     .empty-state p {
       font-size: 15px;
@@ -224,7 +224,7 @@ export interface TableAction {
       transition: background 0.1s;
     }
     .table-row:hover {
-      background: rgba(255, 255, 255, 0.04) !important;
+      background: var(--ops-row-hover) !important;
     }
     .clickable-cell {
       font-size: 14px;
@@ -246,7 +246,7 @@ export interface TableAction {
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--ops-text-soft) !important;
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--ops-item-hover);
     }
     ::ng-deep .mat-mdc-cell {
       border-bottom-color: var(--ops-border) !important;

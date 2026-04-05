@@ -153,12 +153,13 @@ const UOM_OPTIONS = ['EA', 'KG', 'G', 'L', 'ML', 'BOX', 'CASE', 'PALLET', 'ROLL'
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 16px;
       padding: 12px 0;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--ops-border);
     }
     .detail-row:last-child { border-bottom: none; }
-    .detail-label { font-size: 13px; color: #64748b; font-weight: 500; }
-    .detail-value { font-size: 14px; color: #1e293b; }
+    .detail-label { font-size: 13px; color: var(--ops-text-muted); font-weight: 500; }
+    .detail-value { font-size: 14px; color: var(--ops-text); text-align: right; }
     .mono { font-family: monospace; font-size: 13px; }
     .badge {
       font-size: 12px;
@@ -166,8 +167,8 @@ const UOM_OPTIONS = ['EA', 'KG', 'G', 'L', 'ML', 'BOX', 'CASE', 'PALLET', 'ROLL'
       padding: 3px 10px;
       border-radius: 20px;
     }
-    .badge.active { background: #dcfce7; color: #16a34a; }
-    .badge.inactive { background: #f1f5f9; color: #64748b; }
+    .badge.active { background: var(--ops-success-soft); color: var(--ops-success-strong); }
+    .badge.inactive { background: var(--ops-item-hover); color: var(--ops-text-muted); }
     .form-body { display: flex; flex-direction: column; gap: 4px; }
     .full-width { width: 100%; }
 
@@ -214,8 +215,8 @@ export class SkuComponent implements OnInit {
     {
       key: 'is_active', label: 'Status', type: 'badge', width: '100px',
       badgeConfig: {
-        'true': { color: '#16a34a', bg: '#dcfce7' },
-        'false': { color: '#64748b', bg: '#f1f5f9' }
+        'true': { color: 'var(--ops-success-strong)', bg: 'var(--ops-success-soft)' },
+        'false': { color: 'var(--ops-text-muted)', bg: 'var(--ops-item-hover)' }
       },
       format: (val) => val ? 'Active' : 'Inactive'
     }

@@ -1,0 +1,190 @@
+- generic [ref=e328]:
+  - complementary [ref=e331]:
+    - generic [ref=e332]:
+      - generic [ref=e333]:
+        - generic [ref=e334]:
+          - img [ref=e336]: warehouse
+          - generic [ref=e337]:
+            - generic [ref=e338]: YES WMS
+            - generic [ref=e339]: Operations Console
+        - button [ref=e340] [cursor=pointer]:
+          - img [ref=e341]: keyboard_double_arrow_left
+      - generic [ref=e342]:
+        - button "Operate" [ref=e343] [cursor=pointer]
+        - button "Setup" [ref=e344] [cursor=pointer]
+      - navigation [ref=e345]:
+        - link "Dashboard" [ref=e346] [cursor=pointer]:
+          - /url: /opsdashboard/dashboard
+          - img [ref=e347]: dashboard
+          - generic [ref=e348]: Dashboard
+        - generic [ref=e349]:
+          - generic [ref=e350]: Transactions
+          - link "All Transactions" [ref=e351] [cursor=pointer]:
+            - /url: /opsdashboard/transactions
+            - img [ref=e352]: receipt_long
+            - generic [ref=e353]: All Transactions
+          - link "GRN Receive" [ref=e354] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/grn
+            - img [ref=e355]: input
+            - generic [ref=e356]: GRN Receive
+          - link "Move Stock" [ref=e357] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/move
+            - img [ref=e358]: swap_horiz
+            - generic [ref=e359]: Move Stock
+          - link "Putaway" [ref=e360] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/putaway
+            - img [ref=e361]: move_to_inbox
+            - generic [ref=e362]: Putaway
+          - link "Order Pick" [ref=e363] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/order-pick
+            - img [ref=e364]: shopping_cart
+            - generic [ref=e365]: Order Pick
+        - generic [ref=e366]:
+          - generic [ref=e367]: Inventory
+          - link "Stock Balances" [ref=e368] [cursor=pointer]:
+            - /url: /opsdashboard/inventory
+            - img [ref=e369]: inventory
+            - generic [ref=e370]: Stock Balances
+      - generic [ref=e371]:
+        - generic [ref=e373]:
+          - generic [ref=e374]:
+            - img [ref=e375]: apartment
+            - generic [ref=e376]: FAC-MAIN
+          - generic [ref=e377]:
+            - img [ref=e378]: warehouse
+            - generic [ref=e379]: DEMO_WH1
+        - generic [ref=e380]: Account
+        - link "Facilities 1" [ref=e381] [cursor=pointer]:
+          - /url: /opsdashboard/facility-select
+          - img [ref=e382]: domain
+          - generic [ref=e383]: Facilities
+          - generic [ref=e384]: "1"
+        - button "Logout" [ref=e385] [cursor=pointer]:
+          - img [ref=e386]: logout
+          - generic [ref=e387]: Logout
+        - generic [ref=e388]:
+          - img "Abu Bakkar Siddique" [ref=e390]
+          - generic [ref=e391]:
+            - generic [ref=e392]: Abu Bakkar Siddique
+            - generic [ref=e393]: Main Distribution Center
+          - img [ref=e394]: more_horiz
+  - generic [ref=e395]:
+    - generic [ref=e397]:
+      - button [ref=e398] [cursor=pointer]:
+        - img [ref=e399]: menu_open
+      - generic [ref=e402]: Dashboard
+      - generic [ref=e403] [cursor=pointer]:
+        - img [ref=e404]: warehouse
+        - generic [ref=e405]: Main Distribution Center
+        - button [ref=e406]:
+          - img [ref=e407]: expand_more
+      - button "Theme menu" [active] [ref=e410] [cursor=pointer]:
+        - img [ref=e411]: brightness_auto
+      - button "AB" [ref=e414] [cursor=pointer]:
+        - generic [ref=e415]: AB
+    - main [ref=e418]:
+      - generic [ref=e420]:
+        - generic "Dashboard" [ref=e421]:
+          - generic [ref=e423]:
+            - img [ref=e425]: dashboard
+            - generic [ref=e426]:
+              - heading "Dashboard" [level=1] [ref=e427]
+              - paragraph [ref=e428]: Welcome back, Abu Bakkar Siddique
+        - generic [ref=e429]:
+          - link "20 SKUs" [ref=e430] [cursor=pointer]:
+            - /url: /opsdashboard/masters/sku
+            - img [ref=e432]: inventory_2
+            - generic [ref=e433]:
+              - generic [ref=e434]: "20"
+              - generic [ref=e435]: SKUs
+            - img [ref=e436]: chevron_right
+          - link "7 Zones" [ref=e437] [cursor=pointer]:
+            - /url: /opsdashboard/masters/zone
+            - img [ref=e439]: grid_view
+            - generic [ref=e440]:
+              - generic [ref=e441]: "7"
+              - generic [ref=e442]: Zones
+            - img [ref=e443]: chevron_right
+          - link "24 Locations" [ref=e444] [cursor=pointer]:
+            - /url: /opsdashboard/masters/location
+            - img [ref=e446]: location_on
+            - generic [ref=e447]:
+              - generic [ref=e448]: "24"
+              - generic [ref=e449]: Locations
+            - img [ref=e450]: chevron_right
+          - link "2690 Transactions" [ref=e451] [cursor=pointer]:
+            - /url: /opsdashboard/transactions
+            - img [ref=e453]: receipt_long
+            - generic [ref=e454]:
+              - generic [ref=e455]: "2690"
+              - generic [ref=e456]: Transactions
+            - img [ref=e457]: chevron_right
+        - generic [ref=e458]:
+          - heading "Quick Actions" [level=3] [ref=e459]
+          - generic [ref=e460]:
+            - link "New GRN" [ref=e461] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/grn
+              - img [ref=e463]: input
+              - generic [ref=e464]: New GRN
+            - link "Move Stock" [ref=e465] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/move
+              - img [ref=e467]: swap_horiz
+              - generic [ref=e468]: Move Stock
+            - link "Putaway" [ref=e469] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/putaway
+              - img [ref=e471]: move_to_inbox
+              - generic [ref=e472]: Putaway
+            - link "Order Pick" [ref=e473] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/order-pick
+              - img [ref=e475]: shopping_cart
+              - generic [ref=e476]: Order Pick
+            - link "Inventory" [ref=e477] [cursor=pointer]:
+              - /url: /opsdashboard/inventory
+              - img [ref=e479]: inventory
+              - generic [ref=e480]: Inventory
+        - generic [ref=e481]:
+          - generic [ref=e482]:
+            - heading "Recent Transactions" [level=3] [ref=e483]
+            - link "See all" [ref=e484] [cursor=pointer]:
+              - /url: /opsdashboard/transactions
+          - generic [ref=e485]:
+            - generic [ref=e486] [cursor=pointer]:
+              - img [ref=e488]: input
+              - generic [ref=e489]:
+                - generic [ref=e490]: GRN
+                - generic [ref=e491]: PO-24477
+              - generic [ref=e492]:
+                - generic [ref=e493]: COMPLETED
+                - generic [ref=e494]: 28 Apr
+            - generic [ref=e495] [cursor=pointer]:
+              - img [ref=e497]: shopping_cart
+              - generic [ref=e498]:
+                - generic [ref=e499]: ORDER_PICK
+                - generic [ref=e500]: ORD-3855
+              - generic [ref=e501]:
+                - generic [ref=e502]: COMPLETED
+                - generic [ref=e503]: 28 Apr
+            - generic [ref=e504] [cursor=pointer]:
+              - img [ref=e506]: shopping_cart
+              - generic [ref=e507]:
+                - generic [ref=e508]: ORDER_PICK
+                - generic [ref=e509]: ORD-3851
+              - generic [ref=e510]:
+                - generic [ref=e511]: COMPLETED
+                - generic [ref=e512]: 28 Apr
+            - generic [ref=e513] [cursor=pointer]:
+              - img [ref=e515]: swap_horiz
+              - generic [ref=e516]:
+                - generic [ref=e517]: MOVE
+                - generic [ref=e518]: MOV-577
+              - generic [ref=e519]:
+                - generic [ref=e520]: COMPLETED
+                - generic [ref=e521]: 27 Apr
+            - generic [ref=e522] [cursor=pointer]:
+              - img [ref=e524]: swap_horiz
+              - generic [ref=e525]:
+                - generic [ref=e526]: MOVE
+                - generic [ref=e527]: MOV-183
+              - generic [ref=e528]:
+                - generic [ref=e529]: COMPLETED
+                - generic [ref=e530]: 26 Apr

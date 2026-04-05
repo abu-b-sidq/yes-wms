@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DataTableComponent, TableColumn, TableAction } from '../../../shared/components/data-table/data-table.component';
 import { DetailDialogComponent } from '../../../shared/components/detail-dialog/detail-dialog.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -19,11 +20,11 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { Transaction, TransactionListItem, TransactionType, TransactionStatus } from '../../../core/models/operations.model';
 
 const STATUS_BADGE: Record<string, { color: string; bg: string }> = {
-  PENDING:     { color: '#d97706', bg: '#fef3c7' },
-  IN_PROGRESS: { color: '#2563eb', bg: '#dbeafe' },
-  COMPLETED:   { color: '#16a34a', bg: '#dcfce7' },
-  FAILED:      { color: '#ef4444', bg: '#fef2f2' },
-  CANCELLED:   { color: '#64748b', bg: '#f1f5f9' }
+  PENDING:     { color: 'var(--ops-warning-strong)', bg: 'var(--ops-warning-soft)' },
+  IN_PROGRESS: { color: 'var(--ops-primary)', bg: 'var(--ops-primary-soft)' },
+  COMPLETED:   { color: 'var(--ops-success-strong)', bg: 'var(--ops-success-soft)' },
+  FAILED:      { color: 'var(--ops-danger-strong)', bg: 'var(--ops-danger-soft)' },
+  CANCELLED:   { color: 'var(--ops-text-muted)', bg: 'var(--ops-item-hover)' }
 };
 
 @Component({
@@ -33,7 +34,7 @@ const STATUS_BADGE: Record<string, { color: string; bg: string }> = {
     CommonModule, RouterModule, FormsModule,
     MatFormFieldModule, MatInputModule, MatButtonModule,
     MatIconModule, MatSelectModule, MatSnackBarModule,
-    MatDialogModule, MatDividerModule,
+    MatDialogModule, MatDividerModule, MatTooltipModule,
     DataTableComponent, DetailDialogComponent,
     ConfirmDialogComponent, PageHeaderComponent
   ],
@@ -83,7 +84,7 @@ const STATUS_BADGE: Record<string, { color: string; bg: string }> = {
         [open]="viewDialogOpen()"
         [title]="selectedTxn()?.type ?? 'Transaction'"
         [subtitle]="selectedTxn()?.reference ?? selectedTxn()?.id?.slice(0,8) ?? ''"
-        (closed)="viewDialogOpen.set(false)">
+        (closed)="closeDetailDialog()">
 
         <div header-actions *ngIf="selectedTxn()">
           <button mat-icon-button color="primary"
@@ -174,35 +175,37 @@ const STATUS_BADGE: Record<string, { color: string; bg: string }> = {
     .content-area { padding: 0 24px 24px; }
     .txn-detail { }
     .detail-grid { display: flex; flex-direction: column; margin-bottom: 16px; }
-    .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+    .detail-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--ops-border); }
     .detail-row:last-child { border-bottom: none; }
-    .detail-label { font-size: 13px; color: #64748b; font-weight: 500; }
-    .detail-value { font-size: 14px; color: #1e293b; }
+    .detail-label { font-size: 13px; color: var(--ops-text-muted); font-weight: 500; }
+    .detail-value { font-size: 14px; color: var(--ops-text); text-align: right; }
     .mono { font-family: monospace; }
     .small { font-size: 12px; }
     .badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
     .txn-section { margin-bottom: 16px; }
-    .section-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px; }
+    .section-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ops-text-soft); margin-bottom: 8px; }
     .line-item {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
       padding: 10px 12px;
-      background: #f8fafc;
+      background: var(--ops-item-hover);
+      border: 1px solid var(--ops-border);
       border-radius: 8px;
       margin-bottom: 6px;
     }
     .line-main { display: flex; align-items: center; gap: 8px; flex: 1; }
-    .sku-code { font-weight: 600; font-size: 14px; color: #1e293b; font-family: monospace; }
-    .qty-badge { background: #dbeafe; color: #2563eb; font-weight: 600; font-size: 13px; padding: 1px 8px; border-radius: 12px; }
-    .line-sub { font-size: 12px; color: #64748b; flex: 1; }
+    .sku-code { font-weight: 600; font-size: 14px; color: var(--ops-text); font-family: monospace; }
+    .qty-badge { background: var(--ops-primary-soft); color: var(--ops-primary); font-weight: 600; font-size: 13px; padding: 1px 8px; border-radius: 12px; }
+    .line-sub { font-size: 12px; color: var(--ops-text-muted); flex: 1; min-width: 180px; }
     .task-status { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px; }
-    .ts-pending { background: #fef3c7; color: #d97706; }
-    .ts-completed { background: #dcfce7; color: #16a34a; }
-    .ts-in_progress { background: #dbeafe; color: #2563eb; }
-    .ts-cancelled { background: #f1f5f9; color: #64748b; }
+    .ts-pending { background: var(--ops-warning-soft); color: var(--ops-warning-strong); }
+    .ts-completed { background: var(--ops-success-soft); color: var(--ops-success-strong); }
+    .ts-in_progress { background: var(--ops-primary-soft); color: var(--ops-primary); }
+    .ts-cancelled { background: var(--ops-item-hover); color: var(--ops-text-muted); border: 1px solid var(--ops-border); }
     .doc-link { margin-top: 16px; }
-    .loading-detail { padding: 24px; text-align: center; color: #64748b; }
+    .loading-detail { padding: 24px; text-align: center; color: var(--ops-text-muted); }
     @media (max-width: 600px) { .content-area { padding: 0 12px 16px; } .filters { padding: 0 12px 12px; } }
   `]
 })
@@ -224,6 +227,7 @@ export class TransactionsListComponent implements OnInit {
   selectedTxn = signal<Transaction | null>(null);
   viewDialogOpen = signal(false);
   loadingDetail = signal(false);
+  private lastDialogCloseAt = 0;
 
   txnTypes: TransactionType[] = ['GRN', 'MOVE', 'PUTAWAY', 'ORDER_PICK', 'RETURN', 'CYCLE_COUNT', 'ADJUSTMENT'];
   txnStatuses: TransactionStatus[] = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'CANCELLED'];
@@ -232,19 +236,19 @@ export class TransactionsListComponent implements OnInit {
   get canExecute() { return this.auth.hasPermission('operations.execute'); }
 
   statusBadge(status: string) {
-    return STATUS_BADGE[status] ?? { color: '#64748b', bg: '#f1f5f9' };
+    return STATUS_BADGE[status] ?? { color: 'var(--ops-text-muted)', bg: 'var(--ops-item-hover)' };
   }
 
   columns: TableColumn[] = [
     { key: 'type', label: 'Type', width: '120px', type: 'badge',
       badgeConfig: {
-        GRN: { color: '#16a34a', bg: '#dcfce7' },
-        MOVE: { color: '#d97706', bg: '#fef3c7' },
-        PUTAWAY: { color: '#7c3aed', bg: '#ede9fe' },
-        ORDER_PICK: { color: '#dc2626', bg: '#fee2e2' },
-        RETURN: { color: '#0284c7', bg: '#e0f2fe' },
-        CYCLE_COUNT: { color: '#334155', bg: '#f1f5f9' },
-        ADJUSTMENT: { color: '#64748b', bg: '#f1f5f9' }
+        GRN: { color: 'var(--ops-success-strong)', bg: 'var(--ops-success-soft)' },
+        MOVE: { color: 'var(--ops-warning-strong)', bg: 'var(--ops-warning-soft)' },
+        PUTAWAY: { color: 'var(--ops-accent-violet)', bg: 'var(--ops-accent-violet-soft)' },
+        ORDER_PICK: { color: 'var(--ops-danger-strong)', bg: 'var(--ops-danger-soft)' },
+        RETURN: { color: 'var(--ops-primary)', bg: 'var(--ops-primary-soft)' },
+        CYCLE_COUNT: { color: 'var(--ops-text-muted)', bg: 'var(--ops-item-hover)' },
+        ADJUSTMENT: { color: 'var(--ops-text-muted)', bg: 'var(--ops-item-hover)' }
       }
     },
     { key: 'status', label: 'Status', type: 'badge', width: '130px',
@@ -282,6 +286,7 @@ export class TransactionsListComponent implements OnInit {
   }
 
   onView(txn: TransactionListItem): void {
+    if (performance.now() - this.lastDialogCloseAt < 250) return;
     this.viewDialogOpen.set(true);
     this.loadingDetail.set(true);
     this.ops.getTransaction(txn.id).subscribe({
@@ -341,4 +346,11 @@ export class TransactionsListComponent implements OnInit {
     this.loadTransactions();
   }
   onSearch(_q: string): void { this.pageIndex.set(0); this.loadTransactions(); }
+
+  closeDetailDialog(): void {
+    this.lastDialogCloseAt = performance.now();
+    this.viewDialogOpen.set(false);
+    this.loadingDetail.set(false);
+    this.selectedTxn.set(null);
+  }
 }

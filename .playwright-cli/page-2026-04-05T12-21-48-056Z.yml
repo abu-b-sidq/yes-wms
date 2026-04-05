@@ -1,0 +1,209 @@
+- generic [ref=e56]:
+  - complementary [ref=e59]:
+    - generic [ref=e60]:
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - img [ref=e64]: warehouse
+          - generic [ref=e65]:
+            - generic [ref=e66]: YES WMS
+            - generic [ref=e67]: Operations Console
+        - button [ref=e68] [cursor=pointer]:
+          - img [ref=e69]: keyboard_double_arrow_left
+      - generic [ref=e70]:
+        - button "Operate" [ref=e71] [cursor=pointer]
+        - button "Setup" [ref=e72] [cursor=pointer]
+      - navigation [ref=e73]:
+        - link "Dashboard" [ref=e74] [cursor=pointer]:
+          - /url: /opsdashboard/dashboard
+          - img [ref=e75]: dashboard
+          - generic [ref=e76]: Dashboard
+        - generic [ref=e77]:
+          - generic [ref=e78]: Transactions
+          - link "All Transactions" [ref=e79] [cursor=pointer]:
+            - /url: /opsdashboard/transactions
+            - img [ref=e80]: receipt_long
+            - generic [ref=e81]: All Transactions
+          - link "GRN Receive" [ref=e82] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/grn
+            - img [ref=e83]: input
+            - generic [ref=e84]: GRN Receive
+          - link "Move Stock" [ref=e85] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/move
+            - img [ref=e86]: swap_horiz
+            - generic [ref=e87]: Move Stock
+          - link "Putaway" [ref=e88] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/putaway
+            - img [ref=e89]: move_to_inbox
+            - generic [ref=e90]: Putaway
+          - link "Order Pick" [ref=e91] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/order-pick
+            - img [ref=e92]: shopping_cart
+            - generic [ref=e93]: Order Pick
+        - generic [ref=e94]:
+          - generic [ref=e95]: Inventory
+          - link "Stock Balances" [ref=e96] [cursor=pointer]:
+            - /url: /opsdashboard/inventory
+            - img [ref=e97]: inventory
+            - generic [ref=e98]: Stock Balances
+      - generic [ref=e99]:
+        - generic [ref=e101]:
+          - generic [ref=e102]:
+            - img [ref=e103]: apartment
+            - generic [ref=e104]: BLR-A1
+          - generic [ref=e105]:
+            - img [ref=e106]: warehouse
+            - generic [ref=e107]: BLR01
+        - generic [ref=e108]: Account
+        - link "Facilities 0" [ref=e109] [cursor=pointer]:
+          - /url: /opsdashboard/facility-select
+          - img [ref=e110]: domain
+          - generic [ref=e111]: Facilities
+          - generic [ref=e112]: "0"
+        - button "Logout" [ref=e113] [cursor=pointer]:
+          - img [ref=e114]: logout
+          - generic [ref=e115]: Logout
+        - generic [ref=e116]:
+          - generic [ref=e118]: QU
+          - generic [ref=e119]:
+            - generic [ref=e120]: QA User
+            - generic [ref=e121]: Bangalore A1
+          - img [ref=e122]: more_horiz
+  - generic [ref=e123]:
+    - generic [ref=e125]:
+      - button [ref=e126] [cursor=pointer]:
+        - img [ref=e127]: menu_open
+      - generic [ref=e130]: Transactions
+      - generic [ref=e131] [cursor=pointer]:
+        - img [ref=e132]: warehouse
+        - generic [ref=e133]: Bangalore A1
+        - button [ref=e134]:
+          - img [ref=e135]: expand_more
+      - button "Theme menu" [ref=e138] [cursor=pointer]:
+        - img [ref=e139]: dark_mode
+      - button "QU" [ref=e142] [cursor=pointer]:
+        - generic [ref=e143]: QU
+    - main [ref=e146]:
+      - generic [ref=e148]:
+        - generic "Transactions" [ref=e149]:
+          - generic [ref=e151]:
+            - img [ref=e153]: receipt_long
+            - generic [ref=e154]:
+              - heading "Transactions" [level=1] [ref=e155]
+              - paragraph [ref=e156]: View and manage all WMS transactions
+        - generic [ref=e157]:
+          - generic [ref=e160] [cursor=pointer]:
+            - generic [ref=e161]: Type
+            - combobox "Type All Types" [ref=e163]:
+              - generic [ref=e164]:
+                - generic [ref=e166]: All Types
+                - img [ref=e169]
+          - generic [ref=e173] [cursor=pointer]:
+            - generic [ref=e174]: Status
+            - combobox "Status All Statuses" [ref=e176]:
+              - generic [ref=e177]:
+                - generic [ref=e179]: All Statuses
+                - img [ref=e182]
+        - generic "Transactions" [ref=e185]:
+          - generic [ref=e186]:
+            - generic [ref=e191]:
+              - generic [ref=e192]: Search
+              - img [ref=e194]: search
+              - textbox "Search" [ref=e196]:
+                - /placeholder: Search transactions
+            - table [ref=e232]:
+              - rowgroup [ref=e233]:
+                - row "Type Status Reference Created Actions" [ref=e234]:
+                  - columnheader "Type" [ref=e235]:
+                    - button "Type" [ref=e236] [cursor=pointer]:
+                      - generic [ref=e237]: Type
+                  - columnheader "Status" [ref=e244]:
+                    - button "Status" [ref=e245] [cursor=pointer]:
+                      - generic [ref=e246]: Status
+                  - columnheader "Reference" [ref=e253]:
+                    - button "Reference" [ref=e254] [cursor=pointer]:
+                      - generic [ref=e255]: Reference
+                  - columnheader "Created" [ref=e262]:
+                    - button "Created" [ref=e263] [cursor=pointer]:
+                      - generic [ref=e264]: Created
+                  - columnheader "Actions" [ref=e271]
+              - rowgroup [ref=e272]:
+                - row "MOVE PENDING TXN-001 05 Apr 2026, 17:51" [ref=e273] [cursor=pointer]:
+                  - cell "MOVE" [ref=e274]:
+                    - generic [ref=e275]: MOVE
+                  - cell "PENDING" [ref=e276]:
+                    - generic [ref=e277]: PENDING
+                  - cell "TXN-001" [ref=e278]
+                  - cell "05 Apr 2026, 17:51" [ref=e279]
+                  - cell [ref=e280]:
+                    - button [ref=e281]:
+                      - img [ref=e282]: visibility
+                    - button [ref=e285]:
+                      - img [ref=e286]: play_arrow
+            - group [ref=e201]:
+              - generic [ref=e203]:
+                - generic [ref=e204]:
+                  - generic [ref=e205]: "Items per page:"
+                  - combobox "25 Items per page:" [ref=e210] [cursor=pointer]:
+                    - generic [ref=e211]:
+                      - generic [ref=e213]: "25"
+                      - img [ref=e216]
+                - generic [ref=e218]:
+                  - generic [ref=e219]: 1 – 1 of 1
+                  - button "First page" [disabled]:
+                    - img
+                  - button "Previous page" [disabled]:
+                    - img
+                  - button "Next page" [disabled]:
+                    - img
+                  - button "Last page" [disabled]:
+                    - img
+        - generic [ref=e290]:
+          - generic [ref=e291]:
+            - generic [ref=e292]:
+              - button [ref=e293] [cursor=pointer]:
+                - img [ref=e294]: arrow_back
+              - generic [ref=e297]:
+                - heading "MOVE" [level=2] [ref=e298]
+                - paragraph [ref=e299]: TXN-001
+            - generic [ref=e301]:
+              - button [ref=e302] [cursor=pointer]:
+                - img [ref=e303]: play_arrow
+              - button [ref=e306] [cursor=pointer]:
+                - img [ref=e307]: cancel
+          - separator [ref=e310]
+          - generic [ref=e312]:
+            - generic [ref=e313]:
+              - generic [ref=e314]:
+                - generic [ref=e315]: ID
+                - generic [ref=e316]: txn-001
+              - generic [ref=e317]:
+                - generic [ref=e318]: Type
+                - generic [ref=e319]: MOVE
+              - generic [ref=e320]:
+                - generic [ref=e321]: Status
+                - generic [ref=e322]: PENDING
+              - generic [ref=e323]:
+                - generic [ref=e324]: Reference
+                - generic [ref=e325]: TXN-001
+              - generic [ref=e326]:
+                - generic [ref=e327]: Notes
+                - generic [ref=e328]: Mock detail
+              - generic [ref=e329]:
+                - generic [ref=e330]: Created
+                - generic [ref=e331]: 05 Apr 2026, 17:51
+            - generic [ref=e332]:
+              - generic [ref=e333]: Picks (1)
+              - generic [ref=e334]:
+                - generic [ref=e335]:
+                  - generic [ref=e336]: SKU-1
+                  - generic [ref=e337]: × 2
+                - generic [ref=e338]: "LOCATION: A-01"
+                - generic [ref=e339]: PENDING
+            - generic [ref=e340]:
+              - generic [ref=e341]: Drops (1)
+              - generic [ref=e342]:
+                - generic [ref=e343]:
+                  - generic [ref=e344]: SKU-1
+                  - generic [ref=e345]: × 2
+                - generic [ref=e346]: "LOCATION: B-01"
+                - generic [ref=e347]: PENDING

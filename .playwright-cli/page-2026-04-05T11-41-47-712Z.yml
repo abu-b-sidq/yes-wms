@@ -1,0 +1,34 @@
+- generic [ref=e4]:
+  - button "Theme menu" [active] [ref=e5] [cursor=pointer]:
+    - img [ref=e6]: light_mode
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - img [ref=e12]: warehouse
+      - heading "YES WMS" [level=1] [ref=e13]
+      - paragraph [ref=e14]: Operations Dashboard
+    - generic [ref=e15]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - text: Email
+          - generic [ref=e20]: "*"
+        - img [ref=e22]: email
+        - textbox "Email" [ref=e24]:
+          - /placeholder: you@example.com
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - text: Password
+          - generic [ref=e30]: "*"
+        - img [ref=e32]: lock
+        - textbox "Password" [ref=e34]
+        - button [ref=e36] [cursor=pointer]:
+          - img [ref=e37]: visibility
+      - button "Sign In" [ref=e41]:
+        - generic [ref=e42]: Sign In
+    - generic [ref=e45]:
+      - separator [ref=e46]
+      - generic [ref=e47]: or
+      - separator [ref=e48]
+    - button "Google Continue with Google" [ref=e49]:
+      - generic [ref=e50]:
+        - img "Google" [ref=e51]
+        - text: Continue with Google

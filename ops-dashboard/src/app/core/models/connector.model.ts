@@ -89,8 +89,8 @@ export const ENTITY_TYPE_LABELS: Record<SyncEntityType, string> = {
 };
 
 export const SYNC_STATUS_CONFIG: Record<SyncStatus, { color: string; bg: string }> = {
-  PENDING:   { color: '#92400e', bg: '#fef3c7' },
-  RUNNING:   { color: '#1e40af', bg: '#dbeafe' },
-  COMPLETED: { color: '#166534', bg: '#dcfce7' },
-  FAILED:    { color: '#991b1b', bg: '#fee2e2' }
+  PENDING:   { color: 'var(--ops-warning-strong)', bg: 'var(--ops-warning-soft)' },
+  RUNNING:   { color: 'var(--ops-accent-blue)', bg: 'var(--ops-accent-blue-soft)' },
+  COMPLETED: { color: 'var(--ops-success-strong)', bg: 'var(--ops-success-soft)' },
+  FAILED:    { color: 'var(--ops-danger-strong)', bg: 'var(--ops-danger-soft)' }
 };

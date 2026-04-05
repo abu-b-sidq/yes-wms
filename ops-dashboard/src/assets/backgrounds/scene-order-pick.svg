@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" fill="none">
+  <defs>
+    <linearGradient id="pickA" x1="274" y1="188" x2="890" y2="660" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2C162" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#2F7DE1" stop-opacity=".12"/>
+    </linearGradient>
+  </defs>
+  <rect x="274" y="188" width="604" height="374" rx="48" fill="url(#pickA)" stroke="#1F6A4F" stroke-opacity=".14" stroke-width="8"/>
+  <path d="M360 478H704L676 318H438L412 392H360V478Z" fill="#F7FBF7" fill-opacity=".12" stroke="#1F6A4F" stroke-opacity=".22" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="448" cy="506" r="34" fill="#1F6A4F" fill-opacity=".18"/>
+  <circle cx="640" cy="506" r="34" fill="#1F6A4F" fill-opacity=".18"/>
+  <rect x="462" y="254" width="214" height="152" rx="28" fill="#F7FBF7" fill-opacity=".1"/>
+  <path d="M510 298H628" stroke="#1F6A4F" stroke-opacity=".24" stroke-width="14" stroke-linecap="round"/>
+  <path d="M510 342H612" stroke="#1F6A4F" stroke-opacity=".16" stroke-width="14" stroke-linecap="round"/>
+  <path d="M510 386H580" stroke="#1F6A4F" stroke-opacity=".16" stroke-width="14" stroke-linecap="round"/>
+  <path d="M942 252L982 292L1068 206" stroke="#79BF64" stroke-opacity=".66" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="924" y="330" width="192" height="154" rx="34" fill="#F7FBF7" fill-opacity=".12" stroke="#1F6A4F" stroke-opacity=".18" stroke-width="8"/>
+  <path d="M974 382H1072" stroke="#1F6A4F" stroke-opacity=".24" stroke-width="14" stroke-linecap="round"/>
+  <path d="M974 430H1040" stroke="#F2C162" stroke-opacity=".56" stroke-width="14" stroke-linecap="round"/>
+</svg>

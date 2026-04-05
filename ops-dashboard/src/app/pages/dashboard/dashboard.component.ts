@@ -27,6 +27,14 @@ interface RecentTransaction {
   created_at: string;
 }
 
+interface QuickAction {
+  label: string;
+  icon: string;
+  route: string;
+  color: string;
+  bg: string;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -60,35 +68,11 @@ interface RecentTransaction {
       <div class="section">
         <h3 class="section-title">Quick Actions</h3>
         <div class="quick-actions">
-          <a class="quick-action-btn" routerLink="/transactions/grn">
-            <div class="qa-icon" style="background:rgba(92,168,67,0.16)">
-              <mat-icon style="color:#8cc27c">input</mat-icon>
+          <a class="quick-action-btn" *ngFor="let action of quickActions" [routerLink]="action.route">
+            <div class="qa-icon" [style.background]="action.bg">
+              <mat-icon [style.color]="action.color">{{ action.icon }}</mat-icon>
             </div>
-            <span>New GRN</span>
-          </a>
-          <a class="quick-action-btn" routerLink="/transactions/move">
-            <div class="qa-icon" style="background:rgba(245,184,92,0.16)">
-              <mat-icon style="color:#f3c97f">swap_horiz</mat-icon>
-            </div>
-            <span>Move Stock</span>
-          </a>
-          <a class="quick-action-btn" routerLink="/transactions/putaway">
-            <div class="qa-icon" style="background:rgba(118,103,214,0.16)">
-              <mat-icon style="color:#b0a5ff">move_to_inbox</mat-icon>
-            </div>
-            <span>Putaway</span>
-          </a>
-          <a class="quick-action-btn" routerLink="/transactions/order-pick">
-            <div class="qa-icon" style="background:rgba(238,107,102,0.16)">
-              <mat-icon style="color:#f2a09d">shopping_cart</mat-icon>
-            </div>
-            <span>Order Pick</span>
-          </a>
-          <a class="quick-action-btn" routerLink="/inventory">
-            <div class="qa-icon" style="background:rgba(75,152,235,0.16)">
-              <mat-icon style="color:#8fc0f3">inventory</mat-icon>
-            </div>
-            <span>Inventory</span>
+            <span>{{ action.label }}</span>
           </a>
         </div>
       </div>
@@ -141,7 +125,7 @@ interface RecentTransaction {
       padding: 0 24px 24px;
     }
     .stat-card {
-      background: linear-gradient(180deg, rgba(37, 44, 51, 0.92) 0%, rgba(28, 33, 37, 0.96) 100%);
+      background: var(--ops-elevated-bg-soft);
       border: 1px solid var(--ops-border);
       border-radius: 18px;
       padding: 18px;
@@ -155,8 +139,8 @@ interface RecentTransaction {
       cursor: pointer;
     }
     .stat-card:hover {
-      border-color: rgba(75, 152, 235, 0.22);
-      background: linear-gradient(180deg, rgba(42, 50, 57, 0.96) 0%, rgba(30, 35, 40, 1) 100%);
+      border-color: var(--ops-border-strong);
+      background: var(--ops-elevated-bg-hover);
       transform: translateY(-2px);
     }
     .stat-icon {
@@ -167,7 +151,7 @@ interface RecentTransaction {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--ops-line-soft);
     }
     .stat-content { flex: 1; }
     .stat-value {
@@ -213,9 +197,9 @@ interface RecentTransaction {
       align-items: center;
       gap: 8px;
       padding: 16px 12px;
-      background: linear-gradient(180deg, rgba(37, 44, 51, 0.92) 0%, rgba(28, 33, 37, 0.96) 100%);
+      background: var(--ops-elevated-bg-soft);
       border: 1px solid var(--ops-border);
-      border-radius: 16px;
+      border-radius: 18px;
       text-decoration: none;
       color: var(--ops-text);
       box-shadow: var(--ops-shadow);
@@ -223,8 +207,8 @@ interface RecentTransaction {
     }
     .quick-action-btn:hover {
       transform: translateY(-2px);
-      border-color: rgba(75, 152, 235, 0.2);
-      background: linear-gradient(180deg, rgba(42, 50, 57, 0.96) 0%, rgba(30, 35, 40, 1) 100%);
+      border-color: var(--ops-border-strong);
+      background: var(--ops-elevated-bg-hover);
     }
     .qa-icon {
       width: 48px;
@@ -233,7 +217,7 @@ interface RecentTransaction {
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--ops-line-soft);
     }
     .quick-action-btn span {
       font-size: 12px;
@@ -246,7 +230,7 @@ interface RecentTransaction {
       padding: 32px;
     }
     .recent-list {
-      background: linear-gradient(180deg, rgba(37, 44, 51, 0.94) 0%, rgba(28, 33, 37, 0.98) 100%);
+      background: var(--ops-elevated-bg);
       border: 1px solid var(--ops-border);
       border-radius: 18px;
       box-shadow: var(--ops-shadow);
@@ -262,7 +246,7 @@ interface RecentTransaction {
       cursor: pointer;
     }
     .txn-item:last-child { border-bottom: none; }
-    .txn-item:hover { background: rgba(255, 255, 255, 0.04); }
+    .txn-item:hover { background: var(--ops-row-hover); }
     .txn-type-icon {
       width: 40px;
       height: 40px;
@@ -271,7 +255,7 @@ interface RecentTransaction {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--ops-line-softer);
     }
     .txn-info { flex: 1; }
     .txn-type {
@@ -297,11 +281,11 @@ interface RecentTransaction {
       border-radius: 20px;
       border: 1px solid transparent;
     }
-    .status-completed { background: var(--ops-success-soft); color: #8cc27c; border-color: rgba(92, 168, 67, 0.22); }
-    .status-pending { background: var(--ops-warning-soft); color: #f3c97f; border-color: rgba(245, 184, 92, 0.22); }
-    .status-in_progress { background: var(--ops-primary-soft); color: #8fc0f3; border-color: rgba(75, 152, 235, 0.22); }
-    .status-cancelled { background: rgba(255, 255, 255, 0.05); color: var(--ops-text-muted); border-color: var(--ops-border); }
-    .status-failed { background: var(--ops-danger-soft); color: #f2a09d; border-color: rgba(238, 107, 102, 0.24); }
+    .status-completed { background: var(--ops-success-soft); color: var(--ops-success-strong); border-color: var(--ops-success-soft); }
+    .status-pending { background: var(--ops-warning-soft); color: var(--ops-warning-strong); border-color: var(--ops-warning-soft); }
+    .status-in_progress { background: var(--ops-primary-soft); color: var(--ops-primary); border-color: var(--ops-primary-soft); }
+    .status-cancelled { background: var(--ops-item-hover); color: var(--ops-text-muted); border-color: var(--ops-border); }
+    .status-failed { background: var(--ops-danger-soft); color: var(--ops-danger-strong); border-color: var(--ops-danger-soft); }
     .txn-date { font-size: 11px; color: var(--ops-text-soft); }
     .empty-recent {
       display: flex;
@@ -331,11 +315,19 @@ export class DashboardComponent implements OnInit {
   private masters = inject(MastersService);
 
   stats = signal<StatCard[]>([
-    { label: 'SKUs', value: '—', icon: 'inventory_2', color: '#8fc0f3', bg: 'rgba(75,152,235,0.16)', route: '/masters/sku' },
-    { label: 'Zones', value: '—', icon: 'grid_view', color: '#b0a5ff', bg: 'rgba(118,103,214,0.16)', route: '/masters/zone' },
-    { label: 'Locations', value: '—', icon: 'location_on', color: '#8cc27c', bg: 'rgba(92,168,67,0.16)', route: '/masters/location' },
-    { label: 'Transactions', value: '—', icon: 'receipt_long', color: '#f3c97f', bg: 'rgba(245,184,92,0.16)', route: '/transactions' },
+    { label: 'SKUs', value: '—', icon: 'inventory_2', color: 'var(--ops-accent-blue)', bg: 'var(--ops-accent-blue-soft)', route: '/masters/sku' },
+    { label: 'Zones', value: '—', icon: 'grid_view', color: 'var(--ops-accent-violet)', bg: 'var(--ops-accent-violet-soft)', route: '/masters/zone' },
+    { label: 'Locations', value: '—', icon: 'location_on', color: 'var(--ops-success)', bg: 'var(--ops-success-soft)', route: '/masters/location' },
+    { label: 'Transactions', value: '—', icon: 'receipt_long', color: 'var(--ops-accent-amber)', bg: 'var(--ops-accent-amber-soft)', route: '/transactions' },
   ]);
+
+  quickActions: QuickAction[] = [
+    { label: 'New GRN', icon: 'input', route: '/transactions/grn', color: 'var(--ops-success)', bg: 'var(--ops-success-soft)' },
+    { label: 'Move Stock', icon: 'swap_horiz', route: '/transactions/move', color: 'var(--ops-accent-amber)', bg: 'var(--ops-accent-amber-soft)' },
+    { label: 'Putaway', icon: 'move_to_inbox', route: '/transactions/putaway', color: 'var(--ops-accent-violet)', bg: 'var(--ops-accent-violet-soft)' },
+    { label: 'Order Pick', icon: 'shopping_cart', route: '/transactions/order-pick', color: 'var(--ops-danger)', bg: 'var(--ops-danger-soft)' },
+    { label: 'Inventory', icon: 'inventory', route: '/inventory', color: 'var(--ops-primary)', bg: 'var(--ops-primary-soft)' }
+  ];
 
   recentTxns = signal<RecentTransaction[]>([]);
   loadingTxns = signal(true);
@@ -388,17 +380,25 @@ export class DashboardComponent implements OnInit {
 
   getTxnColor(type: string): string {
     const map: Record<string, string> = {
-      GRN: '#8cc27c', MOVE: '#f3c97f', PUTAWAY: '#b0a5ff',
-      ORDER_PICK: '#f2a09d', RETURN: '#8fc0f3', ADJUSTMENT: '#b3b5b7'
+      GRN: 'var(--ops-success)',
+      MOVE: 'var(--ops-accent-amber)',
+      PUTAWAY: 'var(--ops-accent-violet)',
+      ORDER_PICK: 'var(--ops-danger)',
+      RETURN: 'var(--ops-accent-blue)',
+      ADJUSTMENT: 'var(--ops-text-muted)'
     };
-    return map[type] ?? '#334155';
+    return map[type] ?? 'var(--ops-text-muted)';
   }
 
   getTxnBg(type: string): string {
     const map: Record<string, string> = {
-      GRN: 'rgba(92,168,67,0.16)', MOVE: 'rgba(245,184,92,0.16)', PUTAWAY: 'rgba(118,103,214,0.16)',
-      ORDER_PICK: 'rgba(238,107,102,0.16)', RETURN: 'rgba(75,152,235,0.16)', ADJUSTMENT: 'rgba(255,255,255,0.06)'
+      GRN: 'var(--ops-success-soft)',
+      MOVE: 'var(--ops-accent-amber-soft)',
+      PUTAWAY: 'var(--ops-accent-violet-soft)',
+      ORDER_PICK: 'var(--ops-danger-soft)',
+      RETURN: 'var(--ops-accent-blue-soft)',
+      ADJUSTMENT: 'var(--ops-item-hover)'
     };
-    return map[type] ?? '#f1f5f9';
+    return map[type] ?? 'var(--ops-item-hover)';
   }
 }

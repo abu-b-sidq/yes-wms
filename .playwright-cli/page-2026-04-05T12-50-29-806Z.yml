@@ -1,0 +1,151 @@
+- generic [ref=e4]:
+  - complementary [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - img [ref=e12]: warehouse
+          - generic [ref=e13]:
+            - generic [ref=e14]: YES WMS
+            - generic [ref=e15]: Operations Console
+        - button [ref=e16] [cursor=pointer]:
+          - img [ref=e17]: keyboard_double_arrow_left
+      - generic [ref=e18]:
+        - button "Operate" [ref=e19] [cursor=pointer]
+        - button "Setup" [ref=e20] [cursor=pointer]
+      - navigation [ref=e21]:
+        - link "Dashboard" [ref=e22] [cursor=pointer]:
+          - /url: /opsdashboard/dashboard
+          - img [ref=e23]: dashboard
+          - generic [ref=e24]: Dashboard
+        - generic [ref=e25]:
+          - generic [ref=e26]: Transactions
+          - link "All Transactions" [ref=e27] [cursor=pointer]:
+            - /url: /opsdashboard/transactions
+            - img [ref=e28]: receipt_long
+            - generic [ref=e29]: All Transactions
+          - link "GRN Receive" [active] [ref=e30] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/grn
+            - img [ref=e31]: input
+            - generic [ref=e32]: GRN Receive
+          - link "Move Stock" [ref=e33] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/move
+            - img [ref=e34]: swap_horiz
+            - generic [ref=e35]: Move Stock
+          - link "Putaway" [ref=e36] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/putaway
+            - img [ref=e37]: move_to_inbox
+            - generic [ref=e38]: Putaway
+          - link "Order Pick" [ref=e39] [cursor=pointer]:
+            - /url: /opsdashboard/transactions/order-pick
+            - img [ref=e40]: shopping_cart
+            - generic [ref=e41]: Order Pick
+        - generic [ref=e42]:
+          - generic [ref=e43]: Inventory
+          - link "Stock Balances" [ref=e44] [cursor=pointer]:
+            - /url: /opsdashboard/inventory
+            - img [ref=e45]: inventory
+            - generic [ref=e46]: Stock Balances
+      - generic [ref=e47]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - img [ref=e51]: apartment
+            - generic [ref=e52]: FAC-MAIN
+          - generic [ref=e53]:
+            - img [ref=e54]: warehouse
+            - generic [ref=e55]: DEMO_WH1
+        - generic [ref=e56]: Account
+        - link "Facilities 1" [ref=e57] [cursor=pointer]:
+          - /url: /opsdashboard/facility-select
+          - img [ref=e58]: domain
+          - generic [ref=e59]: Facilities
+          - generic [ref=e60]: "1"
+        - button "Logout" [ref=e61] [cursor=pointer]:
+          - img [ref=e62]: logout
+          - generic [ref=e63]: Logout
+        - generic [ref=e64]:
+          - img "Abu Bakkar Siddique" [ref=e66]
+          - generic [ref=e67]:
+            - generic [ref=e68]: Abu Bakkar Siddique
+            - generic [ref=e69]: Main Distribution Center
+          - img [ref=e70]: more_horiz
+  - generic [ref=e71]:
+    - generic [ref=e73]:
+      - button [ref=e74] [cursor=pointer]:
+        - img [ref=e75]: menu_open
+      - generic [ref=e78]: GRN
+      - generic [ref=e79] [cursor=pointer]:
+        - img [ref=e80]: warehouse
+        - generic [ref=e81]: Main Distribution Center
+        - button [ref=e82]:
+          - img [ref=e83]: expand_more
+      - button "Theme menu" [ref=e86] [cursor=pointer]:
+        - img [ref=e87]: dark_mode
+      - button "AB" [ref=e90] [cursor=pointer]:
+        - generic [ref=e91]: AB
+    - main [ref=e94]:
+      - generic [ref=e224]:
+        - generic "GRN — Goods Receipt" [ref=e225]:
+          - generic [ref=e226]:
+            - generic [ref=e227]:
+              - img [ref=e229]: input
+              - generic [ref=e230]:
+                - heading "GRN — Goods Receipt" [level=1] [ref=e231]
+                - paragraph [ref=e232]: Receive goods into the warehouse
+            - button "Back to Transactions" [ref=e234]:
+              - img [ref=e235]: arrow_back
+              - generic [ref=e236]: Back to Transactions
+        - generic [ref=e240]:
+          - generic [ref=e241]:
+            - generic [ref=e242]: Transaction Details
+            - generic [ref=e245]:
+              - generic [ref=e246]: Reference (Optional)
+              - img [ref=e248]: tag
+              - textbox "Reference (Optional)" [ref=e250]:
+                - /placeholder: e.g. PO-2024-001
+            - generic [ref=e254]:
+              - generic [ref=e255]: Notes (Optional)
+              - textbox "Notes (Optional)" [ref=e257]:
+                - /placeholder: Any notes...
+          - generic [ref=e259]:
+            - generic [ref=e260]:
+              - generic [ref=e261]: Items to Receive
+              - button "Add Item" [ref=e262]:
+                - img [ref=e263]: add
+                - generic [ref=e264]: Add Item
+            - generic [ref=e268]:
+              - generic [ref=e269]: "1"
+              - generic [ref=e270]:
+                - generic [ref=e273] [cursor=pointer]:
+                  - generic [ref=e274]:
+                    - text: SKU *
+                    - generic [ref=e275]: "*"
+                  - combobox "SKU *" [ref=e277]:
+                    - img [ref=e283]
+                - generic [ref=e286]:
+                  - generic [ref=e289]:
+                    - generic [ref=e290]:
+                      - text: Qty *
+                      - generic [ref=e291]: "*"
+                    - spinbutton "Qty *" [ref=e293]: "1"
+                  - generic [ref=e297]:
+                    - generic [ref=e298]: Batch (Optional)
+                    - textbox "Batch (Optional)" [ref=e300]:
+                      - /placeholder: Batch no.
+                - generic [ref=e304] [cursor=pointer]:
+                  - generic [ref=e305]: Destination Zone (Optional)
+                  - combobox "Destination Zone (Optional) — Default (PRE_PUTAWAY) —" [ref=e307]:
+                    - generic [ref=e308]:
+                      - generic [ref=e310]: — Default (PRE_PUTAWAY) —
+                      - img [ref=e313]
+              - button [disabled]:
+                - img: delete
+            - generic [ref=e316]:
+              - generic [ref=e317]:
+                - text: "Total Items:"
+                - strong [ref=e318]: "1"
+              - generic [ref=e319]:
+                - text: "Total Qty:"
+                - strong [ref=e320]: "1"
+          - button "Create & Execute GRN" [ref=e322]:
+            - img [ref=e323]: check
+            - generic [ref=e324]: Create & Execute GRN

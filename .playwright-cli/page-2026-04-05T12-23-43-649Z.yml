@@ -1,0 +1,138 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e56]:
+    - complementary [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - img [ref=e64]: warehouse
+            - generic [ref=e65]:
+              - generic [ref=e66]: YES WMS
+              - generic [ref=e67]: Operations Console
+          - button [ref=e68] [cursor=pointer]:
+            - img [ref=e69]: keyboard_double_arrow_left
+        - generic [ref=e70]:
+          - button "Operate" [ref=e71] [cursor=pointer]
+          - button "Setup" [ref=e72] [cursor=pointer]
+        - navigation [ref=e73]:
+          - link "Dashboard" [ref=e74] [cursor=pointer]:
+            - /url: /opsdashboard/dashboard
+            - img [ref=e75]: dashboard
+            - generic [ref=e76]: Dashboard
+          - generic [ref=e77]:
+            - generic [ref=e78]: Transactions
+            - link "All Transactions" [ref=e79] [cursor=pointer]:
+              - /url: /opsdashboard/transactions
+              - img [ref=e80]: receipt_long
+              - generic [ref=e81]: All Transactions
+            - link "GRN Receive" [ref=e82] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/grn
+              - img [ref=e83]: input
+              - generic [ref=e84]: GRN Receive
+            - link "Move Stock" [ref=e85] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/move
+              - img [ref=e86]: swap_horiz
+              - generic [ref=e87]: Move Stock
+            - link "Putaway" [ref=e88] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/putaway
+              - img [ref=e89]: move_to_inbox
+              - generic [ref=e90]: Putaway
+            - link "Order Pick" [ref=e91] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/order-pick
+              - img [ref=e92]: shopping_cart
+              - generic [ref=e93]: Order Pick
+          - generic [ref=e94]:
+            - generic [ref=e95]: Inventory
+            - link "Stock Balances" [ref=e96] [cursor=pointer]:
+              - /url: /opsdashboard/inventory
+              - img [ref=e97]: inventory
+              - generic [ref=e98]: Stock Balances
+        - generic [ref=e99]:
+          - generic [ref=e101]:
+            - generic [ref=e102]:
+              - img [ref=e103]: apartment
+              - generic [ref=e104]: BLR-A1
+            - generic [ref=e105]:
+              - img [ref=e106]: warehouse
+              - generic [ref=e107]: BLR01
+          - generic [ref=e108]: Account
+          - link "Facilities 0" [ref=e109] [cursor=pointer]:
+            - /url: /opsdashboard/facility-select
+            - img [ref=e110]: domain
+            - generic [ref=e111]: Facilities
+            - generic [ref=e112]: "0"
+          - button "Logout" [ref=e113] [cursor=pointer]:
+            - img [ref=e114]: logout
+            - generic [ref=e115]: Logout
+          - generic [ref=e116]:
+            - generic [ref=e118]: QU
+            - generic [ref=e119]:
+              - generic [ref=e120]: QA User
+              - generic [ref=e121]: Bangalore A1
+            - img [ref=e122]: more_horiz
+    - generic [ref=e123]:
+      - generic [ref=e125]:
+        - button [ref=e126] [cursor=pointer]:
+          - img [ref=e127]: menu_open
+        - generic [ref=e130]: Transactions
+        - generic [ref=e131] [cursor=pointer]:
+          - img [ref=e132]: warehouse
+          - generic [ref=e133]: Bangalore A1
+          - button [ref=e134]:
+            - img [ref=e135]: expand_more
+        - button "Theme menu" [ref=e138] [cursor=pointer]:
+          - img [ref=e139]: dark_mode
+        - button "QU" [ref=e142] [cursor=pointer]:
+          - generic [ref=e143]: QU
+      - main [ref=e146]:
+        - generic [ref=e261]:
+          - generic "Transactions" [ref=e262]:
+            - generic [ref=e264]:
+              - img [ref=e266]: receipt_long
+              - generic [ref=e267]:
+                - heading "Transactions" [level=1] [ref=e268]
+                - paragraph [ref=e269]: View and manage all WMS transactions
+          - generic [ref=e270]:
+            - generic [ref=e273] [cursor=pointer]:
+              - generic [ref=e274]: Type
+              - combobox "Type All Types" [ref=e276]:
+                - generic [ref=e277]:
+                  - generic [ref=e279]: All Types
+                  - img [ref=e282]
+            - generic [ref=e286] [cursor=pointer]:
+              - generic [ref=e287]: Status
+              - combobox "Status All Statuses" [ref=e289]:
+                - generic [ref=e290]:
+                  - generic [ref=e292]: All Statuses
+                  - img [ref=e295]
+          - generic "Transactions" [ref=e298]:
+            - generic [ref=e299]:
+              - generic [ref=e304]:
+                - generic [ref=e305]: Search
+                - img [ref=e307]: search
+                - textbox "Search" [ref=e309]:
+                  - /placeholder: Search transactions
+              - generic [ref=e311]:
+                - img [ref=e312]: inbox
+                - paragraph [ref=e313]: No transactions found
+              - group [ref=e314]:
+                - generic [ref=e316]:
+                  - generic [ref=e317]:
+                    - generic [ref=e318]: "Items per page:"
+                    - combobox "25 Items per page:" [ref=e323] [cursor=pointer]:
+                      - generic [ref=e324]:
+                        - generic [ref=e326]: "25"
+                        - img [ref=e329]
+                  - generic [ref=e331]:
+                    - generic [ref=e332]: 0 of 0
+                    - button "First page" [disabled]:
+                      - img
+                    - button "Previous page" [disabled]:
+                      - img
+                    - button "Next page" [disabled]:
+                      - img
+                    - button "Last page" [disabled]:
+                      - img
+  - generic [ref=e338]:
+    - generic [ref=e339]: Failed to load transactions
+    - button "Dismiss" [ref=e341]:
+      - generic [ref=e342]: Dismiss

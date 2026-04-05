@@ -1,0 +1,48 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - button "Theme menu" [expanded] [ref=e5] [cursor=pointer]:
+      - img [ref=e6]: light_mode
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - img [ref=e12]: warehouse
+        - heading "YES WMS" [level=1] [ref=e13]
+        - paragraph [ref=e14]: Operations Dashboard
+      - generic [ref=e15]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - text: Email
+            - generic [ref=e20]: "*"
+          - img [ref=e22]: email
+          - textbox "Email" [ref=e24]:
+            - /placeholder: you@example.com
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - text: Password
+            - generic [ref=e30]: "*"
+          - img [ref=e32]: lock
+          - textbox "Password" [ref=e34]
+          - button [ref=e36] [cursor=pointer]:
+            - img [ref=e37]: visibility
+        - button "Sign In" [ref=e41]:
+          - generic [ref=e42]: Sign In
+      - generic [ref=e45]:
+        - separator [ref=e46]
+        - generic [ref=e47]: or
+        - separator [ref=e48]
+      - button "Google Continue with Google" [ref=e49]:
+        - generic [ref=e50]:
+          - img "Google" [ref=e51]
+          - text: Continue with Google
+  - menu [ref=e71]:
+    - generic [ref=e72]:
+      - generic [ref=e59]: Theme
+      - separator [ref=e60]
+      - menuitem "System" [active] [ref=e61] [cursor=pointer]:
+        - img [ref=e62]: brightness_auto
+        - generic [ref=e63]: System
+      - menuitem "Light" [ref=e64] [cursor=pointer]:
+        - img [ref=e65]: light_mode
+        - generic [ref=e66]: Light
+      - menuitem "Dark" [ref=e67] [cursor=pointer]:
+        - img [ref=e68]: dark_mode
+        - generic [ref=e69]: Dark

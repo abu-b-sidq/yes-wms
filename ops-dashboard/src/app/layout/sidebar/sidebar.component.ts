@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/auth/auth.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 type WorkspaceMode = 'operate' | 'setup';
 
@@ -45,14 +46,25 @@ interface NavSection {
             </div>
           </div>
 
-          <button
-            type="button"
-            class="icon-button"
-            (click)="toggleCollapse.emit()"
-            [matTooltip]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-            matTooltipPosition="right">
-            <mat-icon>{{ collapsed ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left' }}</mat-icon>
-          </button>
+          <div class="sidebar-header-actions">
+            <button
+              type="button"
+              class="icon-button"
+              (click)="toggleTheme()"
+              [matTooltip]="themeTooltip()"
+              matTooltipPosition="right">
+              <mat-icon>{{ themeIcon() }}</mat-icon>
+            </button>
+
+            <button
+              type="button"
+              class="icon-button"
+              (click)="toggleCollapse.emit()"
+              [matTooltip]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+              matTooltipPosition="right">
+              <mat-icon>{{ collapsed ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left' }}</mat-icon>
+            </button>
+          </div>
         </div>
 
         <div class="workspace-switch" *ngIf="!collapsed">
@@ -166,6 +178,7 @@ export class SidebarComponent {
 
   private auth = inject(AuthService);
   private router = inject(Router);
+  readonly theme = inject(ThemeService);
 
   readonly workspace = signal<WorkspaceMode>('operate');
 
@@ -219,6 +232,8 @@ export class SidebarComponent {
     const parts = this.userName().split(/\s+/).filter(Boolean);
     return (parts[0]?.[0] ?? '?').concat(parts[1]?.[0] ?? '').toUpperCase();
   });
+  readonly themeIcon = computed(() => this.theme.resolved() === 'light' ? 'dark_mode' : 'light_mode');
+  readonly themeTooltip = computed(() => this.theme.resolved() === 'light' ? 'Switch to dark theme' : 'Switch to light theme');
 
   constructor() {
     this.syncWorkspace(this.router.url);
@@ -242,6 +257,10 @@ export class SidebarComponent {
 
   onLogout(): void {
     this.auth.logout();
+  }
+
+  toggleTheme(): void {
+    this.theme.toggle();
   }
 
   private syncWorkspace(url: string): void {

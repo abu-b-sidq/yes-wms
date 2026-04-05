@@ -214,9 +214,9 @@ const ALL_ENTITIES: SyncEntityType[] = ['SKU', 'INVENTORY', 'ORDER', 'PURCHASE_O
       padding: 64px 24px;
       text-align: center;
     }
-    .empty-icon { font-size: 56px; width: 56px; height: 56px; color: #cbd5e1; }
-    .empty-title { font-size: 18px; font-weight: 600; color: #1e293b; margin: 0; }
-    .empty-sub { font-size: 14px; color: #64748b; margin: 0; }
+    .empty-icon { font-size: 56px; width: 56px; height: 56px; color: var(--ops-text-soft); }
+    .empty-title { font-size: 18px; font-weight: 600; color: var(--ops-text-primary); margin: 0; }
+    .empty-sub { font-size: 14px; color: var(--ops-text-secondary); margin: 0; }
 
     .connector-grid {
       display: grid;
@@ -225,53 +225,58 @@ const ALL_ENTITIES: SyncEntityType[] = ['SKU', 'INVENTORY', 'ORDER', 'PURCHASE_O
     }
 
     .connector-card {
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--ops-card-bg);
+      border: 1px solid var(--ops-card-border);
       border-radius: 12px;
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      transition: box-shadow 0.15s ease;
+      transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
     }
-    .connector-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .connector-card:hover {
+      box-shadow: var(--ops-shadow-soft);
+      transform: translateY(-2px);
+      border-color: var(--ops-border-strong);
+    }
 
     .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
     .card-title-row { display: flex; align-items: center; gap: 12px; }
     .connector-icon {
       width: 40px; height: 40px;
-      background: #eff6ff;
+      background: var(--ops-primary-soft);
       border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
-    .connector-icon mat-icon { color: #3b82f6; }
+    .connector-icon mat-icon { color: var(--ops-primary); }
     .card-title-info { display: flex; flex-direction: column; gap: 2px; }
-    .card-name { font-size: 15px; font-weight: 600; color: #1e293b; }
-    .card-type { font-size: 12px; color: #64748b; }
+    .card-name { font-size: 15px; font-weight: 600; color: var(--ops-text-primary); }
+    .card-type { font-size: 12px; color: var(--ops-text-secondary); }
 
     .status-badge {
       font-size: 11px; font-weight: 600;
       padding: 3px 10px; border-radius: 20px;
     }
-    .status-badge.active { background: #dcfce7; color: #16a34a; }
-    .status-badge.inactive { background: #f1f5f9; color: #64748b; }
+    .status-badge.active { background: var(--ops-success-soft); color: var(--ops-success); }
+    .status-badge.inactive { background: var(--ops-surface-muted); color: var(--ops-text-soft); }
 
     .card-meta { display: flex; flex-direction: column; gap: 6px; }
-    .meta-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b; }
+    .meta-row { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ops-text-secondary); }
     .meta-icon { font-size: 14px; width: 14px; height: 14px; }
-    .never-synced { color: #94a3b8; font-style: italic; }
+    .never-synced { color: var(--ops-text-soft); font-style: italic; }
 
     .entity-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .entity-chip {
       font-size: 11px; padding: 3px 9px;
-      background: #f1f5f9; color: #475569;
+      background: var(--ops-item-hover); color: var(--ops-text-muted);
       border-radius: 20px; white-space: nowrap;
+      border: 1px solid var(--ops-line-soft);
     }
 
     .card-actions {
       display: flex; align-items: center; gap: 6px;
-      border-top: 1px solid #f1f5f9; padding-top: 12px;
+      border-top: 1px solid var(--ops-card-border); padding-top: 12px;
     }
     .action-btn { font-size: 13px; }
     .action-btn mat-icon { font-size: 16px; width: 16px; height: 16px; margin-right: 4px; }
@@ -282,7 +287,7 @@ const ALL_ENTITIES: SyncEntityType[] = ['SKU', 'INVENTORY', 'ORDER', 'PURCHASE_O
     .config-section, .entities-section { display: flex; flex-direction: column; gap: 4px; }
     .section-label {
       font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.08em; color: #64748b;
+      letter-spacing: 0.08em; color: var(--ops-text-secondary);
       padding: 8px 0 4px;
     }
     .entity-checks { display: flex; flex-direction: column; gap: 6px; padding: 4px 0; }

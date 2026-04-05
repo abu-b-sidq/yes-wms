@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" fill="none">
+  <defs>
+    <linearGradient id="facA" x1="286" y1="180" x2="924" y2="710" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F7DE1" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#79BF64" stop-opacity=".12"/>
+    </linearGradient>
+  </defs>
+  <rect x="286" y="248" width="196" height="282" rx="30" fill="url(#facA)" stroke="#1F6A4F" stroke-opacity=".14" stroke-width="8"/>
+  <rect x="524" y="188" width="232" height="342" rx="34" fill="url(#facA)" stroke="#1F6A4F" stroke-opacity=".14" stroke-width="8"/>
+  <rect x="798" y="278" width="164" height="252" rx="28" fill="url(#facA)" stroke="#1F6A4F" stroke-opacity=".14" stroke-width="8"/>
+  <g stroke="#1F6A4F" stroke-opacity=".18" stroke-width="10" stroke-linecap="round">
+    <path d="M340 324H428"/>
+    <path d="M340 382H428"/>
+    <path d="M580 278H702"/>
+    <path d="M580 338H702"/>
+    <path d="M580 398H702"/>
+    <path d="M842 344H918"/>
+    <path d="M842 402H918"/>
+  </g>
+  <path d="M970 184C970 148 999 120 1036 120C1071 120 1100 148 1100 184C1100 236 1036 290 1036 290C1036 290 970 236 970 184Z" fill="#F7FBF7" fill-opacity=".14" stroke="#1F6A4F" stroke-opacity=".18" stroke-width="8"/>
+  <circle cx="1036" cy="184" r="22" fill="#2F7DE1" fill-opacity=".46"/>
+  <path d="M258 622H980" stroke="#1F6A4F" stroke-opacity=".16" stroke-width="12" stroke-linecap="round"/>
+</svg>

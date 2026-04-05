@@ -5,11 +5,18 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { initFirebase } from './core/auth/firebase.config';
+import { ThemeService } from './core/services/theme.service';
 import { environment } from '../environments/environment';
 
 function initFirebaseFactory(): () => void {
   return () => {
     initFirebase(environment.firebase);
+  };
+}
+
+function initThemeFactory(theme: ThemeService): () => void {
+  return () => {
+    theme.init();
   };
 }
 
@@ -21,6 +28,12 @@ export const appConfig: ApplicationConfig = {
     {
       provide: APP_INITIALIZER,
       useFactory: initFirebaseFactory,
+      multi: true
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initThemeFactory,
+      deps: [ThemeService],
       multi: true
     }
   ]

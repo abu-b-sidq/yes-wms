@@ -129,7 +129,7 @@ import { ConnectorConfig, SyncLog, ENTITY_TYPE_LABELS, SYNC_STATUS_CONFIG } from
             <div class="log-errors" *ngIf="log.error_details && log.error_details.length > 0">
               <details>
                 <summary class="errors-summary">
-                  <mat-icon style="font-size:14px;vertical-align:middle;color:#dc2626">error_outline</mat-icon>
+                  <mat-icon style="font-size:14px;vertical-align:middle;color:var(--ops-danger)">error_outline</mat-icon>
                   {{ log.error_details.length }} error{{ log.error_details.length !== 1 ? 's' : '' }}
                 </summary>
                 <div class="error-list">
@@ -153,16 +153,17 @@ import { ConnectorConfig, SyncLog, ENTITY_TYPE_LABELS, SYNC_STATUS_CONFIG } from
 
     .connector-banner {
       display: flex; flex-wrap: wrap; gap: 24px;
-      background: white; border: 1px solid #e2e8f0;
-      border-radius: 10px; padding: 16px 20px;
+      background: var(--ops-elevated-bg); border: 1px solid var(--ops-card-border);
+      border-radius: 16px; padding: 18px 20px;
+      box-shadow: var(--ops-shadow-soft);
     }
     .banner-item { display: flex; flex-direction: column; gap: 3px; }
-    .banner-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 0.06em; }
-    .banner-value { font-size: 14px; color: #1e293b; font-weight: 500; }
+    .banner-label { font-size: 11px; color: var(--ops-text-soft); text-transform: uppercase; font-weight: 600; letter-spacing: 0.06em; }
+    .banner-value { font-size: 14px; color: var(--ops-text-primary); font-weight: 500; }
 
     .status-badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-    .status-badge.active { background: #dcfce7; color: #16a34a; }
-    .status-badge.inactive { background: #f1f5f9; color: #64748b; }
+    .status-badge.active { background: var(--ops-success-soft); color: var(--ops-success); }
+    .status-badge.inactive { background: var(--ops-surface-muted); color: var(--ops-text-soft); }
 
     .center-spinner { display: flex; justify-content: center; padding: 48px; }
 
@@ -170,26 +171,27 @@ import { ConnectorConfig, SyncLog, ENTITY_TYPE_LABELS, SYNC_STATUS_CONFIG } from
       display: flex; flex-direction: column; align-items: center;
       gap: 10px; padding: 48px; text-align: center;
     }
-    .empty-icon { font-size: 48px; width: 48px; height: 48px; color: #cbd5e1; }
-    .empty-title { font-size: 16px; font-weight: 600; color: #1e293b; margin: 0; }
-    .empty-sub { font-size: 13px; color: #64748b; margin: 0; }
+    .empty-icon { font-size: 48px; width: 48px; height: 48px; color: var(--ops-text-soft); }
+    .empty-title { font-size: 16px; font-weight: 600; color: var(--ops-text-primary); margin: 0; }
+    .empty-sub { font-size: 13px; color: var(--ops-text-secondary); margin: 0; }
 
     .logs-list { display: flex; flex-direction: column; gap: 10px; }
     .logs-summary {
       display: flex; justify-content: space-between; align-items: center;
-      font-size: 13px; color: #64748b;
+      font-size: 13px; color: var(--ops-text-secondary);
     }
 
     .log-card {
-      background: white; border: 1px solid #e2e8f0;
-      border-radius: 10px; padding: 16px; display: flex;
+      background: var(--ops-card-bg); border: 1px solid var(--ops-card-border);
+      border-radius: 16px; padding: 16px; display: flex;
       flex-direction: column; gap: 12px;
+      box-shadow: var(--ops-shadow-soft);
     }
 
     .log-header { display: flex; justify-content: space-between; align-items: center; }
     .log-entity { display: flex; align-items: center; gap: 8px; }
-    .entity-icon { font-size: 18px; width: 18px; height: 18px; color: #64748b; }
-    .entity-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+    .entity-icon { font-size: 18px; width: 18px; height: 18px; color: var(--ops-text-secondary); }
+    .entity-name { font-size: 14px; font-weight: 600; color: var(--ops-text-primary); }
     .log-status {
       font-size: 11px; font-weight: 700; padding: 3px 10px;
       border-radius: 20px; text-transform: uppercase;
@@ -197,24 +199,24 @@ import { ConnectorConfig, SyncLog, ENTITY_TYPE_LABELS, SYNC_STATUS_CONFIG } from
 
     .log-stats { display: flex; gap: 20px; }
     .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-    .stat-num { font-size: 20px; font-weight: 700; color: #1e293b; }
-    .stat-label { font-size: 11px; color: #94a3b8; }
-    .stat.created .stat-num { color: #16a34a; }
-    .stat.updated .stat-num { color: #2563eb; }
-    .stat.failed .stat-num { color: #dc2626; }
+    .stat-num { font-size: 20px; font-weight: 700; color: var(--ops-text-primary); }
+    .stat-label { font-size: 11px; color: var(--ops-text-soft); }
+    .stat.created .stat-num { color: var(--ops-success); }
+    .stat.updated .stat-num { color: var(--ops-primary); }
+    .stat.failed .stat-num { color: var(--ops-danger); }
 
-    .log-time { font-size: 12px; color: #94a3b8; }
-    .duration { color: #94a3b8; }
+    .log-time { font-size: 12px; color: var(--ops-text-soft); }
+    .duration { color: var(--ops-text-soft); }
 
-    .log-errors { border-top: 1px solid #f1f5f9; padding-top: 10px; }
-    .errors-summary { font-size: 13px; color: #dc2626; cursor: pointer; list-style: none; }
+    .log-errors { border-top: 1px solid var(--ops-card-border); padding-top: 10px; }
+    .errors-summary { font-size: 13px; color: var(--ops-danger); cursor: pointer; list-style: none; }
     .error-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
     .error-item {
-      background: #fef2f2; border-radius: 6px; padding: 8px 10px;
+      background: var(--ops-danger-soft); border-radius: 6px; padding: 8px 10px;
       display: flex; flex-direction: column; gap: 2px;
     }
-    .error-id { font-size: 11px; font-family: monospace; color: #64748b; }
-    .error-msg { font-size: 12px; color: #dc2626; }
+    .error-id { font-size: 11px; font-family: monospace; color: var(--ops-text-secondary); }
+    .error-msg { font-size: 12px; color: var(--ops-danger); }
 
     @media (max-width: 600px) {
       .content-area { padding: 0 12px 16px; }

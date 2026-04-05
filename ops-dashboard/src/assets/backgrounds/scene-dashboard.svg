@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" fill="none">
+  <defs>
+    <linearGradient id="dashA" x1="244" y1="184" x2="920" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D4EA72" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#1F6A4F" stop-opacity=".12"/>
+    </linearGradient>
+    <linearGradient id="dashB" x1="618" y1="244" x2="930" y2="546" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#79BF64" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#2F7DE1" stop-opacity=".14"/>
+    </linearGradient>
+  </defs>
+  <rect x="244" y="184" width="520" height="328" rx="42" fill="url(#dashA)" stroke="#1F6A4F" stroke-opacity=".18" stroke-width="8"/>
+  <rect x="288" y="232" width="224" height="118" rx="28" fill="#F7FBF7" fill-opacity=".18"/>
+  <path d="M336 318V278" stroke="#1F6A4F" stroke-opacity=".36" stroke-width="18" stroke-linecap="round"/>
+  <path d="M382 318V248" stroke="#79BF64" stroke-opacity=".58" stroke-width="18" stroke-linecap="round"/>
+  <path d="M428 318V264" stroke="#D4EA72" stroke-opacity=".82" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="802" cy="340" r="126" fill="url(#dashB)"/>
+  <circle cx="802" cy="340" r="82" fill="#F7FBF7" fill-opacity=".78"/>
+  <path d="M802 214A126 126 0 0 1 910 278" stroke="#1F6A4F" stroke-opacity=".42" stroke-width="32" stroke-linecap="round"/>
+  <path d="M900 432A126 126 0 0 1 722 442" stroke="#79BF64" stroke-opacity=".72" stroke-width="32" stroke-linecap="round"/>
+  <path d="M686 268A126 126 0 0 1 752 224" stroke="#C58A1F" stroke-opacity=".52" stroke-width="32" stroke-linecap="round"/>
+  <rect x="286" y="392" width="634" height="212" rx="36" fill="#F7FBF7" fill-opacity=".10" stroke="#1F6A4F" stroke-opacity=".14" stroke-width="6"/>
+  <path d="M338 538L422 474L490 506L592 432L688 468L776 388L872 430" stroke="#1F6A4F" stroke-opacity=".32" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="422" cy="474" r="16" fill="#D4EA72" fill-opacity=".8"/>
+  <circle cx="592" cy="432" r="16" fill="#79BF64" fill-opacity=".72"/>
+  <circle cx="776" cy="388" r="16" fill="#2F7DE1" fill-opacity=".54"/>
+  <rect x="868" y="644" width="146" height="94" rx="28" fill="#F7FBF7" fill-opacity=".12"/>
+  <rect x="904" y="672" width="72" height="18" rx="9" fill="#1F6A4F" fill-opacity=".34"/>
+  <rect x="926" y="704" width="50" height="18" rx="9" fill="#D4EA72" fill-opacity=".7"/>
+</svg>

@@ -26,7 +26,7 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
         <!-- Header -->
         <div class="dialog-header">
           <div class="dialog-title-area">
-            <button mat-icon-button type="button" class="back-btn" (click)="onClose()">
+            <button mat-icon-button type="button" class="back-btn" (click)="onClose($event)">
               <mat-icon>arrow_back</mat-icon>
             </button>
             <div>
@@ -49,7 +49,7 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
         <div class="dialog-footer" *ngIf="showFooter">
           <mat-divider></mat-divider>
           <div class="footer-actions">
-            <button mat-stroked-button type="button" (click)="onClose()">Cancel</button>
+            <button mat-stroked-button type="button" (click)="onClose($event)">Cancel</button>
             <ng-content select="[footer-actions]"></ng-content>
           </div>
         </div>
@@ -60,14 +60,14 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
     .dialog-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(20, 25, 30, 0.82);
+      background: var(--ops-overlay);
       backdrop-filter: blur(8px);
       z-index: 1000;
       display: flex;
       align-items: flex-end;
     }
     .dialog-panel {
-      background: linear-gradient(180deg, rgba(37, 44, 51, 0.96) 0%, rgba(28, 33, 37, 1) 100%);
+      background: var(--ops-elevated-bg);
       border: 1px solid var(--ops-border);
       width: 100%;
       max-height: 92vh;
@@ -85,6 +85,7 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
       justify-content: space-between;
       padding: 12px 8px 12px 4px;
       flex-shrink: 0;
+      background: var(--ops-glass-soft);
     }
     .dialog-title-area {
       display: flex;
@@ -93,6 +94,7 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
     }
     .back-btn {
       color: var(--ops-text-muted);
+      background: var(--ops-item-hover);
     }
     .dialog-title {
       font-size: 18px;
@@ -113,9 +115,11 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
       flex: 1;
       overflow-y: auto;
       padding: 16px;
+      color: var(--ops-text);
     }
     .dialog-footer {
       flex-shrink: 0;
+      background: var(--ops-item-hover);
     }
     .footer-actions {
       display: flex;
@@ -145,7 +149,9 @@ export class DetailDialogComponent {
   @Input() showFooter = false;
   @Output() closed = new EventEmitter<void>();
 
-  onClose(): void {
+  onClose(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.closed.emit();
   }
 

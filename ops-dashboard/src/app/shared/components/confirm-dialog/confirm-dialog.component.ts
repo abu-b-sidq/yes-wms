@@ -40,36 +40,39 @@ export interface ConfirmDialogData {
       padding: 16px;
       text-align: center;
       max-width: 360px;
+      color: var(--ops-text);
     }
     .confirm-icon {
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      background: #eff6ff;
+      background: var(--ops-primary-soft);
+      border: 1px solid var(--ops-border);
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 16px;
     }
     .confirm-icon mat-icon {
-      color: #3b82f6;
+      color: var(--ops-primary);
       font-size: 28px;
       width: 28px;
       height: 28px;
     }
     .confirm-icon.danger {
-      background: #fef2f2;
+      background: var(--ops-danger-soft);
     }
     .confirm-icon.danger mat-icon {
-      color: #ef4444;
+      color: var(--ops-danger);
     }
     h2 {
       font-size: 18px;
       font-weight: 600;
+      color: var(--ops-text);
       margin: 0 0 8px;
     }
     p {
-      color: #64748b;
+      color: var(--ops-text-muted);
       margin: 0;
       font-size: 14px;
     }
