@@ -83,7 +83,15 @@ _TXN_SCHEMA = {
     },
 }
 
-_TXN_LIST_SCHEMA = {"type": "array", "items": _TXN_SCHEMA}
+_TXN_LIST_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "items": {"type": "array", "items": _TXN_SCHEMA},
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "size": {"type": "integer"},
+    },
+}
 
 # ---------------------------------------------------------------------------
 # openapi_extra presets
@@ -140,10 +148,18 @@ def list_transactions(
         require_optional_facility_header=True,
     )
     org, facility = resolve_request_tenant(request)
-    txns = services.list_transactions(
-        org, facility=facility, transaction_type=transaction_type, status=status
+    page = _positive_int_param(request, "page", 1)
+    size = _positive_int_param(request, "size", 25, maximum=100)
+    txns, total = services.list_transactions(
+        org, facility=facility, transaction_type=transaction_type, status=status,
+        page=page, size=size,
     )
-    return success_response(request, data=[_txn_out(t) for t in txns])
+    return success_response(request, data={
+        "items": [_txn_out(t) for t in txns],
+        "total": total,
+        "page": page,
+        "size": size,
+    })
 
 
 @router.get(
@@ -317,6 +333,18 @@ register_response_schema("app_operations_routes_order_pick", _TXN_SCHEMA)
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _positive_int_param(request, key: str, default: int, *, maximum: int | None = None) -> int:
+    raw_value = request.GET.get(key)
+    try:
+        value = int(raw_value) if raw_value is not None else default
+    except (TypeError, ValueError):
+        value = default
+    value = max(value, 1)
+    if maximum is not None:
+        value = min(value, maximum)
+    return value
+
 
 def _get_user(request) -> str:
     auth = getattr(request, "auth_context", None)

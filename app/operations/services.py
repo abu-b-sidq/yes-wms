@@ -136,7 +136,9 @@ def list_transactions(
     status: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
-) -> list[Transaction]:
+    page: int = 1,
+    size: int = 25,
+) -> tuple[list[Transaction], int]:
     qs = Transaction.objects.filter(org=org).select_related("facility").prefetch_related(
         "picks__sku", "drops__sku"
     )
@@ -150,7 +152,10 @@ def list_transactions(
         qs = qs.filter(created_at__gte=date_from)
     if date_to:
         qs = qs.filter(created_at__lte=date_to)
-    return list(qs.order_by("-created_at")[:100])
+    qs = qs.order_by("-created_at")
+    total = qs.count()
+    offset = (page - 1) * size
+    return list(qs[offset:offset + size]), total
 
 
 def create_and_execute_move(

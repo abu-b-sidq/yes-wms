@@ -145,6 +145,26 @@ _PAGINATED_SKU_SCHEMA = {
     },
 }
 
+_PAGINATED_ZONE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "items": {"type": "array", "items": _ZONE_SCHEMA},
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "size": {"type": "integer"},
+    },
+}
+
+_PAGINATED_LOCATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "items": {"type": "array", "items": _LOCATION_SCHEMA},
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "size": {"type": "integer"},
+    },
+}
+
 _ORG_USER_SCHEMA = {
     "type": "object",
     "properties": {
@@ -846,11 +866,18 @@ def list_zones(request):
         require_membership=True,
     )
     org, _ = resolve_request_tenant(request)
-    zones = services.list_zones(org)
-    return success_response(
-        request,
-        data=[_zone_out(z) for z in zones],
-    )
+    page = _positive_int_param(request, "page", 1)
+    size = _positive_int_param(request, "size", 25, maximum=100)
+    search = (request.GET.get("search") or "").strip()
+    zones = services.list_zones(org, search=search)
+    total = len(zones)
+    start = (page - 1) * size
+    return success_response(request, data={
+        "items": [_zone_out(z) for z in zones[start:start + size]],
+        "total": total,
+        "page": page,
+        "size": size,
+    })
 
 
 @router.get(
@@ -926,8 +953,18 @@ def list_locations(request):
         require_membership=True,
     )
     org, _ = resolve_request_tenant(request)
-    locations = services.list_locations(org)
-    return success_response(request, data=[_location_out(loc) for loc in locations])
+    page = _positive_int_param(request, "page", 1)
+    size = _positive_int_param(request, "size", 25, maximum=100)
+    search = (request.GET.get("search") or "").strip()
+    locations = services.list_locations(org, search=search)
+    total = len(locations)
+    start = (page - 1) * size
+    return success_response(request, data={
+        "items": [_location_out(loc) for loc in locations[start:start + size]],
+        "total": total,
+        "page": page,
+        "size": size,
+    })
 
 
 @router.get(
@@ -996,11 +1033,11 @@ register_response_schema("app_masters_routes_list_skus", _PAGINATED_SKU_SCHEMA)
 register_response_schema("app_masters_routes_get_sku", _SKU_SCHEMA)
 register_response_schema("app_masters_routes_update_sku", _SKU_SCHEMA)
 register_response_schema("app_masters_routes_create_zone", _ZONE_SCHEMA)
-register_response_schema("app_masters_routes_list_zones", _list_of(_ZONE_SCHEMA))
+register_response_schema("app_masters_routes_list_zones", _PAGINATED_ZONE_SCHEMA)
 register_response_schema("app_masters_routes_get_zone", _ZONE_SCHEMA)
 register_response_schema("app_masters_routes_update_zone", _ZONE_SCHEMA)
 register_response_schema("app_masters_routes_create_location", _LOCATION_SCHEMA)
-register_response_schema("app_masters_routes_list_locations", _list_of(_LOCATION_SCHEMA))
+register_response_schema("app_masters_routes_list_locations", _PAGINATED_LOCATION_SCHEMA)
 register_response_schema("app_masters_routes_get_location", _LOCATION_SCHEMA)
 register_response_schema("app_masters_routes_update_location", _LOCATION_SCHEMA)
 

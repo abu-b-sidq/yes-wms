@@ -150,8 +150,14 @@ def update_zone(org: Organization, code: str, data: dict, user: str = "") -> Zon
     return zone
 
 
-def list_zones(org: Organization) -> list[Zone]:
-    return list(Zone.objects.filter(org=org).order_by("code"))
+def list_zones(org: Organization, search: str = "") -> list[Zone]:
+    queryset = Zone.objects.filter(org=org)
+    if search:
+        term = search.strip()
+        queryset = queryset.filter(
+            Q(code__icontains=term) | Q(name__icontains=term)
+        )
+    return list(queryset.order_by("code"))
 
 
 # --- Location ---
@@ -191,8 +197,14 @@ def update_location(
     return location
 
 
-def list_locations(org: Organization) -> list[Location]:
-    return list(Location.objects.filter(org=org).select_related("zone").order_by("code"))
+def list_locations(org: Organization, search: str = "") -> list[Location]:
+    queryset = Location.objects.filter(org=org).select_related("zone")
+    if search:
+        term = search.strip()
+        queryset = queryset.filter(
+            Q(code__icontains=term) | Q(name__icontains=term)
+        )
+    return list(queryset.order_by("code"))
 
 
 # --- Facility Mapping Overrides ---

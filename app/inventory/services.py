@@ -114,7 +114,9 @@ def get_balances(
     sku_code: str | None = None,
     entity_type: str | None = None,
     entity_code: str | None = None,
-) -> list[InventoryBalance]:
+    page: int = 1,
+    size: int = 50,
+) -> tuple[list[InventoryBalance], int]:
     qs = InventoryBalance.objects.filter(org=org).select_related("facility", "sku")
     if facility:
         qs = qs.filter(facility=facility)
@@ -124,7 +126,10 @@ def get_balances(
         qs = qs.filter(entity_type=entity_type)
     if entity_code:
         qs = qs.filter(entity_code=entity_code)
-    return list(qs.order_by("sku__code", "entity_type", "entity_code")[:200])
+    qs = qs.order_by("sku__code", "entity_type", "entity_code")
+    total = qs.count()
+    offset = (page - 1) * size
+    return list(qs[offset:offset + size]), total
 
 
 def get_balances_by_location(

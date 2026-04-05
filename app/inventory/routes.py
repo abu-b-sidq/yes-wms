@@ -59,7 +59,15 @@ _LEDGER_SCHEMA = {
     },
 }
 
-_BALANCES_LIST = {"type": "array", "items": _BALANCE_SCHEMA}
+_BALANCES_LIST = {
+    "type": "object",
+    "properties": {
+        "items": {"type": "array", "items": _BALANCE_SCHEMA},
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "size": {"type": "integer"},
+    },
+}
 _LEDGER_LIST = {"type": "array", "items": _LEDGER_SCHEMA}
 
 # ---------------------------------------------------------------------------
@@ -88,11 +96,19 @@ def list_balances(
         require_optional_facility_header=True,
     )
     org, facility = resolve_request_tenant(request)
-    balances = services.get_balances(
+    page = _positive_int_param(request, "page", 1)
+    size = _positive_int_param(request, "size", 50, maximum=200)
+    balances, total = services.get_balances(
         org, facility=facility, sku_code=sku_code,
         entity_type=entity_type, entity_code=entity_code,
+        page=page, size=size,
     )
-    return success_response(request, data=[_balance_out(b) for b in balances])
+    return success_response(request, data={
+        "items": [_balance_out(b) for b in balances],
+        "total": total,
+        "page": page,
+        "size": size,
+    })
 
 
 @router.get(
@@ -189,6 +205,18 @@ register_response_schema("app_inventory_routes_ledger_by_transaction", _LEDGER_L
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _positive_int_param(request, key: str, default: int, *, maximum: int | None = None) -> int:
+    raw_value = request.GET.get(key)
+    try:
+        value = int(raw_value) if raw_value is not None else default
+    except (TypeError, ValueError):
+        value = default
+    value = max(value, 1)
+    if maximum is not None:
+        value = min(value, maximum)
+    return value
+
 
 def _balance_out(b) -> dict:
     return schemas.BalanceOut(
