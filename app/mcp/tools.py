@@ -340,7 +340,15 @@ def wms_list_transactions(
         enforce_facility_scope(access, facility_id)
     org = _resolve_org(org_id)
     facility = _resolve_facility(org, facility_id) if facility_id else None
-    return [_txn(t) for t in list_transactions(org, facility=facility, transaction_type=transaction_type, status=status, date_from=date_from, date_to=date_to)]
+    transactions, _total = list_transactions(
+        org,
+        facility=facility,
+        transaction_type=transaction_type,
+        status=status,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    return [_txn(t) for t in transactions]
 
 
 @sync_to_async

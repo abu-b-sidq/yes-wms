@@ -153,3 +153,89 @@ def test_inventory_balance_tool_unpacks_paginated_service_result(monkeypatch):
             "updated_at": "2026-01-01T00:00:00+00:00",
         }
     ]
+
+
+def test_list_transactions_tool_unpacks_paginated_service_result(monkeypatch):
+    fake_access = SimpleNamespace(allowed_facility_codes=[])
+    fake_org = SimpleNamespace(id="testorg")
+    fake_facility = SimpleNamespace(code="FAC-001")
+    fake_transaction = SimpleNamespace(
+        id="txn-1",
+        transaction_type="MOVE",
+        status="PENDING",
+        reference_number="REF-001",
+        notes="Move stock",
+        document_url="",
+        created_by="firebase-user-1",
+        picks=SimpleNamespace(all=lambda: []),
+        drops=SimpleNamespace(all=lambda: []),
+        created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        updated_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
+        started_at=None,
+        completed_at=None,
+        cancelled_at=None,
+    )
+    captured: dict[str, object] = {}
+
+    def fake_list_transactions(
+        org,
+        facility=None,
+        transaction_type=None,
+        status=None,
+        date_from=None,
+        date_to=None,
+    ):
+        captured.update({
+            "org": org,
+            "facility": facility,
+            "transaction_type": transaction_type,
+            "status": status,
+            "date_from": date_from,
+            "date_to": date_to,
+        })
+        return [fake_transaction], 1
+
+    monkeypatch.setattr("app.mcp.tools._check", lambda uid, org_id, permission=None: fake_access)
+    monkeypatch.setattr("app.mcp.tools._resolve_org", lambda org_id: fake_org)
+    monkeypatch.setattr("app.mcp.tools._resolve_facility", lambda org, facility_id: fake_facility)
+    monkeypatch.setattr("app.auth.authorization.enforce_facility_scope", lambda access, facility_id: None)
+    monkeypatch.setattr("app.operations.services.list_transactions", fake_list_transactions)
+
+    result = asyncio.run(
+        mcp_tools.wms_list_transactions(
+            org_id="testorg",
+            facility_id="FAC-001",
+            transaction_type="MOVE",
+            status="PENDING",
+            date_from="2026-01-01",
+            date_to="2026-01-31",
+            uid="firebase-user-1",
+        )
+    )
+
+    assert captured == {
+        "org": fake_org,
+        "facility": fake_facility,
+        "transaction_type": "MOVE",
+        "status": "PENDING",
+        "date_from": "2026-01-01",
+        "date_to": "2026-01-31",
+    }
+    assert result == [
+        {
+            "id": "txn-1",
+            "transaction_type": "MOVE",
+            "status": "PENDING",
+            "reference_number": "REF-001",
+            "notes": "Move stock",
+            "document_url": None,
+            "created_by": "firebase-user-1",
+            "picks": [],
+            "drops": [],
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "updated_at": "2026-01-02T00:00:00+00:00",
+            "started_at": None,
+            "completed_at": None,
+            "cancelled_at": None,
+        }
+    ]
