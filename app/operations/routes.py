@@ -83,10 +83,29 @@ _TXN_SCHEMA = {
     },
 }
 
+_TXN_LIST_ITEM_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "string", "format": "uuid"},
+        "type": {
+            "type": "string",
+            "enum": ["MOVE", "ORDER_PICK", "GRN", "PUTAWAY", "RETURN", "CYCLE_COUNT", "ADJUSTMENT"],
+        },
+        "status": {
+            "type": "string",
+            "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED", "PARTIALLY_COMPLETED"],
+        },
+        "reference": {"type": "string", "nullable": True},
+        "facility": {"type": "string"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"},
+    },
+}
+
 _TXN_LIST_SCHEMA = {
     "type": "object",
     "properties": {
-        "items": {"type": "array", "items": _TXN_SCHEMA},
+        "items": {"type": "array", "items": _TXN_LIST_ITEM_SCHEMA},
         "total": {"type": "integer"},
         "page": {"type": "integer"},
         "size": {"type": "integer"},
@@ -155,7 +174,7 @@ def list_transactions(
         page=page, size=size,
     )
     return success_response(request, data={
-        "items": [_txn_out(t) for t in txns],
+        "items": [_txn_list_out(t) for t in txns],
         "total": total,
         "page": page,
         "size": size,
@@ -353,6 +372,19 @@ def _get_user(request) -> str:
     if auth and auth.client_name:
         return auth.client_name
     return ""
+
+
+def _txn_list_out(txn) -> dict:
+    """Lightweight list-item shape matching the frontend TransactionListItem model."""
+    return {
+        "id": str(txn.id),
+        "type": txn.transaction_type,
+        "status": txn.status,
+        "reference": txn.reference_number or None,
+        "facility": txn.facility.code,
+        "created_at": txn.created_at.isoformat(),
+        "updated_at": txn.updated_at.isoformat(),
+    }
 
 
 def _txn_out(txn) -> dict:
