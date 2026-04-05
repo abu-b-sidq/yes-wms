@@ -136,7 +136,7 @@ interface RecentTransaction {
     }
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 14px;
       padding: 0 24px 24px;
     }
@@ -322,7 +322,7 @@ interface RecentTransaction {
     .empty-recent p { margin: 0; font-size: 14px; }
 
     @media (max-width: 600px) {
-      .stats-grid { padding: 0 16px 16px; }
+      .stats-grid { padding: 0 16px 16px; grid-template-columns: repeat(2, 1fr); }
       .section { padding: 0 16px 16px; }
     }
   `]
