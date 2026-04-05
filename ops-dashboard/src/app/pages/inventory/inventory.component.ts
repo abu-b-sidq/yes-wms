@@ -60,13 +60,12 @@ export class InventoryComponent implements OnInit {
 
   columns: TableColumn[] = [
     { key: 'sku_code', label: 'SKU', sortable: true, width: '140px' },
-    { key: 'sku_name', label: 'SKU Name' },
     { key: 'entity_type', label: 'Location Type', width: '130px' },
     { key: 'entity_code', label: 'Location Code', width: '150px' },
-    { key: 'on_hand', label: 'On Hand', type: 'number', width: '100px', sortable: true },
-    { key: 'reserved', label: 'Reserved', type: 'number', width: '100px' },
-    { key: 'available', label: 'Available', type: 'number', width: '100px', sortable: true },
-    { key: 'batch', label: 'Batch', width: '120px', format: (v) => (v as string) || '—' }
+    { key: 'quantity_on_hand', label: 'On Hand', type: 'number', width: '100px', sortable: true },
+    { key: 'quantity_reserved', label: 'Reserved', type: 'number', width: '100px' },
+    { key: 'quantity_available', label: 'Available', type: 'number', width: '100px', sortable: true },
+    { key: 'batch_number', label: 'Batch', width: '120px', format: (v) => (v as string) || '—' }
   ];
 
   ngOnInit(): void { this.loadBalances(); }

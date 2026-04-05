@@ -108,15 +108,13 @@ export interface OrderPickPayload {
 
 export interface InventoryBalance {
   id: string;
+  facility_code: string;
   sku_code: string;
-  sku_name?: string;
   entity_type: EntityType;
   entity_code: string;
-  entity_name?: string;
-  on_hand: number;
-  reserved: number;
-  available: number;
-  batch?: string;
-  facility: string;
+  batch_number: string;
+  quantity_on_hand: string;
+  quantity_reserved: string;
+  quantity_available: string;
   updated_at: string;
 }
