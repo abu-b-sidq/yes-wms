@@ -6,6 +6,7 @@ import FacilityPicker from './auth/FacilityPicker';
 import AppLayout from './components/layout/AppLayout';
 import AssistantAvatar from './components/chat/AssistantAvatar';
 import { ASSISTANT_NAME } from './constants/branding';
+import { ThemeProvider } from './theme/ThemeContext';
 
 function AppContent() {
   const { authStatus, loading } = useAuth();
@@ -58,8 +59,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

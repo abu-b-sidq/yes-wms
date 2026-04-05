@@ -8,6 +8,7 @@ import ModelSelector from '../chat/ModelSelector';
 import AssistantAvatar from '../chat/AssistantAvatar';
 import NotificationPanel from './NotificationPanel';
 import { ASSISTANT_NAME } from '../../constants/branding';
+import ThemeToggle from './ThemeToggle';
 
 function resolveDisplayName(displayName?: string | null, email?: string | null): string {
   if (displayName?.trim()) {
@@ -322,6 +323,7 @@ export default function AppLayout() {
                     model={model}
                     onSelect={handleModelSelect}
                   />
+                  <ThemeToggle />
                   <NotificationPanel facilityId={session?.facilityId || null} />
                   <button
                     type="button"

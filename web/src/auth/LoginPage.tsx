@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from './AuthContext';
 import AssistantAvatar from '../components/chat/AssistantAvatar';
 import { ASSISTANT_NAME } from '../constants/branding';
+import ThemeToggle from '../components/layout/ThemeToggle';
 
 export default function LoginPage() {
   const { signIn, signInWithGoogle, loginError, loading } = useAuth();
@@ -21,6 +22,9 @@ export default function LoginPage() {
     <div className="h-[100dvh] overflow-hidden px-3 py-3 md:px-4">
       <div className="mx-auto grid h-full max-w-7xl gap-4 lg:grid-cols-[1fr_0.92fr]">
         <section className="soft-panel relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
+          <div className="absolute right-6 top-6 z-10">
+            <ThemeToggle />
+          </div>
           <div className="absolute inset-x-16 top-0 h-32 rounded-full bg-[rgba(121,191,100,0.2)] blur-3xl" />
           <div className="relative flex h-full flex-col justify-between gap-6">
             <div className="space-y-4">

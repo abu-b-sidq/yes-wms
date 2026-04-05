@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from './AuthContext';
 import AssistantAvatar from '../components/chat/AssistantAvatar';
 import { ASSISTANT_NAME } from '../constants/branding';
+import ThemeToggle from '../components/layout/ThemeToggle';
 
 export default function AccessStatePage() {
   const { user, accessState, retrySessionBootstrap, signOut, loading } = useAuth();
@@ -18,7 +19,10 @@ export default function AccessStatePage() {
   return (
     <div className="h-[100dvh] overflow-hidden px-3 py-3 md:px-4">
       <div className="mx-auto grid h-full max-w-6xl gap-4 lg:grid-cols-[0.92fr_1.08fr]">
-        <section className="soft-panel flex flex-col justify-between gap-6 overflow-hidden px-6 py-7 md:px-7 md:py-8">
+        <section className="soft-panel relative flex flex-col justify-between gap-6 overflow-hidden px-6 py-7 md:px-7 md:py-8">
+          <div className="absolute right-6 top-6 z-10">
+            <ThemeToggle />
+          </div>
           <div className="space-y-4">
             <p className="ops-label text-xs">
               Session Check
