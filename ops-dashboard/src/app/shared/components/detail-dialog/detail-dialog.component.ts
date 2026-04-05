@@ -14,19 +14,19 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
   imports: [CommonModule, MatIconModule, MatButtonModule, MatDividerModule],
   animations: [
     trigger('slideIn', [
-      state('void', style({ transform: 'translateY(100%)', opacity: 0 })),
-      state('*', style({ transform: 'translateY(0)', opacity: 1 })),
-      transition('void => *', animate('300ms cubic-bezier(0.4, 0, 0.2, 1)')),
-      transition('* => void', animate('250ms cubic-bezier(0.4, 0, 0.2, 1)'))
+      state('void', style({ opacity: 0 })),
+      state('*', style({ opacity: 1 })),
+      transition('void => *', animate('200ms ease')),
+      transition('* => void', animate('150ms ease'))
     ])
   ],
   template: `
-    <div class="dialog-backdrop" *ngIf="open" (click)="onBackdropClick($event)">
-      <div class="dialog-panel" [@slideIn] (click)="$event.stopPropagation()">
+    <div class="dialog-backdrop" *ngIf="open" [@slideIn] (click)="onBackdropClick($event)">
+      <div class="dialog-panel" (click)="$event.stopPropagation()">
         <!-- Header -->
         <div class="dialog-header">
           <div class="dialog-title-area">
-            <button mat-icon-button class="back-btn" (click)="onClose()">
+            <button mat-icon-button type="button" class="back-btn" (click)="onClose()">
               <mat-icon>arrow_back</mat-icon>
             </button>
             <div>
@@ -49,7 +49,7 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
         <div class="dialog-footer" *ngIf="showFooter">
           <mat-divider></mat-divider>
           <div class="footer-actions">
-            <button mat-stroked-button (click)="onClose()">Cancel</button>
+            <button mat-stroked-button type="button" (click)="onClose()">Cancel</button>
             <ng-content select="[footer-actions]"></ng-content>
           </div>
         </div>
@@ -76,6 +76,8 @@ import { trigger, state, style, animate, transition } from '@angular/animations'
       flex-direction: column;
       overflow: hidden;
       box-shadow: var(--ops-shadow);
+      transform: translateY(0);
+      transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
     }
     .dialog-header {
       display: flex;

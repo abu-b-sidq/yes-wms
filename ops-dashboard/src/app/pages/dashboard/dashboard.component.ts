@@ -6,7 +6,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { OperationsService } from '../../core/services/operations.service';
+import { MastersService } from '../../core/services/masters.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { forkJoin } from 'rxjs';
 
 interface StatCard {
   label: string;
@@ -328,6 +330,7 @@ interface RecentTransaction {
 export class DashboardComponent implements OnInit {
   auth = inject(AuthService);
   private ops = inject(OperationsService);
+  private masters = inject(MastersService);
 
   stats = signal<StatCard[]>([
     { label: 'SKUs', value: '—', icon: 'inventory_2', color: '#8fc0f3', bg: 'rgba(75,152,235,0.16)', route: '/masters/sku' },
@@ -340,7 +343,28 @@ export class DashboardComponent implements OnInit {
   loadingTxns = signal(true);
 
   ngOnInit(): void {
+    this.loadStats();
     this.loadRecentTransactions();
+  }
+
+  loadStats(): void {
+    forkJoin({
+      skus: this.masters.getSkus({ page: 1, size: 1 }),
+      zones: this.masters.getZones({ page: 1, size: 1 }),
+      locations: this.masters.getLocations({ page: 1, size: 1 }),
+      txns: this.ops.getTransactions({ size: 1 }),
+    }).subscribe({
+      next: ({ skus, zones, locations, txns }) => {
+        const getTotal = (r: any) => (Array.isArray(r) ? r.length : r.total);
+        this.stats.update(s => s.map(card => {
+          if (card.label === 'SKUs') return { ...card, value: getTotal(skus) };
+          if (card.label === 'Zones') return { ...card, value: getTotal(zones) };
+          if (card.label === 'Locations') return { ...card, value: getTotal(locations) };
+          if (card.label === 'Transactions') return { ...card, value: getTotal(txns) };
+          return card;
+        }));
+      }
+    });
   }
 
   loadRecentTransactions(): void {

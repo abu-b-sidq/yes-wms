@@ -269,7 +269,7 @@ export class TransactionsListComponent implements OnInit {
     this.ops.getTransactions({
       page: this.pageIndex() + 1,
       size: this.pageSize,
-      ...(this.typeFilter ? { type: this.typeFilter } : {}),
+      ...(this.typeFilter ? { transaction_type: this.typeFilter } : {}),
       ...(this.statusFilter ? { status: this.statusFilter } : {})
     }).subscribe({
       next: (res) => {
@@ -335,6 +335,10 @@ export class TransactionsListComponent implements OnInit {
   }
 
   applyFilter(): void { this.pageIndex.set(0); this.loadTransactions(); }
-  onPage(event: { pageIndex: number }): void { this.pageIndex.set(event.pageIndex); this.loadTransactions(); }
+  onPage(event: { pageIndex: number; pageSize: number }): void {
+    this.pageIndex.set(event.pageIndex);
+    this.pageSize = event.pageSize;
+    this.loadTransactions();
+  }
   onSearch(_q: string): void { this.pageIndex.set(0); this.loadTransactions(); }
 }
