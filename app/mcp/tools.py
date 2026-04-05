@@ -78,6 +78,7 @@ def _pick(p) -> dict:
         "source_entity_type": p.source_entity_type,
         "source_entity_code": p.source_entity_code,
         "quantity": str(p.quantity), "batch_number": p.batch_number,
+        "created_by": p.created_by, "performed_by": p.performed_by,
     }
 
 
@@ -88,6 +89,7 @@ def _drop(d) -> dict:
         "dest_entity_code": d.dest_entity_code,
         "quantity": str(d.quantity), "batch_number": d.batch_number,
         "paired_pick_id": str(d.paired_pick_id) if d.paired_pick_id else None,
+        "created_by": d.created_by, "performed_by": d.performed_by,
     }
 
 
@@ -99,6 +101,7 @@ def _txn(t) -> dict:
         "reference_number": t.reference_number,
         "notes": t.notes,
         "document_url": t.document_url or None,
+        "created_by": t.created_by,
         "picks": [_pick(p) for p in t.picks.all()],
         "drops": [_drop(d) for d in t.drops.all()],
         "created_at": t.created_at.isoformat(),
@@ -326,7 +329,7 @@ def wms_execute_transaction(org_id: str, transaction_id: str, uid: str = "") -> 
     org = _resolve_org(org_id)
     txn = get_transaction(org, transaction_id)
     enforce_facility_scope(access, txn.facility.code)
-    return _txn(execute_transaction(txn))
+    return _txn(execute_transaction(txn, user=uid))
 
 
 @sync_to_async

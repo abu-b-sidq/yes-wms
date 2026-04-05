@@ -20,13 +20,18 @@ from django.db import transaction as db_transaction
 from app.core.enums import EntityType, TransactionStatus
 from app.inventory.models import InventoryBalance, InventoryLedger
 from app.masters.models import (
+    AppUser,
+    AppUserStatus,
     Facility,
     FacilityLocation,
     FacilitySKU,
     FacilityZone,
     Location,
+    MembershipStatus,
     Organization,
+    Role,
     SKU,
+    UserOrgMembership,
     Zone,
 )
 from app.masters.services import (
@@ -143,6 +148,45 @@ VOLUME_CONFIG = {
     "heavy":  {"grns": (40, 60), "putaways_per_grn": (8, 15), "order_picks": (120, 180), "moves": (40, 60)},
 }
 
+# Demo users seeded into the database (no real Firebase account — firebase_uid used as created_by key)
+USERS = [
+    {
+        "firebase_uid": "seed-user-admin",
+        "email": "admin@yes-demo.com",
+        "display_name": "Admin User",
+        "role_code": "org_admin",
+        "status": AppUserStatus.ACTIVE,
+    },
+    {
+        "firebase_uid": "seed-user-manager",
+        "email": "manager@yes-demo.com",
+        "display_name": "Facility Manager",
+        "role_code": "facility_manager",
+        "status": AppUserStatus.ACTIVE,
+    },
+    {
+        "firebase_uid": "seed-user-operator1",
+        "email": "operator1@yes-demo.com",
+        "display_name": "Warehouse Operator 1",
+        "role_code": "operator",
+        "status": AppUserStatus.ACTIVE,
+    },
+    {
+        "firebase_uid": "seed-user-operator2",
+        "email": "operator2@yes-demo.com",
+        "display_name": "Warehouse Operator 2",
+        "role_code": "operator",
+        "status": AppUserStatus.ACTIVE,
+    },
+    {
+        "firebase_uid": "seed-user-viewer",
+        "email": "viewer@yes-demo.com",
+        "display_name": "Read-Only Viewer",
+        "role_code": "viewer",
+        "status": AppUserStatus.ACTIVE,
+    },
+]
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -204,6 +248,39 @@ def _get_or_create_sku(org: Organization, sku_data: dict) -> SKU:
     except Exception:
         payload = {k: v for k, v in sku_data.items() if k not in ("category", "qty_range", "use_batch")}
         return create_sku(org, payload, user="seed")
+
+
+def _seed_users(org: Organization) -> list[AppUser]:
+    """Create demo AppUsers and attach them to the org with appropriate roles."""
+    seeded = []
+    for u in USERS:
+        user, _ = AppUser.objects.get_or_create(
+            firebase_uid=u["firebase_uid"],
+            defaults={
+                "email": u["email"],
+                "display_name": u["display_name"],
+                "status": u["status"],
+            },
+        )
+        # Always ensure status & display_name are up to date
+        user.status = u["status"]
+        user.display_name = u["display_name"]
+        user.save(update_fields=["status", "display_name"])
+
+        try:
+            role = Role.objects.get(code=u["role_code"])
+        except Role.DoesNotExist:
+            # Role not bootstrapped yet — skip membership
+            seeded.append(user)
+            continue
+
+        UserOrgMembership.objects.get_or_create(
+            user=user,
+            org=org,
+            defaults={"role": role, "status": MembershipStatus.ACTIVE},
+        )
+        seeded.append(user)
+    return seeded
 
 
 # ---------------------------------------------------------------------------
@@ -290,6 +367,7 @@ class Command(BaseCommand):
         n_putaways_max = n_grns * vol["putaways_per_grn"][1]
         self.stdout.write("Would create:")
         self.stdout.write(f"  • 1 organization, 1 facility")
+        self.stdout.write(f"  • {len(USERS)} demo users (admin, manager, operators, viewer)")
         self.stdout.write(f"  • {len(ZONES)} zones, {len(LOCATIONS)} locations, {len(SKUS)} SKUs")
         self.stdout.write(f"  • {n_grns} GRN transactions")
         self.stdout.write(f"  • {n_putaways_min}–{n_putaways_max} putaway transactions")
@@ -304,6 +382,9 @@ class Command(BaseCommand):
 
         facility, fac_created = _get_or_create_facility(org)
         self.stdout.write(f"     Facility: {facility.code} ({'created' if fac_created else 'existing'})")
+
+        seeded_users = _seed_users(org)
+        self.stdout.write(f"     Users: {len(seeded_users)} ready")
 
         for z in ZONES:
             _get_or_create_zone(org, z)

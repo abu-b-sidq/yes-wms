@@ -43,6 +43,8 @@ class PickOut(Schema):
     source_entity_code: str
     quantity: Decimal
     batch_number: str
+    created_by: str = ""
+    performed_by: str = ""
 
 
 class DropOut(Schema):
@@ -53,6 +55,8 @@ class DropOut(Schema):
     quantity: Decimal
     batch_number: str
     paired_pick_id: str | None = None
+    created_by: str = ""
+    performed_by: str = ""
 
 
 class TransactionOut(Schema):
@@ -69,6 +73,7 @@ class TransactionOut(Schema):
     created_at: datetime
     updated_at: datetime
     document_url: str = ""
+    created_by: str = ""
 
 
 # --- Convenience endpoints ---

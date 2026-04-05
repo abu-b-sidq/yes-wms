@@ -30,6 +30,8 @@ _PICK_SCHEMA = {
         "source_entity_code": {"type": "string"},
         "quantity": {"type": "string", "format": "decimal"},
         "batch_number": {"type": "string"},
+        "created_by": {"type": "string"},
+        "performed_by": {"type": "string"},
     },
 }
 
@@ -43,6 +45,8 @@ _DROP_SCHEMA = {
         "quantity": {"type": "string", "format": "decimal"},
         "batch_number": {"type": "string"},
         "paired_pick_id": {"type": "string", "format": "uuid", "nullable": True},
+        "created_by": {"type": "string"},
+        "performed_by": {"type": "string"},
     },
 }
 
@@ -75,6 +79,7 @@ _TXN_SCHEMA = {
         "cancelled_at": {"type": "string", "format": "date-time", "nullable": True},
         "created_at": {"type": "string", "format": "date-time"},
         "updated_at": {"type": "string", "format": "date-time"},
+        "created_by": {"type": "string"},
     },
 }
 
@@ -179,7 +184,8 @@ def execute_transaction(request, txn_id: str):
     org, _ = resolve_request_tenant(request)
     txn = services.get_transaction(org, txn_id)
     enforce_facility_scope(access, txn.facility.code)
-    txn = services.execute_transaction(txn)
+    user = _get_user(request)
+    txn = services.execute_transaction(txn, user=user)
     return success_response(request, data=_txn_out(txn))
 
 
@@ -332,6 +338,8 @@ def _txn_out(txn) -> dict:
                 source_entity_code=p.source_entity_code,
                 quantity=p.quantity,
                 batch_number=p.batch_number,
+                created_by=p.created_by,
+                performed_by=p.performed_by,
             ).dict()
         )
     drops = []
@@ -345,6 +353,8 @@ def _txn_out(txn) -> dict:
                 quantity=d.quantity,
                 batch_number=d.batch_number,
                 paired_pick_id=str(d.paired_pick_id) if d.paired_pick_id else None,
+                created_by=d.created_by,
+                performed_by=d.performed_by,
             ).dict()
         )
     return schemas.TransactionOut(
@@ -361,4 +371,5 @@ def _txn_out(txn) -> dict:
         created_at=txn.created_at,
         updated_at=txn.updated_at,
         document_url=txn.document_url or "",
+        created_by=txn.created_by,
     ).dict()

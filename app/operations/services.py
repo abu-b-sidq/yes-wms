@@ -57,7 +57,7 @@ def create_transaction(
     return txn
 
 
-def execute_transaction(txn: Transaction) -> Transaction:
+def execute_transaction(txn: Transaction, user: str = "") -> Transaction:
     from app.inventory.services import credit_balance, debit_balance
 
     with db_transaction.atomic():
@@ -91,6 +91,12 @@ def execute_transaction(txn: Transaction) -> Transaction:
                 transaction=txn,
                 drop=drop,
             )
+
+        if user:
+            Pick.objects.filter(transaction=txn).update(performed_by=user, updated_by=user)
+            Drop.objects.filter(transaction=txn).update(performed_by=user, updated_by=user)
+            txn.updated_by = user
+            txn.save(update_fields=["updated_by", "updated_at"])
 
         transition(txn, TransactionStatus.COMPLETED)
 
@@ -174,7 +180,7 @@ def create_and_execute_move(
         ],
     }
     txn = create_transaction(org, facility, txn_data, user=user)
-    return execute_transaction(txn)
+    return execute_transaction(txn, user=user)
 
 
 def create_and_execute_grn(
@@ -199,7 +205,7 @@ def create_and_execute_grn(
         "drops": drops,
     }
     txn = create_transaction(org, facility, txn_data, user=user)
-    return execute_transaction(txn)
+    return execute_transaction(txn, user=user)
 
 
 def create_and_execute_putaway(
@@ -229,7 +235,7 @@ def create_and_execute_putaway(
         ],
     }
     txn = create_transaction(org, facility, txn_data, user=user)
-    return execute_transaction(txn)
+    return execute_transaction(txn, user=user)
 
 
 def create_and_execute_order_pick(
@@ -259,7 +265,7 @@ def create_and_execute_order_pick(
         ],
     }
     txn = create_transaction(org, facility, txn_data, user=user)
-    return execute_transaction(txn)
+    return execute_transaction(txn, user=user)
 
 
 # --- Internal helpers ---

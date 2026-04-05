@@ -160,6 +160,7 @@ class Pick(TenantAwareModel):
     locked_at = models.DateTimeField(null=True, blank=True)
     lock_expires_at = models.DateTimeField(null=True, blank=True)
     points_awarded = models.PositiveIntegerField(default=0)
+    performed_by = models.CharField(max_length=255, blank=True, default="")
 
     class Meta:
         db_table = "app_pick"
@@ -229,6 +230,7 @@ class Drop(TenantAwareModel):
     locked_at = models.DateTimeField(null=True, blank=True)
     lock_expires_at = models.DateTimeField(null=True, blank=True)
     points_awarded = models.PositiveIntegerField(default=0)
+    performed_by = models.CharField(max_length=255, blank=True, default="")
 
     class Meta:
         db_table = "app_drop"
