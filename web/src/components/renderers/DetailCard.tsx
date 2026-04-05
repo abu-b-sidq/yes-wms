@@ -3,17 +3,17 @@ import type { DetailCardComponent } from '../../types/chat';
 
 export default function DetailCard({ component }: { component: DetailCardComponent }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="ops-card-soft overflow-hidden rounded-xl">
       {component.title && (
-        <div className="px-4 py-3 border-b border-gray-100 font-semibold text-gray-800 text-sm">
+        <div className="border-b border-[var(--ops-line-soft)] px-4 py-3 text-sm font-semibold text-[var(--ops-text)]">
           {component.title}
         </div>
       )}
-      <dl className="divide-y divide-gray-100">
+      <dl className="divide-y divide-[var(--ops-line-softer)]">
         {component.fields.map((field, idx) => (
           <div key={idx} className="px-4 py-2.5 flex justify-between gap-4">
-            <dt className="text-sm text-gray-500 flex-shrink-0">{field.label}</dt>
-            <dd className="text-sm text-gray-900 text-right break-all">{field.value}</dd>
+            <dt className="flex-shrink-0 text-sm text-[var(--ops-text-muted)]">{field.label}</dt>
+            <dd className="break-all text-right text-sm text-[var(--ops-text)]">{field.value}</dd>
           </div>
         ))}
       </dl>

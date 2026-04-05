@@ -15,7 +15,8 @@ class TestInventoryBalances:
             facility,
             {"items": [{"sku_code": "SKU-001", "quantity": Decimal("100")}]},
         )
-        balances = get_balances(org, facility=facility, sku_code="SKU-001")
+        balances, total = get_balances(org, facility=facility, sku_code="SKU-001")
+        assert total == 1
         assert len(balances) == 1
         assert balances[0].quantity_on_hand == Decimal("100.0000")
         assert balances[0].quantity_available == Decimal("100.0000")
@@ -27,7 +28,8 @@ class TestInventoryBalances:
                 facility,
                 {"items": [{"sku_code": "SKU-001", "quantity": Decimal("50")}]},
             )
-        balances = get_balances(org, facility=facility, sku_code="SKU-001")
+        balances, total = get_balances(org, facility=facility, sku_code="SKU-001")
+        assert total == 1
         assert len(balances) == 1
         assert balances[0].quantity_on_hand == Decimal("150.0000")
 

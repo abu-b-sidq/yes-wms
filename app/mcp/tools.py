@@ -277,7 +277,14 @@ def wms_get_inventory_balances(
         enforce_facility_scope(access, facility_id)
     org = _resolve_org(org_id)
     facility = _resolve_facility(org, facility_id) if facility_id else None
-    return [_balance(b) for b in get_balances(org, facility=facility, sku_code=sku_code, entity_type=entity_type, entity_code=entity_code)]
+    balances, _total = get_balances(
+        org,
+        facility=facility,
+        sku_code=sku_code,
+        entity_type=entity_type,
+        entity_code=entity_code,
+    )
+    return [_balance(b) for b in balances]
 
 
 @sync_to_async

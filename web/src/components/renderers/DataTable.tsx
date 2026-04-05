@@ -120,37 +120,37 @@ export default function DataTable({ component }: { component: TableComponent }) 
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="ops-card-soft overflow-hidden rounded-xl">
       {component.title && (
-        <div className="px-4 py-3 border-b border-gray-100 font-semibold text-gray-800 text-sm">
+        <div className="border-b border-[var(--ops-line-soft)] px-4 py-3 text-sm font-semibold text-[var(--ops-text)]">
           {component.title}
         </div>
       )}
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50">
+            <tr className="bg-[rgba(255,255,255,0.03)]">
               {derivedColumns.map((col, idx) => (
                 <th
                   key={idx}
                   onClick={() => handleSort(idx)}
-                  className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition select-none"
+                  className="cursor-pointer select-none px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-[var(--ops-text-muted)] transition hover:bg-[rgba(255,255,255,0.04)]"
                 >
                   <span className="flex items-center gap-1">
                     {col}
                     {sortCol === idx && (
-                      <span className="text-primary-500">{sortAsc ? '\u2191' : '\u2193'}</span>
+                      <span className="text-[var(--ops-highlight)]">{sortAsc ? '\u2191' : '\u2193'}</span>
                     )}
                   </span>
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[var(--ops-line-softer)]">
             {sortedRows.map((row, rIdx) => (
-              <tr key={rIdx} className="hover:bg-gray-50 transition">
+              <tr key={rIdx} className="transition hover:bg-[var(--ops-row-hover)]">
                 {row.map((cell, cIdx) => (
-                  <td key={cIdx} className="px-4 py-2.5 text-gray-700 whitespace-nowrap">
+                  <td key={cIdx} className="whitespace-nowrap px-4 py-2.5 text-[var(--ops-text-muted)]">
                     {cell !== null && cell !== undefined ? String(cell) : '-'}
                   </td>
                 ))}
@@ -159,7 +159,7 @@ export default function DataTable({ component }: { component: TableComponent }) 
           </tbody>
         </table>
       </div>
-      <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">
+      <div className="border-t border-[var(--ops-line-soft)] px-4 py-2 text-xs text-[var(--ops-text-soft)]">
         {normalizedRows.length} row{normalizedRows.length !== 1 ? 's' : ''}
       </div>
     </div>

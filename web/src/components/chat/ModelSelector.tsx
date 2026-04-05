@@ -26,7 +26,7 @@ export default function ModelSelector({ provider, model, onSelect }: ModelSelect
   }, []);
 
   if (loading) {
-    return <div className="text-xs text-gray-400">Loading models...</div>;
+    return <div className="text-xs text-[var(--ops-text-soft)]">Loading models...</div>;
   }
 
   const selectedValue = `${provider}:${model}`;
@@ -41,11 +41,13 @@ export default function ModelSelector({ provider, model, onSelect }: ModelSelect
           value: `${entry.provider}:${modelName}`,
           label: `${entry.provider}/${modelName}`,
         }))
-      : [{
-          value: `${entry.provider}:`,
-          label: `${entry.provider} (unavailable)`,
-          disabled: true,
-        }]
+      : [
+          {
+            value: `${entry.provider}:`,
+            label: `${entry.provider} (unavailable)`,
+            disabled: true,
+          },
+        ]
   );
   const options = (models.length === 0 ? fallbackOptions : discoveredOptions).slice();
 
@@ -57,14 +59,17 @@ export default function ModelSelector({ provider, model, onSelect }: ModelSelect
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="ops-input-shell flex items-center gap-2 rounded-[18px] px-3 py-2">
+      <span className="ops-label text-[11px]">
+        Model
+      </span>
       <select
         value={selectedValue}
         onChange={(e) => {
-          const [p, ...rest] = e.target.value.split(':');
-          onSelect(p, rest.join(':'));
+          const [nextProvider, ...rest] = e.target.value.split(':');
+          onSelect(nextProvider, rest.join(':'));
         }}
-        className="text-xs bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 focus:ring-1 focus:ring-primary-500 outline-none"
+        className="rounded-full bg-transparent pr-6 text-xs font-medium text-[var(--ops-text)] outline-none"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value} disabled={option.disabled}>

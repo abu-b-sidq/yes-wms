@@ -78,6 +78,11 @@ $ops-light-theme: mat.define-light-theme((
   --ops-card-bg: linear-gradient(180deg, rgba(19, 39, 34, 0.96) 0%, rgba(13, 26, 22, 0.98) 100%);
   --ops-card-bg-soft: rgba(255, 255, 255, 0.03);
   --ops-card-border: rgba(232, 244, 236, 0.12);
+  --ops-form-surface: linear-gradient(180deg, rgba(19, 39, 34, 0.60) 0%, rgba(13, 26, 22, 0.60) 100%);
+  --ops-table-surface: linear-gradient(180deg, rgba(20, 40, 34, 0.60) 0%, rgba(11, 24, 20, 0.60) 100%);
+  --ops-table-header-surface: rgba(17, 36, 32, 0.60);
+  --ops-dropdown-surface: rgba(23, 50, 44, 0.60);
+  --ops-field-surface: rgba(17, 36, 32, 0.60);
   --ops-page-bg:
     radial-gradient(circle at top left, rgba(121, 191, 100, 0.12), transparent 24%),
     linear-gradient(180deg, #0a1513 0%, #0c1916 100%);
@@ -167,6 +172,11 @@ $ops-light-theme: mat.define-light-theme((
   --ops-card-bg: linear-gradient(180deg, rgba(255, 255, 252, 0.98) 0%, rgba(248, 250, 244, 0.98) 100%);
   --ops-card-bg-soft: rgba(15, 89, 65, 0.04);
   --ops-card-border: rgba(15, 35, 24, 0.10);
+  --ops-form-surface: linear-gradient(180deg, rgba(255, 255, 252, 0.60) 0%, rgba(248, 250, 244, 0.60) 100%);
+  --ops-table-surface: linear-gradient(180deg, rgba(255, 255, 252, 0.60) 0%, rgba(246, 249, 241, 0.60) 100%);
+  --ops-table-header-surface: rgba(255, 253, 248, 0.60);
+  --ops-dropdown-surface: rgba(255, 253, 248, 0.60);
+  --ops-field-surface: rgba(255, 253, 248, 0.60);
   --ops-page-bg:
     radial-gradient(circle at top left, rgba(184, 215, 62, 0.16), transparent 24%),
     linear-gradient(180deg, #f3f5ec 0%, #e7eee0 100%);
@@ -794,9 +804,10 @@ code,
 .mat-mdc-select-panel {
   border-radius: 14px !important;
   border: 1px solid var(--ops-border) !important;
-  background: var(--ops-surface-raised) !important;
+  background: var(--ops-dropdown-surface) !important;
   color: var(--ops-text) !important;
   box-shadow: var(--ops-shadow) !important;
+  backdrop-filter: blur(18px);
 }
 
 .mat-mdc-menu-item {
@@ -810,10 +821,11 @@ code,
 
 .mat-mdc-dialog-container .mdc-dialog__surface {
   border-radius: 20px !important;
-  background: var(--ops-surface) !important;
+  background: var(--ops-form-surface) !important;
   color: var(--ops-text) !important;
   border: 1px solid var(--ops-border) !important;
   box-shadow: var(--ops-shadow) !important;
+  backdrop-filter: blur(18px);
 }
 
 .mat-mdc-form-field-subscript-wrapper {
@@ -822,7 +834,8 @@ code,
 
 .mat-mdc-text-field-wrapper {
   padding: 0 12px !important;
-  background: var(--ops-glass-soft);
+  background: var(--ops-field-surface);
+  backdrop-filter: blur(14px);
 }
 
 .mat-mdc-paginator {
@@ -889,6 +902,38 @@ code,
   background: rgba(10, 20, 17, 0.92) !important;
   color: #f7fbf7 !important;
   border: 1px solid var(--ops-border) !important;
+}
+
+app-data-table .data-table-container {
+  background: var(--ops-table-surface) !important;
+  backdrop-filter: blur(18px);
+}
+
+app-data-table .table-wrapper,
+.mat-mdc-table,
+.mat-mdc-row,
+.mat-mdc-header-row,
+.mat-mdc-footer-row {
+  background: transparent !important;
+}
+
+app-data-table .loading-overlay {
+  background: var(--ops-table-surface) !important;
+  backdrop-filter: blur(14px);
+}
+
+app-data-table .mat-mdc-header-cell {
+  background: var(--ops-table-header-surface) !important;
+  backdrop-filter: blur(14px);
+}
+
+app-detail-dialog .dialog-panel,
+.form-card,
+.success-card,
+.login-card,
+.facility-card {
+  background: var(--ops-form-surface) !important;
+  backdrop-filter: blur(18px);
 }
 
 .fade-in {

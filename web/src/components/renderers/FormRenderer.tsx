@@ -21,21 +21,21 @@ export default function FormRenderer({ component, onConfirm }: FormRendererProps
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
-      <h3 className="font-semibold text-gray-800 text-sm mb-4">{component.title}</h3>
+    <div className="ops-card-soft rounded-xl p-5">
+      <h3 className="mb-4 text-sm font-semibold text-[var(--ops-text)]">{component.title}</h3>
       <form onSubmit={handleSubmit} className="space-y-3">
         {component.fields.map((field) => (
           <div key={field.name}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-[var(--ops-text-muted)]">
               {field.label}
-              {field.required && <span className="text-red-500 ml-0.5">*</span>}
+              {field.required && <span className="ml-0.5 text-[var(--ops-danger)]">*</span>}
             </label>
             {field.type === 'select' && field.options ? (
               <select
                 value={values[field.name]}
                 onChange={(e) => setValues(v => ({ ...v, [field.name]: e.target.value }))}
                 required={field.required}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-primary-500 outline-none"
+                className="ops-input w-full rounded-lg px-3 py-2 text-sm outline-none"
               >
                 <option value="">Select...</option>
                 {field.options.map((opt) => (
@@ -48,14 +48,14 @@ export default function FormRenderer({ component, onConfirm }: FormRendererProps
                 value={values[field.name]}
                 onChange={(e) => setValues(v => ({ ...v, [field.name]: e.target.value }))}
                 required={field.required}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-primary-500 outline-none"
+                className="ops-input w-full rounded-lg px-3 py-2 text-sm outline-none"
               />
             )}
           </div>
         ))}
         <button
           type="submit"
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition"
+          className="ops-button-primary rounded-lg px-4 py-2 text-sm font-medium transition"
         >
           Submit
         </button>

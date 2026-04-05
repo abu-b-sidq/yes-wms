@@ -1,0 +1,404 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - generic [ref=e10]:
+            - img [ref=e12]: warehouse
+            - generic [ref=e13]:
+              - generic [ref=e14]: YES WMS
+              - generic [ref=e15]: Operations Console
+          - generic [ref=e16]:
+            - button [ref=e17] [cursor=pointer]:
+              - img [ref=e18]: dark_mode
+            - button [ref=e19] [cursor=pointer]:
+              - img [ref=e20]: keyboard_double_arrow_left
+        - generic [ref=e21]:
+          - button "Operate" [ref=e22] [cursor=pointer]
+          - button "Setup" [ref=e23] [cursor=pointer]
+        - navigation [ref=e24]:
+          - link "Dashboard" [ref=e25] [cursor=pointer]:
+            - /url: /opsdashboard/dashboard
+            - img [ref=e26]: dashboard
+            - generic [ref=e27]: Dashboard
+          - generic [ref=e28]:
+            - generic [ref=e29]: Transactions
+            - link "All Transactions" [ref=e30] [cursor=pointer]:
+              - /url: /opsdashboard/transactions
+              - img [ref=e31]: receipt_long
+              - generic [ref=e32]: All Transactions
+            - link "GRN Receive" [ref=e33] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/grn
+              - img [ref=e34]: input
+              - generic [ref=e35]: GRN Receive
+            - link "Move Stock" [ref=e36] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/move
+              - img [ref=e37]: swap_horiz
+              - generic [ref=e38]: Move Stock
+            - link "Putaway" [ref=e39] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/putaway
+              - img [ref=e40]: move_to_inbox
+              - generic [ref=e41]: Putaway
+            - link "Order Pick" [ref=e42] [cursor=pointer]:
+              - /url: /opsdashboard/transactions/order-pick
+              - img [ref=e43]: shopping_cart
+              - generic [ref=e44]: Order Pick
+          - generic [ref=e45]:
+            - generic [ref=e46]: Inventory
+            - link "Stock Balances" [ref=e47] [cursor=pointer]:
+              - /url: /opsdashboard/inventory
+              - img [ref=e48]: inventory
+              - generic [ref=e49]: Stock Balances
+        - generic [ref=e50]:
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - img [ref=e54]: apartment
+              - generic [ref=e55]: FAC-MAIN
+            - generic [ref=e56]:
+              - img [ref=e57]: warehouse
+              - generic [ref=e58]: DEMO_WH1
+          - generic [ref=e59]: Account
+          - link "Facilities 1" [ref=e60] [cursor=pointer]:
+            - /url: /opsdashboard/facility-select
+            - img [ref=e61]: domain
+            - generic [ref=e62]: Facilities
+            - generic [ref=e63]: "1"
+          - button "Logout" [ref=e64] [cursor=pointer]:
+            - img [ref=e65]: logout
+            - generic [ref=e66]: Logout
+          - generic [ref=e67]:
+            - img "Abu Bakkar Siddique" [ref=e69]
+            - generic [ref=e70]:
+              - generic [ref=e71]: Abu Bakkar Siddique
+              - generic [ref=e72]: Main Distribution Center
+            - img [ref=e73]: more_horiz
+    - main [ref=e75]:
+      - generic [ref=e77]:
+        - generic "Transactions" [ref=e78]:
+          - generic [ref=e80]:
+            - img [ref=e82]: receipt_long
+            - generic [ref=e83]:
+              - heading "Transactions" [level=1] [ref=e84]
+              - paragraph [ref=e85]: View and manage all WMS transactions
+        - generic [ref=e86]:
+          - generic [ref=e89] [cursor=pointer]:
+            - generic [ref=e90]: Type
+            - combobox "Type All Types" [expanded] [active] [ref=e92]:
+              - generic [ref=e93]:
+                - generic [ref=e95]: All Types
+                - img [ref=e98]
+          - generic [ref=e102] [cursor=pointer]:
+            - generic [ref=e103]: Status
+            - combobox "Status All Statuses" [ref=e105]:
+              - generic [ref=e106]:
+                - generic [ref=e108]: All Statuses
+                - img [ref=e111]
+        - generic "Transactions" [ref=e114]:
+          - generic [ref=e115]:
+            - generic [ref=e120]:
+              - generic [ref=e121]: Search
+              - img [ref=e123]: search
+              - textbox "Search" [ref=e125]:
+                - /placeholder: Search transactions
+            - table [ref=e127]:
+              - rowgroup [ref=e128]:
+                - row "Type Status Reference Created Actions" [ref=e129]:
+                  - columnheader "Type" [ref=e130]:
+                    - button "Type" [ref=e131] [cursor=pointer]:
+                      - generic [ref=e132]: Type
+                  - columnheader "Status" [ref=e139]:
+                    - button "Status" [ref=e140] [cursor=pointer]:
+                      - generic [ref=e141]: Status
+                  - columnheader "Reference" [ref=e148]:
+                    - button "Reference" [ref=e149] [cursor=pointer]:
+                      - generic [ref=e150]: Reference
+                  - columnheader "Created" [ref=e157]:
+                    - button "Created" [ref=e158] [cursor=pointer]:
+                      - generic [ref=e159]: Created
+                  - columnheader "Actions" [ref=e166]
+              - rowgroup [ref=e167]:
+                - row "GRN COMPLETED PO-24477 28 Apr 2026, 05:56" [ref=e168] [cursor=pointer]:
+                  - cell "GRN" [ref=e169]:
+                    - generic [ref=e170]: GRN
+                  - cell "COMPLETED" [ref=e171]:
+                    - generic [ref=e172]: COMPLETED
+                  - cell "PO-24477" [ref=e173]
+                  - cell "28 Apr 2026, 05:56" [ref=e174]
+                  - cell [ref=e175]:
+                    - button [ref=e176]:
+                      - img [ref=e177]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3855 28 Apr 2026, 03:14" [ref=e180] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e181]:
+                    - generic [ref=e182]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e183]:
+                    - generic [ref=e184]: COMPLETED
+                  - cell "ORD-3855" [ref=e185]
+                  - cell "28 Apr 2026, 03:14" [ref=e186]
+                  - cell [ref=e187]:
+                    - button [ref=e188]:
+                      - img [ref=e189]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3851 28 Apr 2026, 01:56" [ref=e192] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e193]:
+                    - generic [ref=e194]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e195]:
+                    - generic [ref=e196]: COMPLETED
+                  - cell "ORD-3851" [ref=e197]
+                  - cell "28 Apr 2026, 01:56" [ref=e198]
+                  - cell [ref=e199]:
+                    - button [ref=e200]:
+                      - img [ref=e201]: visibility
+                - row "MOVE COMPLETED MOV-577 27 Apr 2026, 05:55" [ref=e204] [cursor=pointer]:
+                  - cell "MOVE" [ref=e205]:
+                    - generic [ref=e206]: MOVE
+                  - cell "COMPLETED" [ref=e207]:
+                    - generic [ref=e208]: COMPLETED
+                  - cell "MOV-577" [ref=e209]
+                  - cell "27 Apr 2026, 05:55" [ref=e210]
+                  - cell [ref=e211]:
+                    - button [ref=e212]:
+                      - img [ref=e213]: visibility
+                - row "MOVE COMPLETED MOV-183 26 Apr 2026, 18:16" [ref=e216] [cursor=pointer]:
+                  - cell "MOVE" [ref=e217]:
+                    - generic [ref=e218]: MOVE
+                  - cell "COMPLETED" [ref=e219]:
+                    - generic [ref=e220]: COMPLETED
+                  - cell "MOV-183" [ref=e221]
+                  - cell "26 Apr 2026, 18:16" [ref=e222]
+                  - cell [ref=e223]:
+                    - button [ref=e224]:
+                      - img [ref=e225]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3849 26 Apr 2026, 17:09" [ref=e228] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e229]:
+                    - generic [ref=e230]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e231]:
+                    - generic [ref=e232]: COMPLETED
+                  - cell "ORD-3849" [ref=e233]
+                  - cell "26 Apr 2026, 17:09" [ref=e234]
+                  - cell [ref=e235]:
+                    - button [ref=e236]:
+                      - img [ref=e237]: visibility
+                - row "MOVE COMPLETED MOV-893 25 Apr 2026, 13:10" [ref=e240] [cursor=pointer]:
+                  - cell "MOVE" [ref=e241]:
+                    - generic [ref=e242]: MOVE
+                  - cell "COMPLETED" [ref=e243]:
+                    - generic [ref=e244]: COMPLETED
+                  - cell "MOV-893" [ref=e245]
+                  - cell "25 Apr 2026, 13:10" [ref=e246]
+                  - cell [ref=e247]:
+                    - button [ref=e248]:
+                      - img [ref=e249]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3845 25 Apr 2026, 05:25" [ref=e252] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e253]:
+                    - generic [ref=e254]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e255]:
+                    - generic [ref=e256]: COMPLETED
+                  - cell "ORD-3845" [ref=e257]
+                  - cell "25 Apr 2026, 05:25" [ref=e258]
+                  - cell [ref=e259]:
+                    - button [ref=e260]:
+                      - img [ref=e261]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3844 24 Apr 2026, 22:36" [ref=e264] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e265]:
+                    - generic [ref=e266]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e267]:
+                    - generic [ref=e268]: COMPLETED
+                  - cell "ORD-3844" [ref=e269]
+                  - cell "24 Apr 2026, 22:36" [ref=e270]
+                  - cell [ref=e271]:
+                    - button [ref=e272]:
+                      - img [ref=e273]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3839 24 Apr 2026, 10:16" [ref=e276] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e277]:
+                    - generic [ref=e278]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e279]:
+                    - generic [ref=e280]: COMPLETED
+                  - cell "ORD-3839" [ref=e281]
+                  - cell "24 Apr 2026, 10:16" [ref=e282]
+                  - cell [ref=e283]:
+                    - button [ref=e284]:
+                      - img [ref=e285]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3838 23 Apr 2026, 17:06" [ref=e288] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e289]:
+                    - generic [ref=e290]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e291]:
+                    - generic [ref=e292]: COMPLETED
+                  - cell "ORD-3838" [ref=e293]
+                  - cell "23 Apr 2026, 17:06" [ref=e294]
+                  - cell [ref=e295]:
+                    - button [ref=e296]:
+                      - img [ref=e297]: visibility
+                - row "MOVE COMPLETED MOV-480 21 Apr 2026, 07:22" [ref=e300] [cursor=pointer]:
+                  - cell "MOVE" [ref=e301]:
+                    - generic [ref=e302]: MOVE
+                  - cell "COMPLETED" [ref=e303]:
+                    - generic [ref=e304]: COMPLETED
+                  - cell "MOV-480" [ref=e305]
+                  - cell "21 Apr 2026, 07:22" [ref=e306]
+                  - cell [ref=e307]:
+                    - button [ref=e308]:
+                      - img [ref=e309]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3837 20 Apr 2026, 10:58" [ref=e312] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e313]:
+                    - generic [ref=e314]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e315]:
+                    - generic [ref=e316]: COMPLETED
+                  - cell "ORD-3837" [ref=e317]
+                  - cell "20 Apr 2026, 10:58" [ref=e318]
+                  - cell [ref=e319]:
+                    - button [ref=e320]:
+                      - img [ref=e321]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3833 20 Apr 2026, 04:57" [ref=e324] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e325]:
+                    - generic [ref=e326]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e327]:
+                    - generic [ref=e328]: COMPLETED
+                  - cell "ORD-3833" [ref=e329]
+                  - cell "20 Apr 2026, 04:57" [ref=e330]
+                  - cell [ref=e331]:
+                    - button [ref=e332]:
+                      - img [ref=e333]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3832 19 Apr 2026, 16:14" [ref=e336] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e337]:
+                    - generic [ref=e338]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e339]:
+                    - generic [ref=e340]: COMPLETED
+                  - cell "ORD-3832" [ref=e341]
+                  - cell "19 Apr 2026, 16:14" [ref=e342]
+                  - cell [ref=e343]:
+                    - button [ref=e344]:
+                      - img [ref=e345]: visibility
+                - row "GRN COMPLETED PO-26844 18 Apr 2026, 05:16" [ref=e348] [cursor=pointer]:
+                  - cell "GRN" [ref=e349]:
+                    - generic [ref=e350]: GRN
+                  - cell "COMPLETED" [ref=e351]:
+                    - generic [ref=e352]: COMPLETED
+                  - cell "PO-26844" [ref=e353]
+                  - cell "18 Apr 2026, 05:16" [ref=e354]
+                  - cell [ref=e355]:
+                    - button [ref=e356]:
+                      - img [ref=e357]: visibility
+                - row "MOVE COMPLETED MOV-955 17 Apr 2026, 15:28" [ref=e360] [cursor=pointer]:
+                  - cell "MOVE" [ref=e361]:
+                    - generic [ref=e362]: MOVE
+                  - cell "COMPLETED" [ref=e363]:
+                    - generic [ref=e364]: COMPLETED
+                  - cell "MOV-955" [ref=e365]
+                  - cell "17 Apr 2026, 15:28" [ref=e366]
+                  - cell [ref=e367]:
+                    - button [ref=e368]:
+                      - img [ref=e369]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3828 17 Apr 2026, 15:12" [ref=e372] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e373]:
+                    - generic [ref=e374]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e375]:
+                    - generic [ref=e376]: COMPLETED
+                  - cell "ORD-3828" [ref=e377]
+                  - cell "17 Apr 2026, 15:12" [ref=e378]
+                  - cell [ref=e379]:
+                    - button [ref=e380]:
+                      - img [ref=e381]: visibility
+                - row "GRN COMPLETED PO-52605 17 Apr 2026, 00:57" [ref=e384] [cursor=pointer]:
+                  - cell "GRN" [ref=e385]:
+                    - generic [ref=e386]: GRN
+                  - cell "COMPLETED" [ref=e387]:
+                    - generic [ref=e388]: COMPLETED
+                  - cell "PO-52605" [ref=e389]
+                  - cell "17 Apr 2026, 00:57" [ref=e390]
+                  - cell [ref=e391]:
+                    - button [ref=e392]:
+                      - img [ref=e393]: visibility
+                - row "GRN COMPLETED PO-44875 17 Apr 2026, 00:06" [ref=e396] [cursor=pointer]:
+                  - cell "GRN" [ref=e397]:
+                    - generic [ref=e398]: GRN
+                  - cell "COMPLETED" [ref=e399]:
+                    - generic [ref=e400]: COMPLETED
+                  - cell "PO-44875" [ref=e401]
+                  - cell "17 Apr 2026, 00:06" [ref=e402]
+                  - cell [ref=e403]:
+                    - button [ref=e404]:
+                      - img [ref=e405]: visibility
+                - row "GRN COMPLETED PO-73419 15 Apr 2026, 14:16" [ref=e408] [cursor=pointer]:
+                  - cell "GRN" [ref=e409]:
+                    - generic [ref=e410]: GRN
+                  - cell "COMPLETED" [ref=e411]:
+                    - generic [ref=e412]: COMPLETED
+                  - cell "PO-73419" [ref=e413]
+                  - cell "15 Apr 2026, 14:16" [ref=e414]
+                  - cell [ref=e415]:
+                    - button [ref=e416]:
+                      - img [ref=e417]: visibility
+                - row "GRN COMPLETED PO-36166 14 Apr 2026, 18:45" [ref=e420] [cursor=pointer]:
+                  - cell "GRN" [ref=e421]:
+                    - generic [ref=e422]: GRN
+                  - cell "COMPLETED" [ref=e423]:
+                    - generic [ref=e424]: COMPLETED
+                  - cell "PO-36166" [ref=e425]
+                  - cell "14 Apr 2026, 18:45" [ref=e426]
+                  - cell [ref=e427]:
+                    - button [ref=e428]:
+                      - img [ref=e429]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3823 14 Apr 2026, 16:48" [ref=e432] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e433]:
+                    - generic [ref=e434]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e435]:
+                    - generic [ref=e436]: COMPLETED
+                  - cell "ORD-3823" [ref=e437]
+                  - cell "14 Apr 2026, 16:48" [ref=e438]
+                  - cell [ref=e439]:
+                    - button [ref=e440]:
+                      - img [ref=e441]: visibility
+                - row "ORDER_PICK COMPLETED ORD-3822 14 Apr 2026, 14:44" [ref=e444] [cursor=pointer]:
+                  - cell "ORDER_PICK" [ref=e445]:
+                    - generic [ref=e446]: ORDER_PICK
+                  - cell "COMPLETED" [ref=e447]:
+                    - generic [ref=e448]: COMPLETED
+                  - cell "ORD-3822" [ref=e449]
+                  - cell "14 Apr 2026, 14:44" [ref=e450]
+                  - cell [ref=e451]:
+                    - button [ref=e452]:
+                      - img [ref=e453]: visibility
+                - row "GRN COMPLETED PO-87137 14 Apr 2026, 07:50" [ref=e456] [cursor=pointer]:
+                  - cell "GRN" [ref=e457]:
+                    - generic [ref=e458]: GRN
+                  - cell "COMPLETED" [ref=e459]:
+                    - generic [ref=e460]: COMPLETED
+                  - cell "PO-87137" [ref=e461]
+                  - cell "14 Apr 2026, 07:50" [ref=e462]
+                  - cell [ref=e463]:
+                    - button [ref=e464]:
+                      - img [ref=e465]: visibility
+            - group [ref=e468]:
+              - generic [ref=e470]:
+                - generic [ref=e471]:
+                  - generic [ref=e472]: "Items per page:"
+                  - combobox "25 Items per page:" [ref=e477] [cursor=pointer]:
+                    - generic [ref=e478]:
+                      - generic [ref=e480]: "25"
+                      - img [ref=e483]
+                - generic [ref=e485]:
+                  - generic [ref=e486]: 1 – 25 of 2691
+                  - button "First page" [disabled]:
+                    - img
+                  - button "Previous page" [disabled]:
+                    - img
+                  - button "Next page" [ref=e487] [cursor=pointer]:
+                    - img [ref=e488]
+                  - button "Last page" [ref=e492] [cursor=pointer]:
+                    - img [ref=e493]
+  - listbox "Type" [ref=e500]:
+    - option "All Types" [selected] [ref=e501] [cursor=pointer]:
+      - generic [ref=e502]: All Types
+    - option "GRN" [ref=e504] [cursor=pointer]:
+      - generic [ref=e505]: GRN
+    - option "MOVE" [ref=e506] [cursor=pointer]:
+      - generic [ref=e507]: MOVE
+    - option "PUTAWAY" [ref=e508] [cursor=pointer]:
+      - generic [ref=e509]: PUTAWAY
+    - option "ORDER_PICK" [ref=e510] [cursor=pointer]:
+      - generic [ref=e511]: ORDER_PICK
+    - option "RETURN" [ref=e512] [cursor=pointer]:
+      - generic [ref=e513]: RETURN
+    - option "CYCLE_COUNT" [ref=e514] [cursor=pointer]:
+      - generic [ref=e515]: CYCLE_COUNT
+    - option "ADJUSTMENT" [ref=e516] [cursor=pointer]:
+      - generic [ref=e517]: ADJUSTMENT

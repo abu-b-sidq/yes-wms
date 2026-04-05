@@ -34,7 +34,7 @@ export default function ComponentRenderer({ component, onConfirmAction }: Compon
       return <FormRenderer component={component} onConfirm={onConfirmAction} />;
     default:
       return (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-500">
+        <div className="rounded-xl border border-[var(--ops-border)] bg-[rgba(255,255,255,0.03)] p-4 text-sm text-[var(--ops-text-muted)]">
           Unknown component type: {(component as { type: string }).type}
         </div>
       );
