@@ -203,10 +203,9 @@ interface RecentTransaction {
       text-decoration: none;
     }
     .quick-actions {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
       gap: 14px;
-      overflow-x: auto;
-      padding-bottom: 4px;
     }
     .quick-action-btn {
       display: flex;
@@ -220,9 +219,7 @@ interface RecentTransaction {
       text-decoration: none;
       color: var(--ops-text);
       box-shadow: var(--ops-shadow);
-      min-width: 80px;
       transition: transform 0.2s, border-color 0.2s, background 0.2s;
-      flex-shrink: 0;
     }
     .quick-action-btn:hover {
       transform: translateY(-2px);
@@ -323,6 +320,7 @@ interface RecentTransaction {
 
     @media (max-width: 600px) {
       .stats-grid { padding: 0 16px 16px; grid-template-columns: repeat(2, 1fr); }
+      .quick-actions { grid-template-columns: repeat(3, 1fr); }
       .section { padding: 0 16px 16px; }
     }
   `]
