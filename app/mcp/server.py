@@ -334,6 +334,349 @@ _TOOL_DEFS: list[types.Tool] = [
             "required": ["org_id", "query"],
         },
     ),
+    # --- Masters CRUD Tools (Tier 1) ---
+    types.Tool(
+        name="wms_create_organization",
+        description="Create a new organization.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Organization name"},
+                "org_id": {"type": "string", "description": "Organization ID (optional, defaults to name)"},
+            },
+            "required": ["name"],
+        },
+    ),
+    types.Tool(
+        name="wms_update_organization",
+        description="Update an organization's details.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "name": {"type": "string", "description": "New organization name (optional)"},
+                "is_active": {"type": "boolean", "description": "Active status (optional)"},
+            },
+            "required": ["org_id"],
+        },
+    ),
+    types.Tool(
+        name="wms_create_facility",
+        description="Create a new facility/warehouse.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "code": {"type": "string", "description": "Facility code"},
+                "warehouse_key": {"type": "string", "description": "Warehouse key"},
+                "name": {"type": "string", "description": "Facility name"},
+                "address": {"type": "string", "description": "Physical address (optional)"},
+                "is_active": {"type": "boolean", "default": True},
+            },
+            "required": ["org_id", "code", "warehouse_key", "name"],
+        },
+    ),
+    types.Tool(
+        name="wms_get_facility",
+        description="Get details for a specific facility.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "facility_code": {"type": "string"},
+            },
+            "required": ["org_id", "facility_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_update_facility",
+        description="Update a facility's details.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "facility_code": {"type": "string"},
+                "warehouse_key": {"type": "string", "description": "New warehouse key (optional)"},
+                "name": {"type": "string", "description": "New facility name (optional)"},
+                "address": {"type": "string", "description": "New address (optional)"},
+                "is_active": {"type": "boolean", "description": "Active status (optional)"},
+            },
+            "required": ["org_id", "facility_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_create_sku",
+        description="Create a new SKU (product) in an organization.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "code": {"type": "string", "description": "SKU code"},
+                "name": {"type": "string", "description": "Product name"},
+                "unit_of_measure": {"type": "string", "description": "Unit (optional, default: EA)", "default": "EA"},
+                "is_active": {"type": "boolean", "default": True},
+                "metadata": {"type": "object", "description": "Custom metadata (optional)", "default": {}},
+            },
+            "required": ["org_id", "code", "name"],
+        },
+    ),
+    types.Tool(
+        name="wms_get_sku",
+        description="Get details for a specific SKU.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "sku_code": {"type": "string"},
+            },
+            "required": ["org_id", "sku_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_update_sku",
+        description="Update a SKU's details.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "sku_code": {"type": "string"},
+                "name": {"type": "string", "description": "New product name (optional)"},
+                "unit_of_measure": {"type": "string", "description": "New unit (optional)"},
+                "is_active": {"type": "boolean", "description": "Active status (optional)"},
+                "metadata": {"type": "object", "description": "Updated metadata (optional)"},
+            },
+            "required": ["org_id", "sku_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_create_zone",
+        description="Create a new storage zone in an organization.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "code": {"type": "string", "description": "Zone code"},
+                "name": {"type": "string", "description": "Zone name"},
+                "is_active": {"type": "boolean", "default": True},
+            },
+            "required": ["org_id", "code", "name"],
+        },
+    ),
+    types.Tool(
+        name="wms_get_zone",
+        description="Get details for a specific zone.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "zone_code": {"type": "string"},
+            },
+            "required": ["org_id", "zone_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_update_zone",
+        description="Update a zone's details.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "zone_code": {"type": "string"},
+                "name": {"type": "string", "description": "New zone name (optional)"},
+                "is_active": {"type": "boolean", "description": "Active status (optional)"},
+            },
+            "required": ["org_id", "zone_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_create_location",
+        description="Create a new bin/shelf location in a zone.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "code": {"type": "string", "description": "Location code"},
+                "name": {"type": "string", "description": "Location name"},
+                "zone_code": {"type": "string", "description": "Parent zone code"},
+                "capacity": {"type": "integer", "description": "Capacity (optional)"},
+                "is_active": {"type": "boolean", "default": True},
+            },
+            "required": ["org_id", "code", "name", "zone_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_get_location",
+        description="Get details for a specific location.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "location_code": {"type": "string"},
+            },
+            "required": ["org_id", "location_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_update_location",
+        description="Update a location's details.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "location_code": {"type": "string"},
+                "name": {"type": "string", "description": "New location name (optional)"},
+                "zone_code": {"type": "string", "description": "New parent zone code (optional)"},
+                "capacity": {"type": "integer", "description": "New capacity (optional)"},
+                "is_active": {"type": "boolean", "description": "Active status (optional)"},
+            },
+            "required": ["org_id", "location_code"],
+        },
+    ),
+    # --- Facility Mappings (Tier 2) ---
+    types.Tool(
+        name="wms_list_facility_skus",
+        description="List SKUs mapped to a specific facility.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "facility_code": {"type": "string"},
+            },
+            "required": ["org_id", "facility_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_update_facility_sku",
+        description="Update facility-specific SKU settings.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "facility_code": {"type": "string"},
+                "sku_code": {"type": "string"},
+                "is_active": {"type": "boolean", "description": "Active status (optional)"},
+                "overrides": {"type": "object", "description": "Facility-specific overrides (optional)"},
+            },
+            "required": ["org_id", "facility_code", "sku_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_list_facility_zones",
+        description="List zones mapped to a specific facility.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "facility_code": {"type": "string"},
+            },
+            "required": ["org_id", "facility_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_update_facility_zone",
+        description="Update facility-specific zone settings.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "facility_code": {"type": "string"},
+                "zone_code": {"type": "string"},
+                "is_active": {"type": "boolean", "description": "Active status (optional)"},
+                "overrides": {"type": "object", "description": "Facility-specific overrides (optional)"},
+            },
+            "required": ["org_id", "facility_code", "zone_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_list_facility_locations",
+        description="List locations mapped to a specific facility.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "facility_code": {"type": "string"},
+            },
+            "required": ["org_id", "facility_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_update_facility_location",
+        description="Update facility-specific location settings.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "facility_code": {"type": "string"},
+                "location_code": {"type": "string"},
+                "is_active": {"type": "boolean", "description": "Active status (optional)"},
+                "overrides": {"type": "object", "description": "Facility-specific overrides (optional)"},
+            },
+            "required": ["org_id", "facility_code", "location_code"],
+        },
+    ),
+    # --- User Management (Tier 3) ---
+    types.Tool(
+        name="wms_list_org_users",
+        description="List all users with access to an organization.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+            },
+            "required": ["org_id"],
+        },
+    ),
+    types.Tool(
+        name="wms_grant_org_access",
+        description="Grant a user access to an organization with a specific role.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "email": {"type": "string", "description": "User email"},
+                "role_code": {"type": "string", "description": "Role code (org_admin, facility_manager, operator, viewer)"},
+                "facility_codes": {"type": "array", "items": {"type": "string"}, "description": "Facility codes to restrict access (optional)"},
+            },
+            "required": ["org_id", "email", "role_code"],
+        },
+    ),
+    types.Tool(
+        name="wms_update_org_access",
+        description="Update a user's access/role in an organization.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "user_id": {"type": "string"},
+                "grant_id": {"type": "string"},
+                "role_code": {"type": "string", "description": "New role code (optional)"},
+                "status": {"type": "string", "description": "Status: ACTIVE or INACTIVE (optional)", "enum": ["ACTIVE", "INACTIVE"]},
+                "facility_codes": {"type": "array", "items": {"type": "string"}, "description": "Updated facility access (optional)"},
+            },
+            "required": ["org_id", "user_id", "grant_id"],
+        },
+    ),
+    types.Tool(
+        name="wms_revoke_org_access",
+        description="Revoke a user's access to an organization.",
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "org_id": {"type": "string"},
+                "user_id": {"type": "string"},
+                "grant_id": {"type": "string"},
+            },
+            "required": ["org_id", "user_id", "grant_id"],
+        },
+    ),
+    types.Tool(
+        name="wms_list_pending_users",
+        description="List users awaiting activation (platform admin only).",
+        inputSchema={
+            "type": "object",
+            "properties": {},
+        },
+    ),
 ]
 
 
@@ -393,6 +736,59 @@ async def handle_call_tool(
             result = await tools.wms_order_pick(**args, uid=uid)
         elif name == "wms_semantic_search":
             result = await tools.wms_semantic_search(**args, uid=uid)
+        # --- Masters CRUD Tools (Tier 1) ---
+        elif name == "wms_create_organization":
+            result = await tools.wms_create_organization(**args, uid=uid)
+        elif name == "wms_update_organization":
+            result = await tools.wms_update_organization(**args, uid=uid)
+        elif name == "wms_create_facility":
+            result = await tools.wms_create_facility(**args, uid=uid)
+        elif name == "wms_get_facility":
+            result = await tools.wms_get_facility(**args, uid=uid)
+        elif name == "wms_update_facility":
+            result = await tools.wms_update_facility(**args, uid=uid)
+        elif name == "wms_create_sku":
+            result = await tools.wms_create_sku(**args, uid=uid)
+        elif name == "wms_get_sku":
+            result = await tools.wms_get_sku(**args, uid=uid)
+        elif name == "wms_update_sku":
+            result = await tools.wms_update_sku(**args, uid=uid)
+        elif name == "wms_create_zone":
+            result = await tools.wms_create_zone(**args, uid=uid)
+        elif name == "wms_get_zone":
+            result = await tools.wms_get_zone(**args, uid=uid)
+        elif name == "wms_update_zone":
+            result = await tools.wms_update_zone(**args, uid=uid)
+        elif name == "wms_create_location":
+            result = await tools.wms_create_location(**args, uid=uid)
+        elif name == "wms_get_location":
+            result = await tools.wms_get_location(**args, uid=uid)
+        elif name == "wms_update_location":
+            result = await tools.wms_update_location(**args, uid=uid)
+        # --- Facility Mappings (Tier 2) ---
+        elif name == "wms_list_facility_skus":
+            result = await tools.wms_list_facility_skus(**args, uid=uid)
+        elif name == "wms_update_facility_sku":
+            result = await tools.wms_update_facility_sku(**args, uid=uid)
+        elif name == "wms_list_facility_zones":
+            result = await tools.wms_list_facility_zones(**args, uid=uid)
+        elif name == "wms_update_facility_zone":
+            result = await tools.wms_update_facility_zone(**args, uid=uid)
+        elif name == "wms_list_facility_locations":
+            result = await tools.wms_list_facility_locations(**args, uid=uid)
+        elif name == "wms_update_facility_location":
+            result = await tools.wms_update_facility_location(**args, uid=uid)
+        # --- User Management (Tier 3) ---
+        elif name == "wms_list_org_users":
+            result = await tools.wms_list_org_users(**args, uid=uid)
+        elif name == "wms_grant_org_access":
+            result = await tools.wms_grant_org_access(**args, uid=uid)
+        elif name == "wms_update_org_access":
+            result = await tools.wms_update_org_access(**args, uid=uid)
+        elif name == "wms_revoke_org_access":
+            result = await tools.wms_revoke_org_access(**args, uid=uid)
+        elif name == "wms_list_pending_users":
+            result = await tools.wms_list_pending_users(**args, uid=uid)
         else:
             return _err(f"Unknown tool: {name}")
 
