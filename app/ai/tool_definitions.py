@@ -60,3 +60,12 @@ def get_anthropic_tools() -> list[dict]:
             },
         })
     return tools
+
+
+def get_deepagent_tools(tools: list[dict] | None = None) -> list:
+    """Return tool definitions in Anthropic format for DeepAgent.
+
+    DeepAgent uses the same Anthropic tool format as the ClaudeProvider.
+    This function is provided for compatibility with the chat service.
+    """
+    return get_anthropic_tools() if not tools else tools
