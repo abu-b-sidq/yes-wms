@@ -1,4 +1,6 @@
-from app.ai.llm_providers import _to_anthropic_messages
+import logging
+
+from app.ai.llm_providers import _log_prompt_request, _to_anthropic_messages
 
 
 def test_to_anthropic_messages_converts_tool_calls_and_results():
@@ -98,3 +100,45 @@ def test_to_anthropic_messages_groups_consecutive_tool_results():
             ],
         },
     ]
+
+
+def test_log_prompt_request_emits_llm_prompt_event(caplog, monkeypatch):
+    app_logger = logging.getLogger("app")
+    ai_logger = logging.getLogger("app.ai")
+    prompt_logger = logging.getLogger("app.ai.llm_prompts")
+    monkeypatch.setattr(app_logger, "handlers", [])
+    monkeypatch.setattr(app_logger, "propagate", True)
+    monkeypatch.setattr(ai_logger, "handlers", [])
+    monkeypatch.setattr(ai_logger, "propagate", True)
+    monkeypatch.setattr(prompt_logger, "handlers", [])
+    monkeypatch.setattr(prompt_logger, "propagate", True)
+    caplog.set_level(logging.INFO, logger="app.ai.llm_prompts")
+
+    _log_prompt_request(
+        provider_name="openai",
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "System instructions"},
+            {"role": "user", "content": "Where is pallet P-100?"},
+        ],
+        tools=[
+            {
+                "type": "function",
+                "function": {"name": "wms_lookup_pallet"},
+            }
+        ],
+    )
+
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "app.ai.llm_prompts" and getattr(record, "event_name", None) == "ai.prompt"
+    ]
+    assert records
+
+    event_data = records[-1].event_data
+    assert event_data["provider"] == "openai"
+    assert event_data["model"] == "gpt-4o-mini"
+    assert event_data["message_count"] == 2
+    assert event_data["tool_names"] == ["wms_lookup_pallet"]
+    assert event_data["messages"][1]["content"] == "Where is pallet P-100?"

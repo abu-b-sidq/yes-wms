@@ -176,23 +176,45 @@ def _build_logging_handler(formatter_name: str) -> dict[str, Any]:
             "formatter": formatter_name,
         }
 
-    filename = LOG_FILE_PATH
+    return _build_rotating_file_handler(formatter_name, LOG_FILE_PATH)
+
+
+def _resolve_log_filename(filename: str) -> str:
     directory = os.path.dirname(filename)
     if directory:
         try:
             os.makedirs(directory, exist_ok=True)
         except OSError:
-            filename = "/tmp/yes-wms.log"
+            return "/tmp/yes-wms.log" if filename == LOG_FILE_PATH else "/tmp/llm_prompts"
+
+    return filename
+
+
+def _build_rotating_file_handler(formatter_name: str, filename: str) -> dict[str, Any]:
+    resolved_filename = _resolve_log_filename(filename)
 
     return {
         "class": "logging.handlers.RotatingFileHandler",
         "formatter": formatter_name,
-        "filename": filename,
+        "filename": resolved_filename,
         "maxBytes": LOG_FILE_MAX_BYTES,
         "backupCount": LOG_FILE_BACKUP_COUNT,
         "encoding": "utf-8",
         "delay": True,
     }
+
+
+def _get_llm_prompt_log_file_path() -> str:
+    configured = (os.getenv("LLM_PROMPT_LOG_FILE_PATH") or "").strip()
+    if configured:
+        return configured
+
+    directory = os.path.dirname(LOG_FILE_PATH)
+    return os.path.join(directory, "llm_prompts") if directory else "llm_prompts"
+
+
+def _build_llm_prompt_logging_handler(formatter_name: str) -> dict[str, Any]:
+    return _build_rotating_file_handler(formatter_name, _get_llm_prompt_log_file_path())
 
 
 _formatter_name = "json" if LOG_FORMAT == "json" else "standard"
@@ -213,6 +235,7 @@ LOGGING = {
     },
     "handlers": {
         "default": _build_logging_handler(_formatter_name),
+        "llm_prompts": _build_llm_prompt_logging_handler(_formatter_name),
     },
     "root": {
         "handlers": ["default"],
@@ -227,6 +250,11 @@ LOGGING = {
         "django.request": {
             "handlers": ["default"],
             "level": "WARNING",
+            "propagate": False,
+        },
+        "app.ai.llm_prompts": {
+            "handlers": ["llm_prompts"],
+            "level": "INFO",
             "propagate": False,
         },
     },

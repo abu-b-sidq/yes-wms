@@ -10,7 +10,10 @@ from typing import Any, AsyncIterator
 
 import httpx
 
+from app.core.logging_utils import log_event
+
 logger = logging.getLogger(__name__)
+prompt_logger = logging.getLogger("app.ai.llm_prompts")
 
 
 # ---------------------------------------------------------------------------
@@ -51,6 +54,37 @@ class LLMProvider(ABC):
     async def list_models(self) -> list[str]:
         """Return available model names."""
         ...
+
+
+def _extract_tool_names(tools: list[dict[str, Any]]) -> list[str]:
+    tool_names: list[str] = []
+    for tool in tools:
+        function = tool.get("function", {}) if isinstance(tool, dict) else {}
+        name = function.get("name")
+        if isinstance(name, str) and name:
+            tool_names.append(name)
+    return tool_names
+
+
+def _log_prompt_request(
+    *,
+    provider_name: str,
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    system: str | None = None,
+) -> None:
+    event_data: dict[str, Any] = {
+        "provider": provider_name,
+        "model": model,
+        "message_count": len(messages),
+        "tool_names": _extract_tool_names(tools),
+        "messages": messages,
+    }
+    if system is not None:
+        event_data["system"] = system
+
+    log_event(prompt_logger, logging.INFO, "ai.prompt", **event_data)
 
 
 # ---------------------------------------------------------------------------
@@ -104,6 +138,13 @@ class OllamaProvider(LLMProvider):
         if tools and not await self._supports_tools(model):
             logger.warning("Model %s does not support tools — sending without tools", model)
             payload.pop("tools", None)
+
+        _log_prompt_request(
+            provider_name="ollama",
+            model=model,
+            messages=messages,
+            tools=payload.get("tools", []),
+        )
 
         async with httpx.AsyncClient(timeout=120.0) as client:
             async with client.stream(
@@ -176,6 +217,13 @@ class OpenAIProvider(LLMProvider):
         }
         if tools:
             kwargs["tools"] = tools
+
+        _log_prompt_request(
+            provider_name="openai",
+            model=model,
+            messages=messages,
+            tools=tools,
+        )
 
         # Accumulate partial tool calls across chunks
         pending_tool_calls: dict[int, dict] = {}
@@ -273,6 +321,14 @@ class ClaudeProvider(LLMProvider):
         if tools:
             from app.ai.tool_definitions import get_anthropic_tools
             kwargs["tools"] = get_anthropic_tools()
+
+        _log_prompt_request(
+            provider_name="claude",
+            model=model,
+            messages=anthropic_messages,
+            tools=tools,
+            system=system_text.strip() or None,
+        )
 
         async with client.messages.stream(**kwargs) as stream:
             current_tool_id = ""
