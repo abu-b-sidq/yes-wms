@@ -12,6 +12,28 @@ import {
   completeDropTask,
 } from '../api/tasks';
 
+type TaskLists<TPick, TDrop> = {
+  picks?: TPick[] | null;
+  drops?: TDrop[] | null;
+};
+
+type TaskResponse<TPick, TDrop> = {
+  data?: TaskLists<TPick, TDrop> | null;
+};
+
+function ensureTaskList<T>(value: T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function getTaskLists<TPick, TDrop>(
+  response: TaskResponse<TPick, TDrop> | null | undefined
+) {
+  return {
+    picks: ensureTaskList(response?.data?.picks),
+    drops: ensureTaskList(response?.data?.drops),
+  };
+}
+
 export function useTasks() {
   const [availablePicks, setAvailablePicks] = useState<PickTask[]>([]);
   const [availableDrops, setAvailableDrops] = useState<DropTask[]>([]);
@@ -28,10 +50,12 @@ export function useTasks() {
         getAvailableTasks(),
         getMyTasks(),
       ]);
-      setAvailablePicks(available.data.picks);
-      setAvailableDrops(available.data.drops);
-      setMyPicks(mine.data.picks);
-      setMyDrops(mine.data.drops);
+      const availableTasks = getTaskLists<PickTask, DropTask>(available);
+      const myTasks = getTaskLists<PickTask, DropTask>(mine);
+      setAvailablePicks(availableTasks.picks);
+      setAvailableDrops(availableTasks.drops);
+      setMyPicks(myTasks.picks);
+      setMyDrops(myTasks.drops);
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -3,8 +3,8 @@ import auth from '@react-native-firebase/auth';
 import { getSessionHeaders } from '../utils/storage';
 
 const API_BASE_URL = __DEV__
-  ? 'http://localhost:8010/api/v1'
-  : 'https://api.yeswms.com/api/v1';
+  ? 'https://wms.yesworks.co.in/api/v1'
+  : 'https://wms.yesworks.co.in/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
