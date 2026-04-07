@@ -17,3 +17,4 @@ openai>=1.0,<2.0
 anthropic>=0.30,<1.0
 pgvector>=0.3
 whitenoise>=6.0,<7.0
+deepagents

@@ -9,8 +9,8 @@
     },
     {
       "name": "web",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["node_modules/.bin/vite"],
       "cwd": "/Users/abs/Projects/yes-wms/web",
       "port": 5173,
       "autoPort": false

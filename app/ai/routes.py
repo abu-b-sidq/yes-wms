@@ -184,11 +184,19 @@ def list_models(request):
     """List available AI models grouped by provider."""
     authorize_request(request, require_firebase=True)
 
+    from app.ai.chat_service import get_deepagents_models
     from app.ai.llm_providers import ClaudeProvider, OllamaProvider, OpenAIProvider
 
     results = []
 
-    # Check each provider
+    # deepagents models (static list, always available)
+    results.append({
+        "provider": "deepagents",
+        "models": get_deepagents_models(),
+        "is_available": True,
+    })
+
+    # Legacy providers
     for provider_name, cls in [("ollama", OllamaProvider), ("openai", OpenAIProvider), ("claude", ClaudeProvider)]:
         provider = cls()
         try:

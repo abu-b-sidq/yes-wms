@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import type { Message } from '../../types/chat';
 import { resolveAssistantRenderState } from '../../utils/assistantContent';
 import ComponentRenderer from '../renderers/ComponentRenderer';
@@ -60,7 +61,28 @@ export default function ChatMessage({ message, onConfirmAction }: ChatMessagePro
                   : 'ops-chat-bubble text-[var(--ops-text)]'
               }`}
             >
-              <div className="whitespace-pre-wrap text-sm leading-7">{contentToRender}</div>
+              {isUser ? (
+                <div className="whitespace-pre-wrap text-sm leading-7">{contentToRender}</div>
+              ) : (
+                <div className="text-sm leading-7">
+                <ReactMarkdown
+                  components={{
+                    h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-bold mb-1 mt-2 first:mt-0">{children}</h3>,
+                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
+                    li: ({ children }) => <li className="text-sm">{children}</li>,
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                    hr: () => <hr className="my-3 border-[var(--ops-border)]" />,
+                    code: ({ children }) => <code className="bg-[var(--ops-subtle-fill)] rounded px-1 text-xs font-mono">{children}</code>,
+                  }}
+                >
+                  {contentToRender}
+                </ReactMarkdown>
+                </div>
+              )}
             </div>
           )}
 

@@ -3,27 +3,52 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import dataclass
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, List, Optional
 from uuid import UUID
 
 from asgiref.sync import sync_to_async
 
-from app.ai.llm_providers import StreamChunk, get_provider
 from app.ai.system_prompt import build_system_prompt
-from app.ai.tool_definitions import get_openai_tools
-from app.ai.tool_executor import execute_tool, is_mutation_tool, summarize_result
+from app.ai.tool_definitions import AUTO_INJECT_PARAMS, MUTATION_TOOLS
+from app.ai.tool_executor import execute_tool, summarize_result
 from app.core.logging_utils import log_event
 
 logger = logging.getLogger(__name__)
 
-MAX_TOOL_LOOPS = 5
 MAX_HISTORY_MESSAGES = 20
 PREFETCH_RAG_LIMIT = 5
 PREFETCH_RAG_CONTENT_TYPES = ("knowledge", "transaction", "sku", "message")
 MAX_PREFETCH_TEXT_CHARS = 500
+
+# Curated list of models supported by deepagents (provider:model format).
+DEEPAGENTS_MODELS: frozenset[str] = frozenset({
+    "anthropic:claude-haiku-4-5",
+    "anthropic:claude-sonnet-4-6",
+    "anthropic:claude-opus-4-6",
+    "openai:gpt-4o",
+    "openai:gpt-4o-mini",
+    "google:gemini-2.0-flash",
+    "google:gemini-2.5-pro",
+})
+
+
+def get_deepagents_models() -> list[str]:
+    """Return the list of models available through deepagents."""
+    return sorted(DEEPAGENTS_MODELS)
+
+
+_JSON_TYPE_MAP: dict[str, Any] = {
+    "string": str,
+    "integer": int,
+    "number": float,
+    "boolean": bool,
+    "array": List[Any],
+    "object": dict,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -54,14 +79,7 @@ async def handle_chat_message(
     model_name: str | None = None,
     confirm_action: dict | None = None,
 ) -> AsyncIterator[SSEEvent]:
-    """Process a user message and yield SSE events.
-
-    This is the main orchestration function. It:
-    1. Saves the user message
-    2. Builds the LLM prompt with tool definitions
-    3. Runs the LLM with tool-calling loop
-    4. Yields streaming events back to the client
-    """
+    """Process a user message and yield SSE events using deepagents."""
     from app.ai.models import Conversation, Message
 
     execution_log: list[dict[str, Any]] = []
@@ -81,7 +99,6 @@ async def handle_chat_message(
 
         provider_name = model_provider or conversation.model_provider
         model = model_name or conversation.model_name
-        provider = get_provider(provider_name)
         _append_execution_step(
             execution_log,
             "conversation_loaded",
@@ -90,7 +107,7 @@ async def handle_chat_message(
             has_facility=bool(conversation.facility_id),
         )
 
-        # Handle action confirmation
+        # Handle action confirmation (unchanged)
         if confirm_action:
             _append_execution_step(
                 execution_log,
@@ -113,7 +130,6 @@ async def handle_chat_message(
                     action=confirm_action["action"],
                     result=_summarize_result_for_log(result),
                 )
-                # Save as assistant message
                 assistant_msg = await sync_to_async(Message.objects.create)(
                     conversation=conversation,
                     role=Message.Role.ASSISTANT,
@@ -153,11 +169,7 @@ async def handle_chat_message(
             role=Message.Role.USER,
             content=user_message,
         )
-        _append_execution_step(
-            execution_log,
-            "user_message_saved",
-            message_chars=len(user_message),
-        )
+        _append_execution_step(execution_log, "user_message_saved", message_chars=len(user_message))
 
         # Auto-generate title from first message
         msg_count = await sync_to_async(conversation.messages.count)()
@@ -165,13 +177,9 @@ async def handle_chat_message(
             title = user_message[:100].strip()
             conversation.title = title
             await sync_to_async(conversation.save)(update_fields=["title", "updated_at"])
-            _append_execution_step(
-                execution_log,
-                "conversation_titled",
-                title=title,
-            )
+            _append_execution_step(execution_log, "conversation_titled", title=title)
 
-        # Always prefetch semantic context before the first LLM call for this user message.
+        # Prefetch semantic context
         prefetched_context = await _prefetch_semantic_context(user_message, uid, org_id)
         _append_execution_step(
             execution_log,
@@ -179,133 +187,113 @@ async def handle_chat_message(
             hit_count=len(prefetched_context or []),
         )
 
-        # Build message history
-        messages = await _build_messages(
-            conversation,
-            org_id,
-            facility_id,
-            facility_name,
-            prefetched_context=prefetched_context,
-        )
-        tools = get_openai_tools()
+        # Build conversation history (OpenAI-dict format, no system prompt)
+        history_messages = await _build_history_messages(conversation, prefetched_context)
         _append_execution_step(
             execution_log,
             "llm_context_built",
-            message_count=len(messages),
-            tool_count=len(tools),
+            message_count=len(history_messages),
         )
 
-        # LLM tool-calling loop
+        # Create deepagents agent
+        from deepagents import create_deep_agent
+
+        # Prefer the model stored on the conversation when it is a recognised
+        # deepagents model; fall back to the env-var default otherwise.
+        env_model = os.environ.get("DEEPAGENTS_MODEL", "anthropic:claude-haiku-4-5")
+        db_model = conversation.model_name if conversation.model_provider == "deepagents" else None
+        deepagents_model = db_model if db_model and db_model in DEEPAGENTS_MODELS else env_model
+        agent = create_deep_agent(
+            model=deepagents_model,
+            tools=_make_langchain_tools(uid, org_id, facility_id),
+            system_prompt=build_system_prompt(org_id, facility_id, facility_name),
+        )
+
+        # Stream agent responses
         full_text = ""
+        pending_tool_calls: dict[str, dict] = {}  # tool_call_id → {name, args}
 
-        for loop_idx in range(MAX_TOOL_LOOPS):
-            tool_calls_in_response: list[dict] = []
-            chunk_text = ""
+        from langchain_core.messages import AIMessageChunk, AIMessage, ToolMessage
 
-            async for chunk in provider.chat_completion(messages, tools, model):
-                if chunk.delta_text:
-                    chunk_text += chunk.delta_text
-                    yield SSEEvent("token", {"text": chunk.delta_text})
+        async for chunk, _metadata in agent.astream(
+            {"messages": history_messages},
+            stream_mode="messages",
+        ):
+            # Accumulate streamed text tokens
+            if isinstance(chunk, AIMessageChunk):
+                content = chunk.content
+                if isinstance(content, str) and content:
+                    full_text += content
+                    yield SSEEvent("token", {"text": content})
+                elif isinstance(content, list):
+                    for block in content:
+                        if isinstance(block, dict) and block.get("type") == "text":
+                            text = block.get("text", "")
+                            if text:
+                                full_text += text
+                                yield SSEEvent("token", {"text": text})
 
+                # Track outgoing tool calls
                 if chunk.tool_calls:
                     for tc in chunk.tool_calls:
-                        tool_calls_in_response.append({
-                            "id": tc.id,
-                            "name": tc.name,
-                            "arguments": tc.arguments,
-                        })
+                        if tc.get("id"):
+                            pending_tool_calls[tc["id"]] = {
+                                "name": tc.get("name", ""),
+                                "args": tc.get("args", {}),
+                            }
+                            yield SSEEvent("tool_call", {
+                                "name": tc.get("name", ""),
+                                "status": "executing",
+                            })
 
-            full_text += chunk_text
-            _append_execution_step(
-                execution_log,
-                "llm_round_completed",
-                round=loop_idx + 1,
-                response_chars=len(chunk_text),
-                tool_call_count=len(tool_calls_in_response),
-            )
+            # Handle tool results
+            elif isinstance(chunk, ToolMessage):
+                content_str = chunk.content if isinstance(chunk.content, str) else json.dumps(chunk.content, default=str)
+                tool_call_id = getattr(chunk, "tool_call_id", "")
+                tool_info = pending_tool_calls.pop(tool_call_id, {})
+                tool_name = getattr(chunk, "name", "") or tool_info.get("name", "tool")
 
-            # No tool calls — we're done
-            if not tool_calls_in_response:
-                break
-
-            # Process tool calls
-            messages.append(_build_assistant_tool_message(chunk_text, tool_calls_in_response))
-
-            for tc in tool_calls_in_response:
-                tool_name = tc["name"]
-                tool_args = tc["arguments"]
-
-                # Mutations require confirmation — don't execute, return dialog
-                if is_mutation_tool(tool_name):
-                    _append_execution_step(
-                        execution_log,
-                        "tool_confirmation_requested",
-                        tool=tool_name,
-                    )
-                    yield SSEEvent("tool_call", {"name": tool_name, "status": "needs_confirmation", "args": tool_args})
-                    confirmation_component = {
-                        "type": "confirmation_dialog",
-                        "title": _tool_display_name(tool_name),
-                        "description": _describe_mutation(tool_name, tool_args),
-                        "action": tool_name,
-                        "parameters": tool_args,
-                        "requires_confirmation": True,
-                    }
-                    components.append(confirmation_component)
-                    # Add a tool result that tells the LLM we're waiting for confirmation
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc["id"],
-                        "content": "PENDING_USER_CONFIRMATION: This action requires user confirmation before execution. A confirmation dialog has been shown to the user.",
-                    })
-                    continue
-
-                yield SSEEvent("tool_call", {"name": tool_name, "status": "executing"})
+                # Check for mutation confirmation marker
                 try:
-                    result = await execute_tool(
-                        tool_name, tool_args,
-                        uid=uid, org_id=org_id, facility_id=facility_id,
-                    )
-                    result_summary = summarize_result(result)
+                    result_data = json.loads(content_str)
+                except (json.JSONDecodeError, TypeError):
+                    result_data = None
+
+                if isinstance(result_data, dict) and result_data.get("__needs_confirmation__"):
+                    action = result_data["action"]
+                    params = result_data.get("parameters", {})
+                    yield SSEEvent("tool_call", {
+                        "name": action,
+                        "status": "needs_confirmation",
+                        "args": params,
+                    })
+                    components.append({
+                        "type": "confirmation_dialog",
+                        "title": _tool_display_name(action),
+                        "description": _describe_mutation(action, params),
+                        "action": action,
+                        "parameters": params,
+                        "requires_confirmation": True,
+                    })
+                else:
                     tool_call_log.append({
                         "tool": tool_name,
-                        "args": _json_safe(tool_args),
-                        "result": _json_safe(result),
+                        "args": _json_safe(tool_info.get("args", {})),
+                        "result": _json_safe(result_data or content_str),
                     })
-                    _append_execution_step(
-                        execution_log,
-                        "tool_executed",
-                        tool=tool_name,
-                        result=_summarize_result_for_log(result),
-                    )
-                    yield SSEEvent("tool_result", {"name": tool_name, "status": "success", "count": len(result) if isinstance(result, list) else 1})
-
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc["id"],
-                        "content": result_summary,
+                    yield SSEEvent("tool_result", {
+                        "name": tool_name,
+                        "status": "success",
                     })
 
-                except Exception as exc:
-                    logger.exception("Tool %s failed", tool_name)
-                    _append_execution_step(
-                        execution_log,
-                        "tool_failed",
-                        tool=tool_name,
-                        error={"type": exc.__class__.__name__, "message": str(exc)},
-                    )
-                    yield SSEEvent("tool_result", {"name": tool_name, "status": "error", "error": str(exc)})
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc["id"],
-                        "content": f"Error: {exc}",
-                    })
+        _append_execution_step(
+            execution_log,
+            "agent_stream_completed",
+            response_chars=len(full_text),
+            tool_call_count=len(tool_call_log),
+        )
 
-            # If all remaining tool calls were mutations needing confirmation, break
-            if all(is_mutation_tool(tc["name"]) for tc in tool_calls_in_response):
-                break
-
-        # Parse the final LLM response for structured components
+        # Parse final response for structured components
         parsed = _parse_response(full_text)
         if parsed:
             if parsed.get("text"):
@@ -339,10 +327,9 @@ async def handle_chat_message(
             tool_call_count=len(tool_call_log),
         )
 
-        # Update conversation timestamp
         await sync_to_async(conversation.save)(update_fields=["updated_at"])
 
-        # Embed the Q+A pair for future semantic retrieval (fire-and-forget)
+        # Embed Q+A pair for future semantic retrieval (fire-and-forget)
         if full_text and user_message:
             import asyncio
             from app.ai.embeddings import upsert_embedding
@@ -352,14 +339,11 @@ async def handle_chat_message(
             )
 
         yield SSEEvent("done", {"message_id": str(assistant_msg.id), "text": full_text})
+
     except Exception as exc:
         completion_status = "failed"
         failure = {"type": exc.__class__.__name__, "message": str(exc)}
-        _append_execution_step(
-            execution_log,
-            "thread_failed",
-            error=failure,
-        )
+        _append_execution_step(execution_log, "thread_failed", error=failure)
         raise
     finally:
         log_event(
@@ -381,20 +365,88 @@ async def handle_chat_message(
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# deepagents tool factory
 # ---------------------------------------------------------------------------
 
-async def _build_messages(
-    conversation,
-    org_id: str,
-    facility_id: str | None,
-    facility_name: str | None,
-    prefetched_context: list[dict] | None = None,
-) -> list[dict]:
-    """Build the messages array for the LLM from conversation history."""
-    system_prompt = build_system_prompt(org_id, facility_id, facility_name)
+def _make_langchain_tools(uid: str, org_id: str, facility_id: str | None) -> list:
+    """Build LangChain StructuredTool objects from MCP tool definitions."""
+    from pydantic import create_model, Field
+    from langchain_core.tools import StructuredTool
+    from app.mcp.server import _TOOL_DEFS
 
-    messages = [{"role": "system", "content": system_prompt}]
+    tools = []
+    for tool_def in _TOOL_DEFS:
+        schema = tool_def.inputSchema
+        props = {
+            k: v for k, v in schema.get("properties", {}).items()
+            if k not in AUTO_INJECT_PARAMS
+        }
+        required_set = {r for r in schema.get("required", []) if r not in AUTO_INJECT_PARAMS}
+
+        # Build pydantic model for tool arguments
+        fields: dict[str, Any] = {}
+        for name, prop in props.items():
+            py_type = _JSON_TYPE_MAP.get(prop.get("type", ""), Any)
+            desc = prop.get("description", "")
+            if name in required_set:
+                fields[name] = (py_type, Field(..., description=desc))
+            else:
+                fields[name] = (Optional[py_type], Field(default=None, description=desc))
+
+        ArgsModel = create_model(f"{tool_def.name}_Args", **fields) if fields else _empty_model(tool_def.name)
+
+        # Capture loop variables in closure defaults
+        async def _run(
+            _tool_name: str = tool_def.name,
+            _is_mutation: bool = tool_def.name in MUTATION_TOOLS,
+            **kwargs: Any,
+        ) -> str:
+            if _is_mutation:
+                clean_kwargs = {k: v for k, v in kwargs.items() if v is not None}
+                return json.dumps({
+                    "__needs_confirmation__": True,
+                    "action": _tool_name,
+                    "parameters": clean_kwargs,
+                })
+            # Strip None values so optional params are not passed to tools
+            # that don't handle None (e.g. analytics limit, offset checks).
+            clean_kwargs = {k: v for k, v in kwargs.items() if v is not None}
+            try:
+                result = await execute_tool(
+                    _tool_name, clean_kwargs,
+                    uid=uid, org_id=org_id, facility_id=facility_id,
+                )
+                return summarize_result(result)
+            except Exception as exc:
+                logger.warning("Tool %s failed: %s", _tool_name, exc)
+                return f"Error: {exc}"
+
+        tools.append(StructuredTool(
+            name=tool_def.name,
+            description=tool_def.description or "",
+            args_schema=ArgsModel,
+            coroutine=_run,
+        ))
+
+    return tools
+
+
+def _empty_model(tool_name: str):
+    from pydantic import BaseModel
+    return type(f"{tool_name}_Args", (BaseModel,), {"__annotations__": {}})
+
+
+# ---------------------------------------------------------------------------
+# Message history builder
+# ---------------------------------------------------------------------------
+
+async def _build_history_messages(
+    conversation,
+    prefetched_context: list[dict] | None,
+) -> list[dict]:
+    """Return conversation history in OpenAI-dict format for deepagents."""
+    messages: list[dict] = []
+
     if prefetched_context is not None:
         messages.append({
             "role": "system",
@@ -412,11 +464,18 @@ async def _build_messages(
     for msg in history:
         entry: dict[str, Any] = {"role": msg.role, "content": msg.content}
         if msg.role == "tool" and msg.tool_results:
-            entry["tool_call_id"] = msg.tool_results[0].get("id", "") if isinstance(msg.tool_results, list) else ""
+            entry["tool_call_id"] = (
+                msg.tool_results[0].get("id", "")
+                if isinstance(msg.tool_results, list) else ""
+            )
         messages.append(entry)
 
     return messages
 
+
+# ---------------------------------------------------------------------------
+# Semantic context prefetch
+# ---------------------------------------------------------------------------
 
 async def _prefetch_semantic_context(
     user_message: str,
@@ -446,7 +505,6 @@ async def _prefetch_semantic_context(
 
 
 def _build_prefetched_context_prompt(results: list[dict]) -> str:
-    """Format deterministic prefetch hits as supplemental context for the model."""
     intro = (
         "Semantic context has already been prefetched for the current user message "
         "before this first model call. Treat it as supplemental context. Use live "
@@ -455,10 +513,7 @@ def _build_prefetched_context_prompt(results: list[dict]) -> str:
     )
 
     if not results:
-        return (
-            f"{intro}\n\n"
-            "Prefetched semantic context result: no relevant matches were found."
-        )
+        return f"{intro}\n\nPrefetched semantic context result: no relevant matches were found."
 
     lines = [intro, "", "Prefetched semantic matches:"]
     for idx, item in enumerate(results, start=1):
@@ -471,11 +526,12 @@ def _build_prefetched_context_prompt(results: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _parse_response(text: str) -> dict | None:
-    """Try to parse the LLM's text as JSON with text + components."""
-    text = text.strip()
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-    # Try to extract JSON from markdown code blocks
+def _parse_response(text: str) -> dict | None:
+    text = text.strip()
     if "```json" in text:
         start = text.index("```json") + 7
         end = text.index("```", start) if "```" in text[start:] else len(text)
@@ -484,7 +540,6 @@ def _parse_response(text: str) -> dict | None:
         start = text.index("```") + 3
         end = text.index("```", start) if "```" in text[start:] else len(text)
         text = text[start:end].strip()
-
     try:
         data = json.loads(text)
         if isinstance(data, dict) and ("text" in data or "components" in data):
@@ -494,30 +549,7 @@ def _parse_response(text: str) -> dict | None:
     return None
 
 
-def _build_assistant_tool_message(chunk_text: str, tool_calls_in_response: list[dict[str, Any]]) -> dict[str, Any]:
-    """Build a provider-safe assistant tool-call message for the next LLM round."""
-    return {
-        "role": "assistant",
-        "content": chunk_text,
-        "tool_calls": [
-            {
-                "id": tc["id"],
-                "type": "function",
-                "function": {
-                    "name": tc["name"],
-                    "arguments": tc["arguments"],
-                },
-            }
-            for tc in tool_calls_in_response
-        ],
-    }
-
-
-def _append_execution_step(
-    execution_log: list[dict[str, Any]],
-    step: str,
-    **data: Any,
-) -> None:
+def _append_execution_step(execution_log: list[dict[str, Any]], step: str, **data: Any) -> None:
     entry = {"step": step}
     entry.update(data)
     execution_log.append(entry)
@@ -525,28 +557,17 @@ def _append_execution_step(
 
 def _summarize_result_for_log(result: Any) -> dict[str, Any]:
     if isinstance(result, list):
-        return {
-            "type": "list",
-            "count": len(result),
-        }
+        return {"type": "list", "count": len(result)}
     if isinstance(result, dict):
-        return {
-            "type": "dict",
-            "keys": sorted(str(key) for key in result.keys())[:10],
-        }
-    return {
-        "type": type(result).__name__,
-        "preview": _truncate_text(str(result), 200),
-    }
+        return {"type": "dict", "keys": sorted(str(key) for key in result.keys())[:10]}
+    return {"type": type(result).__name__, "preview": _truncate_text(str(result), 200)}
 
 
 def _tool_display_name(tool_name: str) -> str:
-    """Convert tool name to a human-readable display name."""
     return tool_name.replace("wms_", "").replace("_", " ").title()
 
 
 def _describe_mutation(tool_name: str, args: dict) -> str:
-    """Build a human-readable description of a mutation action."""
     parts = [_tool_display_name(tool_name)]
     if "sku_code" in args:
         parts.append(f"SKU: {args['sku_code']}")
@@ -560,7 +581,6 @@ def _describe_mutation(tool_name: str, args: dict) -> str:
 
 
 def _dict_to_fields(d: dict) -> list[dict]:
-    """Convert a flat dict to detail_card fields."""
     fields = []
     for key, value in d.items():
         if isinstance(value, (list, dict)):
@@ -570,7 +590,6 @@ def _dict_to_fields(d: dict) -> list[dict]:
 
 
 def _truncate_text(text: str, max_chars: int) -> str:
-    """Collapse whitespace and trim long semantic matches before prompt injection."""
     normalized = " ".join(text.split())
     if len(normalized) <= max_chars:
         return normalized
