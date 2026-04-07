@@ -7,6 +7,7 @@ from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from django.contrib.admin.sites import site
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.test import Client
 from django.urls import reverse
 
 from app.ai.models import EmbeddingRecord
@@ -226,6 +227,36 @@ def test_management_commands_stream_endpoint_streams_command_output(client, admi
         "text": None,
         "success": True,
     }
+
+
+def test_management_commands_stream_endpoint_accepts_real_csrf_flow(db, admin_user, org, monkeypatch):
+    def fake_call_command(command_name, *args, **kwargs):
+        kwargs["stdout"].write("Streaming with csrf\n")
+
+    monkeypatch.setattr("wms_middleware.admin_views.call_command", fake_call_command)
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(admin_user)
+
+    page_response = client.get(reverse("admin_management_commands"))
+    csrf_token = page_response.cookies["csrftoken"].value
+
+    response = client.post(
+        reverse("admin_management_commands_stream"),
+        {
+            "command_name": "index_existing_data",
+            "index_existing_data-org": org.id,
+            "index_existing_data-content_type": "all",
+            "csrfmiddlewaretoken": csrf_token,
+        },
+        HTTP_X_CSRFTOKEN=csrf_token,
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    payload_text = b"".join(response.streaming_content).decode()
+
+    assert page_response.status_code == 200
+    assert response.status_code == 200
+    assert "Streaming with csrf" in payload_text
 
 
 def test_embedding_record_admin_change_page_renders_vector_preview(client, admin_user, org):

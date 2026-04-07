@@ -14,6 +14,7 @@ from django.core.management import call_command, get_commands, load_command_clas
 from django.core.management.base import CommandError
 from django.http import HttpResponseNotAllowed, JsonResponse, StreamingHttpResponse
 from django.template.response import TemplateResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from app.masters.models import Organization
 
@@ -316,6 +317,7 @@ def management_commands_stream_view(request):
     return response
 
 
+@ensure_csrf_cookie
 def management_commands_view(request):
     selected_command = request.POST.get("command_name") if request.method == "POST" else None
     forms_by_name = _build_runnable_forms(request.POST if request.method == "POST" else None, selected_command)

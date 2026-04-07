@@ -121,6 +121,16 @@
         const outputElement = document.getElementById("stream-output");
         const statusElement = document.getElementById("stream-status");
         const streamUrl = "{% url 'admin_management_commands_stream' %}";
+        const getCookie = (name) => {
+            const cookies = document.cookie ? document.cookie.split("; ") : [];
+            for (const cookie of cookies) {
+                const [key, ...parts] = cookie.split("=");
+                if (key === name) {
+                    return decodeURIComponent(parts.join("="));
+                }
+            }
+            return "";
+        };
 
         const setOutput = (text) => {
             outputElement.textContent = text;
@@ -134,7 +144,7 @@
 
         const setRunningState = (form, isRunning) => {
             forms.forEach((candidate) => {
-                candidate.querySelectorAll("input, select, textarea, button").forEach((field) => {
+                candidate.querySelectorAll("input:not([type='hidden']), select, textarea, button").forEach((field) => {
                     field.disabled = isRunning;
                 });
             });
@@ -152,6 +162,8 @@
 
             form.addEventListener("submit", async (event) => {
                 event.preventDefault();
+                const formData = new FormData(form);
+                const csrfToken = getCookie("csrftoken") || formData.get("csrfmiddlewaretoken") || "";
                 setOutput("");
                 statusElement.textContent = "Starting command...";
                 setRunningState(form, true);
@@ -159,9 +171,10 @@
                 try {
                     const response = await fetch(streamUrl, {
                         method: "POST",
-                        body: new FormData(form),
+                        body: formData,
                         credentials: "same-origin",
                         headers: {
+                            "X-CSRFToken": csrfToken,
                             "X-Requested-With": "XMLHttpRequest"
                         }
                     });
