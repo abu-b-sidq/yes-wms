@@ -359,3 +359,19 @@
 .pulse-soft {
   animation: pulse-soft 3.2s ease-in-out infinite;
 }
+
+/* Markdown rendering in assistant chat bubbles */
+.chat-markdown h1 { font-size: 1.125rem; font-weight: 700; margin: 0.75rem 0 0.5rem; }
+.chat-markdown h2 { font-size: 1rem; font-weight: 700; margin: 0.75rem 0 0.5rem; }
+.chat-markdown h3 { font-size: 0.875rem; font-weight: 600; margin: 0.5rem 0 0.25rem; }
+.chat-markdown h1:first-child,
+.chat-markdown h2:first-child,
+.chat-markdown h3:first-child { margin-top: 0; }
+.chat-markdown p { margin-bottom: 0.5rem; }
+.chat-markdown p:last-child { margin-bottom: 0; }
+.chat-markdown ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 0.5rem; }
+.chat-markdown ol { list-style: decimal; padding-left: 1.25rem; margin-bottom: 0.5rem; }
+.chat-markdown li { margin-bottom: 0.125rem; }
+.chat-markdown strong { font-weight: 600; }
+.chat-markdown hr { border-color: var(--ops-border); margin: 0.75rem 0; }
+.chat-markdown code { background: var(--ops-subtle-fill); border-radius: 0.25rem; padding: 0.1em 0.35em; font-size: 0.8em; font-family: monospace; }

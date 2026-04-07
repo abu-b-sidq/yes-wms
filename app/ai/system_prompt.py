@@ -30,27 +30,6 @@ def build_system_prompt(
 {facility_ctx}
 The org_id and facility_id are automatically injected into your tool calls — do NOT include them in your tool arguments. If the user wants to work with a different facility, tell them to switch in the facility selector.
 
-## Domain Knowledge
-
-### Transaction Types
-- **GRN** (Goods Received Note): Receiving items into the warehouse, landing in PRE_PUTAWAY staging zone
-- **PUTAWAY**: Moving items from PRE_PUTAWAY zone to storage locations
-- **MOVE**: Transferring stock between locations
-- **ORDER_PICK**: Picking items from storage for customer orders/invoices
-- **RETURN**: Processing returned goods
-- **CYCLE_COUNT**: Inventory counting/verification
-- **ADJUSTMENT**: Manual inventory corrections
-
-### Transaction Statuses
-PENDING, IN_PROGRESS, COMPLETED, FAILED, CANCELLED, PARTIALLY_COMPLETED
-
-### Entity Types
-LOCATION (bin/shelf), ZONE (logical area), INVOICE (customer order), VIRTUAL_BUCKET, SUPPLIER, CUSTOMER
-
-### Inventory
-- **InventoryBalance**: Current stock levels per SKU per location (on_hand, reserved, available)
-- **InventoryLedger**: Immutable audit trail of all stock movements
-
 ## Response Format
 
 You MUST respond with valid JSON in this exact format:
@@ -61,47 +40,7 @@ You MUST respond with valid JSON in this exact format:
 }}
 ```
 
-### Available Component Types
-
-1. **stat_card** — Single metric display
-```json
-{{"type": "stat_card", "label": "GRNs Today", "value": 5, "description": "Completed GRN transactions"}}
-```
-
-2. **table** — Data table with rows
-```json
-{{"type": "table", "title": "Today's GRNs", "columns": ["ID", "Reference", "Status", "Items", "Created"], "rows": [["uuid...", "REF-001", "COMPLETED", 3, "2024-01-15T10:30:00"]]}}
-```
-
-3. **bar_chart** — Bar chart
-```json
-{{"type": "bar_chart", "title": "GRNs by Status", "data": [{{"name": "COMPLETED", "value": 5}}, {{"name": "PENDING", "value": 2}}], "x_key": "name", "y_key": "value"}}
-```
-
-4. **pie_chart** — Pie chart
-```json
-{{"type": "pie_chart", "title": "Inventory by Zone", "data": [{{"name": "Zone A", "value": 150}}, {{"name": "Zone B", "value": 80}}]}}
-```
-
-5. **line_chart** — Line/trend chart
-```json
-{{"type": "line_chart", "title": "Daily GRNs (Last 7 Days)", "data": [{{"date": "Mon", "count": 3}}, {{"date": "Tue", "count": 5}}], "x_key": "date", "y_key": "count"}}
-```
-
-6. **detail_card** — Key-value detail view
-```json
-{{"type": "detail_card", "title": "Transaction Details", "fields": [{{"label": "ID", "value": "uuid..."}}, {{"label": "Type", "value": "GRN"}}, {{"label": "Status", "value": "COMPLETED"}}]}}
-```
-
-7. **confirmation_dialog** — Confirm before executing a mutation
-```json
-{{"type": "confirmation_dialog", "title": "Create GRN", "description": "Receive 100 units of SKU-A into PRE_PUTAWAY zone", "action": "wms_create_grn", "parameters": {{}}, "requires_confirmation": true}}
-```
-
-8. **form** — Dynamic form for collecting missing inputs
-```json
-{{"type": "form", "title": "Create GRN", "fields": [{{"name": "sku_code", "label": "SKU Code", "type": "text", "required": true}}, {{"name": "quantity", "label": "Quantity", "type": "number", "required": true}}], "action": "wms_create_grn"}}
-```
+Available component types: `stat_card`, `table`, `bar_chart`, `pie_chart`, `line_chart`, `detail_card`, `confirmation_dialog`, `form`. Use `wms_semantic_search` with `content_types=["knowledge"]` and query like "response format <component_name> example" if you need a schema reference for a specific component.
 
 ## Rules
 

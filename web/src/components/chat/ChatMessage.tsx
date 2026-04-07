@@ -1,5 +1,4 @@
-import React from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { useMemo } from 'react';
 import type { Message } from '../../types/chat';
 import { resolveAssistantRenderState } from '../../utils/assistantContent';
 import ComponentRenderer from '../renderers/ComponentRenderer';
@@ -24,6 +23,26 @@ function resolveRoleLabel(message: Message): string {
   }
 }
 
+function parseMarkdown(text: string): string {
+  return text
+    // headings
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // horizontal rule
+    .replace(/^---$/gm, '<hr />')
+    // unordered list items
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    // wrap consecutive <li> in <ul>
+    .replace(/(<li>[\s\S]*?<\/li>)(\n(?!<li>)|$)/g, (m) => `<ul>${m}</ul>`)
+    // numbered list items
+    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    // line breaks to <br> (non-block lines)
+    .replace(/(?<!>)\n(?!<)/g, '<br />');
+}
+
 export default function ChatMessage({ message, onConfirmAction }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
@@ -38,6 +57,11 @@ export default function ChatMessage({ message, onConfirmAction }: ChatMessagePro
     Boolean(assistantRenderState?.hideRawContent) &&
     !contentToRender &&
     componentsToRender.length === 0;
+
+  const renderedMarkdown = useMemo(() => {
+    if (isUser || !contentToRender) return '';
+    return parseMarkdown(contentToRender);
+  }, [isUser, contentToRender]);
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -64,24 +88,10 @@ export default function ChatMessage({ message, onConfirmAction }: ChatMessagePro
               {isUser ? (
                 <div className="whitespace-pre-wrap text-sm leading-7">{contentToRender}</div>
               ) : (
-                <div className="text-sm leading-7">
-                <ReactMarkdown
-                  components={{
-                    h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h1>,
-                    h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
-                    h3: ({ children }) => <h3 className="text-sm font-bold mb-1 mt-2 first:mt-0">{children}</h3>,
-                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                    ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-0.5">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-0.5">{children}</ol>,
-                    li: ({ children }) => <li className="text-sm">{children}</li>,
-                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                    hr: () => <hr className="my-3 border-[var(--ops-border)]" />,
-                    code: ({ children }) => <code className="bg-[var(--ops-subtle-fill)] rounded px-1 text-xs font-mono">{children}</code>,
-                  }}
-                >
-                  {contentToRender}
-                </ReactMarkdown>
-                </div>
+                <div
+                  className="chat-markdown text-sm leading-7"
+                  dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
+                />
               )}
             </div>
           )}
