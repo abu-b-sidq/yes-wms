@@ -4,6 +4,7 @@ import { ApiService } from './api.service';
 import {
   Transaction, TransactionListItem,
   GrnPayload, MovePayload, PutawayPayload, OrderPickPayload,
+  TransactionCreatePayload,
   InventoryBalance, TransactionType, TransactionStatus
 } from '../models/operations.model';
 
@@ -35,6 +36,16 @@ export class OperationsService extends ApiService {
     return this.get<Transaction>(`/operations/transactions/${id}`);
   }
 
+  createTransaction(payload: TransactionCreatePayload): Observable<Transaction> {
+    return this.post<Transaction>('/operations/transactions', {
+      transaction_type: payload.transaction_type,
+      reference_number: payload.reference_number ?? '',
+      notes: payload.notes ?? '',
+      picks: payload.picks ?? [],
+      drops: payload.drops ?? []
+    });
+  }
+
   executeTransaction(id: string): Observable<Transaction> {
     return this.post<Transaction>(`/operations/transactions/${id}/execute`, {});
   }
@@ -43,21 +54,86 @@ export class OperationsService extends ApiService {
     return this.post<Transaction>(`/operations/transactions/${id}/cancel`, {});
   }
 
-  // --- Convenience endpoints (create + execute) ---
+  // --- Dashboard shortcuts via the shared create endpoint ---
   createGrn(payload: GrnPayload): Observable<Transaction> {
-    return this.post<Transaction>('/operations/grn', payload);
+    return this.createTransaction({
+      transaction_type: 'GRN',
+      reference_number: payload.reference,
+      notes: payload.notes,
+      drops: payload.items.map((item) => ({
+        sku_code: item.sku_code,
+        dest_entity_type: 'ZONE',
+        dest_entity_code: item.destination_zone || 'PRE_PUTAWAY',
+        quantity: item.quantity,
+        batch_number: item.batch
+      }))
+    });
   }
 
   createMove(payload: MovePayload): Observable<Transaction> {
-    return this.post<Transaction>('/operations/move', payload);
+    return this.createTransaction({
+      transaction_type: 'MOVE',
+      reference_number: payload.reference,
+      notes: payload.notes,
+      picks: payload.items.map((item) => ({
+        sku_code: item.sku_code,
+        source_entity_type: 'LOCATION',
+        source_entity_code: item.source_location,
+        quantity: item.quantity,
+        batch_number: item.batch
+      })),
+      drops: payload.items.map((item) => ({
+        sku_code: item.sku_code,
+        dest_entity_type: 'LOCATION',
+        dest_entity_code: item.destination_location,
+        quantity: item.quantity,
+        batch_number: item.batch
+      }))
+    });
   }
 
   createPutaway(payload: PutawayPayload): Observable<Transaction> {
-    return this.post<Transaction>('/operations/putaway', payload);
+    return this.createTransaction({
+      transaction_type: 'PUTAWAY',
+      reference_number: payload.reference,
+      notes: payload.notes,
+      picks: payload.items.map((item) => ({
+        sku_code: item.sku_code,
+        source_entity_type: 'ZONE',
+        source_entity_code: item.source_zone || 'PRE_PUTAWAY',
+        quantity: item.quantity,
+        batch_number: item.batch
+      })),
+      drops: payload.items.map((item) => ({
+        sku_code: item.sku_code,
+        dest_entity_type: 'LOCATION',
+        dest_entity_code: item.destination_location,
+        quantity: item.quantity,
+        batch_number: item.batch
+      }))
+    });
   }
 
   createOrderPick(payload: OrderPickPayload): Observable<Transaction> {
-    return this.post<Transaction>('/operations/order-pick', payload);
+    return this.createTransaction({
+      transaction_type: 'ORDER_PICK',
+      reference_number: payload.reference,
+      notes: payload.notes,
+      picks: payload.items.map((item) => ({
+        sku_code: item.sku_code,
+        source_entity_type: 'LOCATION',
+        source_entity_code: item.source_location,
+        quantity: item.quantity,
+        batch_number: item.batch
+      })),
+      drops: payload.items.map((item) => ({
+        sku_code: item.sku_code,
+        dest_entity_type: 'INVOICE',
+        dest_entity_code: item.invoice_code,
+        quantity: item.quantity,
+        batch_number: item.batch
+      }))
+    });
   }
 
   // --- Inventory ---

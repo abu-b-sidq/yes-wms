@@ -39,9 +39,10 @@ import { Transaction } from '../../../core/models/operations.model';
         <div class="success-icon">
           <mat-icon>check_circle</mat-icon>
         </div>
-        <h3>GRN Created & Executed</h3>
+        <h3>GRN Created</h3>
         <p>Transaction ID: <span class="mono">{{ successTxn()!.id.slice(0,8) }}...</span></p>
-        <p>Status: <span class="badge completed">{{ successTxn()!.status }}</span></p>
+        <p>Status: <span class="badge pending">{{ successTxn()!.status }}</span></p>
+        <p>Execute it later from the Transactions list when you are ready.</p>
         <div class="success-actions">
           <button mat-stroked-button (click)="resetForm()">New GRN</button>
           <button mat-flat-button color="primary" (click)="goToTransactions()">View Transactions</button>
@@ -129,7 +130,7 @@ import { Transaction } from '../../../core/models/operations.model';
                     class="submit-btn" [disabled]="submitting()">
               <mat-spinner diameter="20" *ngIf="submitting()"></mat-spinner>
               <mat-icon *ngIf="!submitting()">check</mat-icon>
-              {{ submitting() ? 'Creating GRN...' : 'Create & Execute GRN' }}
+              {{ submitting() ? 'Creating GRN...' : 'Create GRN' }}
             </button>
           </div>
         </form>
@@ -225,7 +226,7 @@ import { Transaction } from '../../../core/models/operations.model';
     p { color: var(--ops-text-secondary); margin: 4px 0; }
     .mono { font-family: monospace; font-size: 13px; }
     .badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-    .badge.completed { background: var(--ops-success-soft); color: var(--ops-success); }
+    .badge.pending { background: var(--ops-accent-amber-soft); color: var(--ops-accent-amber); }
     .success-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
     @media (max-width: 600px) {
       .form-area { padding: 0 12px 16px; }

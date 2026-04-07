@@ -33,8 +33,10 @@ export interface Drop {
 export interface Transaction {
   id: string;
   type: TransactionType;
+  transaction_type?: TransactionType;
   status: TransactionStatus;
   reference?: string;
+  reference_number?: string;
   notes?: string;
   facility: string;
   facility_name?: string;
@@ -104,6 +106,30 @@ export interface OrderPickPayload {
     invoice_code: string;
     batch?: string;
   }>;
+}
+
+export interface TransactionCreatePickPayload {
+  sku_code: string;
+  source_entity_type: EntityType;
+  source_entity_code: string;
+  quantity: number;
+  batch_number?: string;
+}
+
+export interface TransactionCreateDropPayload {
+  sku_code: string;
+  dest_entity_type: EntityType;
+  dest_entity_code: string;
+  quantity: number;
+  batch_number?: string;
+}
+
+export interface TransactionCreatePayload {
+  transaction_type: TransactionType;
+  reference_number?: string;
+  notes?: string;
+  picks?: TransactionCreatePickPayload[];
+  drops?: TransactionCreateDropPayload[];
 }
 
 export interface InventoryBalance {

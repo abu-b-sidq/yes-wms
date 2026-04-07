@@ -35,8 +35,10 @@ import { Transaction } from '../../../core/models/operations.model';
 
       <div class="success-card" *ngIf="successTxn()">
         <div class="success-icon"><mat-icon>check_circle</mat-icon></div>
-        <h3>Putaway Executed</h3>
+        <h3>Putaway Created</h3>
         <p>Transaction: <span class="mono">{{ successTxn()!.id.slice(0,8) }}...</span></p>
+        <p>Status: <span class="badge pending">{{ successTxn()!.status }}</span></p>
+        <p>Execute it later from the Transactions list when you are ready.</p>
         <div class="success-actions">
           <button mat-stroked-button (click)="resetForm()">New Putaway</button>
           <button mat-flat-button color="primary" (click)="router.navigate(['/transactions'])">View All</button>
@@ -111,7 +113,7 @@ import { Transaction } from '../../../core/models/operations.model';
             <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="submitting()">
               <mat-spinner diameter="20" *ngIf="submitting()"></mat-spinner>
               <mat-icon *ngIf="!submitting()">move_to_inbox</mat-icon>
-              {{ submitting() ? 'Executing...' : 'Execute Putaway' }}
+              {{ submitting() ? 'Creating...' : 'Create Putaway' }}
             </button>
           </div>
         </form>
@@ -138,6 +140,8 @@ import { Transaction } from '../../../core/models/operations.model';
     h3 { font-size: 20px; font-weight: 700; color: var(--ops-text-primary); margin: 16px 0 8px; }
     p { color: var(--ops-text-secondary); margin: 4px 0; }
     .mono { font-family: monospace; }
+    .badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .badge.pending { background: var(--ops-accent-amber-soft); color: var(--ops-accent-amber); }
     .success-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
     @media (max-width: 600px) { .form-area { padding: 0 12px 16px; } .row-2 { flex-direction: column; } }
   `]
@@ -196,7 +200,7 @@ export class PutawayComponent implements OnInit {
     }).subscribe({
       next: (txn) => { this.successTxn.set(txn); this.submitting.set(false); },
       error: (err) => {
-        this.snack.open(err?.error?.detail ?? 'Failed', 'Dismiss', { duration: 5000 });
+        this.snack.open(err?.error?.detail ?? 'Failed to create putaway', 'Dismiss', { duration: 5000 });
         this.submitting.set(false);
       }
     });

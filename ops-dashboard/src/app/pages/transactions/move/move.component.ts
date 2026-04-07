@@ -36,9 +36,10 @@ import { Transaction } from '../../../core/models/operations.model';
       <!-- Success state -->
       <div class="success-card" *ngIf="successTxn()">
         <div class="success-icon"><mat-icon>check_circle</mat-icon></div>
-        <h3>Move Executed</h3>
+        <h3>Move Created</h3>
         <p>Transaction ID: <span class="mono">{{ successTxn()!.id.slice(0,8) }}...</span></p>
-        <p>Status: <span class="badge completed">{{ successTxn()!.status }}</span></p>
+        <p>Status: <span class="badge pending">{{ successTxn()!.status }}</span></p>
+        <p>Execute it later from the Transactions list when you are ready.</p>
         <div class="success-actions">
           <button mat-stroked-button (click)="resetForm()">New Move</button>
           <button mat-flat-button color="primary" (click)="router.navigate(['/transactions'])">View Transactions</button>
@@ -119,7 +120,7 @@ import { Transaction } from '../../../core/models/operations.model';
             <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="submitting()">
               <mat-spinner diameter="20" *ngIf="submitting()"></mat-spinner>
               <mat-icon *ngIf="!submitting()">swap_horiz</mat-icon>
-              {{ submitting() ? 'Executing...' : 'Execute Move' }}
+              {{ submitting() ? 'Creating...' : 'Create Move' }}
             </button>
           </div>
         </form>
@@ -158,7 +159,7 @@ import { Transaction } from '../../../core/models/operations.model';
     p { color: var(--ops-text-secondary); margin: 4px 0; }
     .mono { font-family: monospace; font-size: 13px; }
     .badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-    .badge.completed { background: var(--ops-success-soft); color: var(--ops-success); }
+    .badge.pending { background: var(--ops-accent-amber-soft); color: var(--ops-accent-amber); }
     .success-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
     @media (max-width: 600px) {
       .form-area { padding: 0 12px 16px; }
@@ -220,7 +221,7 @@ export class MoveComponent implements OnInit {
     }).subscribe({
       next: (txn) => { this.successTxn.set(txn); this.submitting.set(false); },
       error: (err) => {
-        this.snack.open(err?.error?.detail ?? 'Failed to execute move', 'Dismiss', { duration: 5000 });
+        this.snack.open(err?.error?.detail ?? 'Failed to create move', 'Dismiss', { duration: 5000 });
         this.submitting.set(false);
       }
     });
