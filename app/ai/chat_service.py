@@ -24,8 +24,8 @@ PREFETCH_RAG_LIMIT = 5
 PREFETCH_RAG_CONTENT_TYPES = ("knowledge", "transaction", "sku", "message")
 MAX_PREFETCH_TEXT_CHARS = 500
 
-# Curated list of models supported by deepagents (provider:model format).
-DEEPAGENTS_MODELS: frozenset[str] = frozenset({
+# Static cloud models supported by deepagents (provider:model format).
+STATIC_DEEPAGENTS_MODELS: frozenset[str] = frozenset({
     "anthropic:claude-haiku-4-5",
     "anthropic:claude-sonnet-4-6",
     "anthropic:claude-opus-4-6",
@@ -36,9 +36,29 @@ DEEPAGENTS_MODELS: frozenset[str] = frozenset({
 })
 
 
-def get_deepagents_models() -> list[str]:
-    """Return the list of models available through deepagents."""
-    return sorted(DEEPAGENTS_MODELS)
+def is_valid_deepagents_model(model: str) -> bool:
+    """Return True for known static models or any ollama:* model."""
+    return model in STATIC_DEEPAGENTS_MODELS or model.startswith("ollama:")
+
+
+async def _get_ollama_deepagents_models() -> list[str]:
+    """Fetch available Ollama models and return them prefixed with 'ollama:'."""
+    import httpx
+    base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(f"{base_url}/api/tags")
+            resp.raise_for_status()
+            data = resp.json()
+            return [f"ollama:{m['name']}" for m in data.get("models", [])]
+    except Exception:
+        return []
+
+
+async def get_deepagents_models() -> list[str]:
+    """Return static cloud models plus locally available Ollama models."""
+    ollama_models = await _get_ollama_deepagents_models()
+    return sorted(STATIC_DEEPAGENTS_MODELS) + ollama_models
 
 
 _JSON_TYPE_MAP: dict[str, Any] = {
@@ -202,7 +222,7 @@ async def handle_chat_message(
         # deepagents model; fall back to the env-var default otherwise.
         env_model = os.environ.get("DEEPAGENTS_MODEL", "anthropic:claude-haiku-4-5")
         db_model = conversation.model_name if conversation.model_provider == "deepagents" else None
-        deepagents_model = db_model if db_model and db_model in DEEPAGENTS_MODELS else env_model
+        deepagents_model = db_model if db_model and is_valid_deepagents_model(db_model) else env_model
         agent = create_deep_agent(
             model=deepagents_model,
             tools=_make_langchain_tools(uid, org_id, facility_id),

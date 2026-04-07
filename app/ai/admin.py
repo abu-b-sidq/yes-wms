@@ -65,17 +65,27 @@ class EmbeddingRecordAdmin(admin.ModelAdmin):
     list_display = ("content_type", "object_id", "org_id", "updated_at")
     list_filter = ("content_type", "org_id")
     search_fields = ("object_id", "org_id", "text")
-    readonly_fields = ("updated_at", "embedding")
+    readonly_fields = ("updated_at", "embedding_preview")
     ordering = ("-updated_at",)
     fieldsets = (
         (None, {
             "fields": ("content_type", "object_id", "org_id", "text"),
         }),
         ("Vector", {
-            "fields": ("embedding",),
+            "fields": ("embedding_preview",),
             "classes": ("collapse",),
         }),
         ("Timestamps", {
             "fields": ("updated_at",),
         }),
     )
+
+    @admin.display(description="Embedding")
+    def embedding_preview(self, obj):
+        if obj is None or obj.embedding is None:
+            return ""
+
+        preview = ", ".join(f"{value:.4f}" for value in obj.embedding[:8])
+        if len(obj.embedding) > 8:
+            preview = f"{preview}, ..."
+        return f"{len(obj.embedding)} dims [{preview}]"

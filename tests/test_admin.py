@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.urls import reverse
 
+from app.ai.models import EmbeddingRecord
 from app.connectors.enums import ConnectorType, SyncEntityType, SyncStatus
 from app.connectors.models import ConnectorConfig, ExternalEntityMapping, SyncLog
 from app.documents.models import TransactionDocumentConfig
@@ -71,6 +72,8 @@ def test_admin_index_loads_for_superuser(client, admin_user):
     assert b"WMS Inventory" in response.content
     assert b"WMS Documents" in response.content
     assert b"WMS Connectors" in response.content
+    assert reverse("admin_management_commands").encode() in response.content
+    assert b"Management Commands" in response.content
 
 
 def test_admin_registers_key_domain_models():
@@ -98,6 +101,37 @@ def test_connector_admin_changelist_shows_dispatch_button(client, admin_user, co
 
     assert response.status_code == 200
     assert b"Dispatch due syncs now" in response.content
+
+
+def test_management_commands_admin_page_lists_workspace_and_django_commands(client, admin_user):
+    client.force_login(admin_user)
+
+    response = client.get(reverse("admin_management_commands"))
+
+    assert response.status_code == 200
+    assert b"YES WMS Commands" in response.content
+    assert b"Framework And Third-Party Commands" in response.content
+    assert b"index_existing_data" in response.content
+    assert b"seed_data" in response.content
+    assert b"migrate" in response.content
+    assert b"docker compose exec wms-middleware python manage.py seed_data --help" in response.content
+
+
+def test_embedding_record_admin_change_page_renders_vector_preview(client, admin_user, org):
+    record = EmbeddingRecord.objects.create(
+        content_type=EmbeddingRecord.ContentType.MESSAGE,
+        object_id="message-2905",
+        org_id=org.id,
+        text="Embedding source text",
+        embedding=[0.125] * 768,
+    )
+    client.force_login(admin_user)
+
+    response = client.get(reverse("admin:app_ai_embeddingrecord_change", args=[record.id]))
+
+    assert response.status_code == 200
+    assert b"768 dims" in response.content
+    assert b"0.1250" in response.content
 
 
 def test_connector_admin_queue_sync_action_queues_each_selected_connector(

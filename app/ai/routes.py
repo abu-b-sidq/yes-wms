@@ -189,10 +189,16 @@ def list_models(request):
 
     results = []
 
-    # deepagents models (static list, always available)
+    # deepagents models (static + locally available Ollama models)
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    deepagents_models = loop.run_until_complete(get_deepagents_models())
     results.append({
         "provider": "deepagents",
-        "models": get_deepagents_models(),
+        "models": deepagents_models,
         "is_available": True,
     })
 

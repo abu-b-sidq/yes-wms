@@ -1,0 +1,48 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">Home</a>
+&rsaquo; Management Commands
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module">
+        <h2>Run Commands In Docker</h2>
+        <p>These commands are listed for reference only. Run them from the repository root inside the Docker stack.</p>
+        <p><code>{{ docker_manage_prefix }} &lt;command&gt; --help</code></p>
+    </div>
+
+    {% for section in sections %}
+    <div class="module">
+        <h2>{{ section.title }}</h2>
+        <p>{{ section.description }}</p>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Command</th>
+                    <th scope="col">Source</th>
+                    <th scope="col">Help</th>
+                    <th scope="col">Docker</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for command in section.commands %}
+                <tr>
+                    <th scope="row"><code>{{ command.name }}</code></th>
+                    <td><code>{{ command.app_name }}</code></td>
+                    <td>{{ command.help_text }}</td>
+                    <td>
+                        <code>{{ command.docker_command }}</code><br>
+                        <code>{{ command.help_command }}</code>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
