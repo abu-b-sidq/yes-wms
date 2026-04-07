@@ -170,6 +170,7 @@ guide for changes that need to stay aligned with the current architecture.
 
 ## Working Notes
 
+- Use Docker for all Operations
 - Default to the smallest change that keeps masters, operations, inventory,
   auth, and client flows consistent
 - If you touch routing, middleware, auth, or shared schemas, inspect both the

@@ -17,7 +17,7 @@ import random
 import secrets
 import signal
 import time
-from datetime import date, datetime, timezone
+from datetime import timezone
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand, CommandError
@@ -450,7 +450,12 @@ class Command(BaseCommand):
         n_order_picks: int,
         n_moves: int,
     ) -> dict:
-        """Generate GRNs, putaways, order picks, and moves. Returns transaction counts."""
+        """Generate GRNs, putaways, order picks, and moves. Returns transaction counts.
+
+        All timestamps (created_at, started_at, completed_at) are set to the current
+        wall-clock time via the state machine. There is intentionally no backdating here
+        — use seed_data for historical demo data.
+        """
         with db_transaction.atomic():
             # In-memory inventory tracker: {(sku_code, location_code, batch): Decimal}
             inventory = {}
