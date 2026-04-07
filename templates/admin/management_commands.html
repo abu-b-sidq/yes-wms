@@ -7,8 +7,77 @@
 </div>
 {% endblock %}
 
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .command-output {
+        background: #111827;
+        border-radius: 6px;
+        color: #f9fafb;
+        max-height: 420px;
+        min-height: 180px;
+        overflow: auto;
+        padding: 12px;
+        white-space: pre-wrap;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div id="content-main">
+    <div class="module">
+        <h2>Run Allowed Commands</h2>
+        <p>Only the embedding index commands can be executed from the admin UI. Everything else remains Docker-only.</p>
+        <p>The output pane below updates live while the command is running.</p>
+    </div>
+
+    <div class="module" id="streaming-output-module">
+        <h2>Live Output</h2>
+        <p id="stream-status">Waiting for a command to start.</p>
+        <pre id="stream-output" class="command-output">No command running.</pre>
+    </div>
+
+    {% for runnable in runnable_commands %}
+    <div class="module">
+        <h2>{{ runnable.title }}</h2>
+        <p>{{ runnable.description }}</p>
+        <p><code>{{ runnable.docker_command }}</code></p>
+        <form method="post" novalidate data-command-form>
+            {% csrf_token %}
+            <input type="hidden" name="command_name" value="{{ runnable.name }}">
+            <table>
+                {{ runnable.form.as_table }}
+            </table>
+            <div class="submit-row">
+                <input type="submit" value="Run {{ runnable.name }}" class="default" data-submit-button>
+            </div>
+        </form>
+        <p><code>{{ runnable.help_command }}</code></p>
+    </div>
+    {% endfor %}
+
+    {% if execution_result %}
+    <div class="module">
+        <h2>Execution Result</h2>
+        <p>
+            <strong><code>{{ execution_result.command_name }}</code></strong>
+            {% if execution_result.success %}
+            completed successfully.
+            {% else %}
+            failed.
+            {% endif %}
+        </p>
+        {% if execution_result.stdout %}
+        <h3>Output</h3>
+        <pre>{{ execution_result.stdout }}</pre>
+        {% endif %}
+        {% if execution_result.stderr %}
+        <h3>Error Output</h3>
+        <pre>{{ execution_result.stderr }}</pre>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="module">
         <h2>Run Commands In Docker</h2>
         <p>These commands are listed for reference only. Run them from the repository root inside the Docker stack.</p>
@@ -45,4 +114,106 @@
     </div>
     {% endfor %}
 </div>
+
+<script>
+    (() => {
+        const forms = document.querySelectorAll("[data-command-form]");
+        const outputElement = document.getElementById("stream-output");
+        const statusElement = document.getElementById("stream-status");
+        const streamUrl = "{% url 'admin_management_commands_stream' %}";
+
+        const setOutput = (text) => {
+            outputElement.textContent = text;
+            outputElement.scrollTop = outputElement.scrollHeight;
+        };
+
+        const appendOutput = (text) => {
+            outputElement.textContent += text;
+            outputElement.scrollTop = outputElement.scrollHeight;
+        };
+
+        const setRunningState = (form, isRunning) => {
+            forms.forEach((candidate) => {
+                candidate.querySelectorAll("input, select, textarea, button").forEach((field) => {
+                    field.disabled = isRunning;
+                });
+            });
+            const submitButton = form.querySelector("[data-submit-button]");
+            if (submitButton) {
+                submitButton.value = isRunning ? "Running..." : submitButton.dataset.defaultLabel;
+            }
+        };
+
+        forms.forEach((form) => {
+            const submitButton = form.querySelector("[data-submit-button]");
+            if (submitButton) {
+                submitButton.dataset.defaultLabel = submitButton.value;
+            }
+
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                setOutput("");
+                statusElement.textContent = "Starting command...";
+                setRunningState(form, true);
+
+                try {
+                    const response = await fetch(streamUrl, {
+                        method: "POST",
+                        body: new FormData(form),
+                        credentials: "same-origin",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    });
+
+                    if (!response.ok || !response.body) {
+                        const errorText = await response.text();
+                        statusElement.textContent = "Command failed before streaming started.";
+                        setOutput(errorText || "Unable to start command.");
+                        return;
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = "";
+                    statusElement.textContent = "Command running...";
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) {
+                            break;
+                        }
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split("\n");
+                        buffer = lines.pop() || "";
+
+                        lines.forEach((line) => {
+                            if (!line.trim()) {
+                                return;
+                            }
+
+                            const payload = JSON.parse(line);
+                            if (payload.event === "chunk" && payload.text) {
+                                appendOutput(payload.text);
+                                return;
+                            }
+
+                            if (payload.event === "complete") {
+                                statusElement.textContent = payload.success
+                                    ? "Command completed successfully."
+                                    : "Command finished with errors.";
+                            }
+                        });
+                    }
+                } catch (error) {
+                    statusElement.textContent = "Streaming failed.";
+                    setOutput(error instanceof Error ? error.message : String(error));
+                } finally {
+                    setRunningState(form, false);
+                }
+            });
+        });
+    })();
+</script>
 {% endblock %}

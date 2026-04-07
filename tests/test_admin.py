@@ -1,4 +1,5 @@
 import uuid
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -103,18 +104,128 @@ def test_connector_admin_changelist_shows_dispatch_button(client, admin_user, co
     assert b"Dispatch due syncs now" in response.content
 
 
-def test_management_commands_admin_page_lists_workspace_and_django_commands(client, admin_user):
+def test_management_commands_admin_page_lists_workspace_and_django_commands(client, admin_user, org):
     client.force_login(admin_user)
 
     response = client.get(reverse("admin_management_commands"))
 
     assert response.status_code == 200
+    assert b"Run Allowed Commands" in response.content
+    assert str(org).encode() in response.content
     assert b"YES WMS Commands" in response.content
     assert b"Framework And Third-Party Commands" in response.content
     assert b"index_existing_data" in response.content
     assert b"seed_data" in response.content
     assert b"migrate" in response.content
     assert b"docker compose exec wms-middleware python manage.py seed_data --help" in response.content
+
+
+def test_management_commands_admin_page_runs_index_existing_data(client, admin_user, org, monkeypatch):
+    captured: dict[str, object] = {}
+
+    def fake_call_command(command_name, *args, **kwargs):
+        captured["command_name"] = command_name
+        captured["kwargs"] = kwargs
+        kwargs["stdout"].write("Indexing complete.")
+
+    monkeypatch.setattr("wms_middleware.admin_views.call_command", fake_call_command)
+    client.force_login(admin_user)
+
+    response = client.post(
+        reverse("admin_management_commands"),
+        {
+            "command_name": "index_existing_data",
+            "index_existing_data-org": org.id,
+            "index_existing_data-content_type": "all",
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured["command_name"] == "index_existing_data"
+    assert captured["kwargs"]["org_id"] == "testorg"
+    assert captured["kwargs"]["content_type"] == "all"
+    assert b"Execution Result" in response.content
+    assert b"completed successfully." in response.content
+    assert b"Indexing complete." in response.content
+
+
+def test_management_commands_admin_page_runs_index_knowledge(client, admin_user, org, monkeypatch):
+    captured: dict[str, object] = {}
+
+    def fake_call_command(command_name, *args, **kwargs):
+        captured["command_name"] = command_name
+        captured["kwargs"] = kwargs
+        kwargs["stdout"].write("Knowledge indexing complete.")
+
+    monkeypatch.setattr("wms_middleware.admin_views.call_command", fake_call_command)
+    client.force_login(admin_user)
+
+    response = client.post(
+        reverse("admin_management_commands"),
+        {
+            "command_name": "index_knowledge",
+            "index_knowledge-org": org.id,
+            "index_knowledge-knowledge_dir": "/app/knowledge",
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured["command_name"] == "index_knowledge"
+    assert captured["kwargs"]["org_id"] == "testorg"
+    assert captured["kwargs"]["knowledge_dir"] == "/app/knowledge"
+    assert b"Execution Result" in response.content
+    assert b"completed successfully." in response.content
+    assert b"Knowledge indexing complete." in response.content
+
+
+def test_management_commands_stream_endpoint_streams_command_output(client, admin_user, org, monkeypatch):
+    def fake_call_command(command_name, *args, **kwargs):
+        kwargs["stdout"].write("Starting job\n")
+        kwargs["stderr"].write("Minor warning\n")
+        kwargs["stdout"].write("Done\n")
+
+    monkeypatch.setattr("wms_middleware.admin_views.call_command", fake_call_command)
+    client.force_login(admin_user)
+
+    response = client.post(
+        reverse("admin_management_commands_stream"),
+        {
+            "command_name": "index_existing_data",
+            "index_existing_data-org": org.id,
+            "index_existing_data-content_type": "all",
+        },
+    )
+
+    payload_text = b"".join(response.streaming_content).decode()
+    events = [json.loads(line) for line in payload_text.splitlines() if line.strip()]
+
+    assert response.status_code == 200
+    assert response.streaming
+    assert response["Content-Type"].startswith("application/x-ndjson")
+    assert events[0] == {
+        "event": "chunk",
+        "stream": "stdout",
+        "text": "Starting job\n",
+        "success": None,
+    }
+    assert events[1] == {
+        "event": "chunk",
+        "stream": "stderr",
+        "text": "Minor warning\n",
+        "success": None,
+    }
+    assert events[2] == {
+        "event": "chunk",
+        "stream": "stdout",
+        "text": "Done\n",
+        "success": None,
+    }
+    assert events[-1] == {
+        "event": "complete",
+        "stream": None,
+        "text": None,
+        "success": True,
+    }
 
 
 def test_embedding_record_admin_change_page_renders_vector_preview(client, admin_user, org):
