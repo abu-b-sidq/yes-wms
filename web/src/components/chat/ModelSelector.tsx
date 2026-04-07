@@ -34,6 +34,7 @@ export default function ModelSelector({ provider, model, onSelect }: ModelSelect
     { value: 'ollama:llama3.1', label: 'ollama/llama3.1' },
     { value: 'openai:gpt-4o', label: 'openai/gpt-4o' },
     { value: 'claude:claude-sonnet-4-20250514', label: 'claude/claude-sonnet-4-20250514' },
+    { value: 'deepagent:claude-sonnet-4-20250514', label: 'deepagent/claude-sonnet-4-20250514' },
   ];
   const discoveredOptions: SelectOption[] = models.flatMap((entry) =>
     entry.is_available

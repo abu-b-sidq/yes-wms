@@ -72,6 +72,20 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  langdeepagent:
+    image: langdeepagent:latest
+    container_name: wms-langdeepagent
+    environment:
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY:-}
+      LANGCHAIN_TRACING_V2: "true"
+      LANGCHAIN_PROJECT: "yes-wms"
+    ports:
+      - "8020:8000"
+    depends_on:
+      - wms-middleware
+    profiles:
+      - deepagent
+
   # ollama:
   #   image: ollama/ollama:latest
   #   container_name: wms-ollama

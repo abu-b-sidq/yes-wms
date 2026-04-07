@@ -195,115 +195,186 @@ async def handle_chat_message(
             tool_count=len(tools),
         )
 
-        # LLM tool-calling loop
+        # LLM chat completion — deepagent handles its own tool loop, others use manual loop
         full_text = ""
 
-        for loop_idx in range(MAX_TOOL_LOOPS):
-            tool_calls_in_response: list[dict] = []
-            chunk_text = ""
+        if provider_name == "deepagent":
+            # DeepAgent provider handles the agentic loop internally
+            _append_execution_step(
+                execution_log,
+                "deepagent_initialized",
+                model=model,
+            )
 
             async for chunk in provider.chat_completion(messages, tools, model):
                 if chunk.delta_text:
-                    chunk_text += chunk.delta_text
+                    full_text += chunk.delta_text
                     yield SSEEvent("token", {"text": chunk.delta_text})
 
                 if chunk.tool_calls:
                     for tc in chunk.tool_calls:
-                        tool_calls_in_response.append({
-                            "id": tc.id,
-                            "name": tc.name,
-                            "arguments": tc.arguments,
-                        })
+                        tool_name = tc.name
+                        tool_args = tc.arguments
 
-            full_text += chunk_text
+                        if is_mutation_tool(tool_name):
+                            _append_execution_step(
+                                execution_log,
+                                "tool_confirmation_requested",
+                                tool=tool_name,
+                            )
+                            yield SSEEvent("tool_call", {"name": tool_name, "status": "needs_confirmation", "args": tool_args})
+                            confirmation_component = {
+                                "type": "confirmation_dialog",
+                                "title": _tool_display_name(tool_name),
+                                "description": _describe_mutation(tool_name, tool_args),
+                                "action": tool_name,
+                                "parameters": tool_args,
+                                "requires_confirmation": True,
+                            }
+                            components.append(confirmation_component)
+                        else:
+                            yield SSEEvent("tool_call", {"name": tool_name, "status": "executing"})
+                            try:
+                                result = await execute_tool(
+                                    tool_name, tool_args,
+                                    uid=uid, org_id=org_id, facility_id=facility_id,
+                                )
+                                result_summary = summarize_result(result)
+                                tool_call_log.append({
+                                    "tool": tool_name,
+                                    "args": _json_safe(tool_args),
+                                    "result": _json_safe(result),
+                                })
+                                _append_execution_step(
+                                    execution_log,
+                                    "tool_executed",
+                                    tool=tool_name,
+                                    result=_summarize_result_for_log(result),
+                                )
+                                yield SSEEvent("tool_result", {"name": tool_name, "status": "success", "count": len(result) if isinstance(result, list) else 1})
+                            except Exception as exc:
+                                logger.exception("Tool %s failed", tool_name)
+                                _append_execution_step(
+                                    execution_log,
+                                    "tool_failed",
+                                    tool=tool_name,
+                                    error={"type": exc.__class__.__name__, "message": str(exc)},
+                                )
+                                yield SSEEvent("tool_result", {"name": tool_name, "status": "error", "error": str(exc)})
+
             _append_execution_step(
                 execution_log,
-                "llm_round_completed",
-                round=loop_idx + 1,
-                response_chars=len(chunk_text),
-                tool_call_count=len(tool_calls_in_response),
+                "deepagent_completed",
+                response_chars=len(full_text),
             )
+        else:
+            # Manual tool-calling loop for other providers
+            for loop_idx in range(MAX_TOOL_LOOPS):
+                tool_calls_in_response: list[dict] = []
+                chunk_text = ""
 
-            # No tool calls — we're done
-            if not tool_calls_in_response:
-                break
+                async for chunk in provider.chat_completion(messages, tools, model):
+                    if chunk.delta_text:
+                        chunk_text += chunk.delta_text
+                        yield SSEEvent("token", {"text": chunk.delta_text})
 
-            # Process tool calls
-            messages.append(_build_assistant_tool_message(chunk_text, tool_calls_in_response))
+                    if chunk.tool_calls:
+                        for tc in chunk.tool_calls:
+                            tool_calls_in_response.append({
+                                "id": tc.id,
+                                "name": tc.name,
+                                "arguments": tc.arguments,
+                            })
 
-            for tc in tool_calls_in_response:
-                tool_name = tc["name"]
-                tool_args = tc["arguments"]
+                full_text += chunk_text
+                _append_execution_step(
+                    execution_log,
+                    "llm_round_completed",
+                    round=loop_idx + 1,
+                    response_chars=len(chunk_text),
+                    tool_call_count=len(tool_calls_in_response),
+                )
 
-                # Mutations require confirmation — don't execute, return dialog
-                if is_mutation_tool(tool_name):
-                    _append_execution_step(
-                        execution_log,
-                        "tool_confirmation_requested",
-                        tool=tool_name,
-                    )
-                    yield SSEEvent("tool_call", {"name": tool_name, "status": "needs_confirmation", "args": tool_args})
-                    confirmation_component = {
-                        "type": "confirmation_dialog",
-                        "title": _tool_display_name(tool_name),
-                        "description": _describe_mutation(tool_name, tool_args),
-                        "action": tool_name,
-                        "parameters": tool_args,
-                        "requires_confirmation": True,
-                    }
-                    components.append(confirmation_component)
-                    # Add a tool result that tells the LLM we're waiting for confirmation
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc["id"],
-                        "content": "PENDING_USER_CONFIRMATION: This action requires user confirmation before execution. A confirmation dialog has been shown to the user.",
-                    })
-                    continue
+                # No tool calls — we're done
+                if not tool_calls_in_response:
+                    break
 
-                yield SSEEvent("tool_call", {"name": tool_name, "status": "executing"})
-                try:
-                    result = await execute_tool(
-                        tool_name, tool_args,
-                        uid=uid, org_id=org_id, facility_id=facility_id,
-                    )
-                    result_summary = summarize_result(result)
-                    tool_call_log.append({
-                        "tool": tool_name,
-                        "args": _json_safe(tool_args),
-                        "result": _json_safe(result),
-                    })
-                    _append_execution_step(
-                        execution_log,
-                        "tool_executed",
-                        tool=tool_name,
-                        result=_summarize_result_for_log(result),
-                    )
-                    yield SSEEvent("tool_result", {"name": tool_name, "status": "success", "count": len(result) if isinstance(result, list) else 1})
+                # Process tool calls
+                messages.append(_build_assistant_tool_message(chunk_text, tool_calls_in_response))
 
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc["id"],
-                        "content": result_summary,
-                    })
+                for tc in tool_calls_in_response:
+                    tool_name = tc["name"]
+                    tool_args = tc["arguments"]
 
-                except Exception as exc:
-                    logger.exception("Tool %s failed", tool_name)
-                    _append_execution_step(
-                        execution_log,
-                        "tool_failed",
-                        tool=tool_name,
-                        error={"type": exc.__class__.__name__, "message": str(exc)},
-                    )
-                    yield SSEEvent("tool_result", {"name": tool_name, "status": "error", "error": str(exc)})
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc["id"],
-                        "content": f"Error: {exc}",
-                    })
+                    # Mutations require confirmation — don't execute, return dialog
+                    if is_mutation_tool(tool_name):
+                        _append_execution_step(
+                            execution_log,
+                            "tool_confirmation_requested",
+                            tool=tool_name,
+                        )
+                        yield SSEEvent("tool_call", {"name": tool_name, "status": "needs_confirmation", "args": tool_args})
+                        confirmation_component = {
+                            "type": "confirmation_dialog",
+                            "title": _tool_display_name(tool_name),
+                            "description": _describe_mutation(tool_name, tool_args),
+                            "action": tool_name,
+                            "parameters": tool_args,
+                            "requires_confirmation": True,
+                        }
+                        components.append(confirmation_component)
+                        # Add a tool result that tells the LLM we're waiting for confirmation
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tc["id"],
+                            "content": "PENDING_USER_CONFIRMATION: This action requires user confirmation before execution. A confirmation dialog has been shown to the user.",
+                        })
+                        continue
 
-            # If all remaining tool calls were mutations needing confirmation, break
-            if all(is_mutation_tool(tc["name"]) for tc in tool_calls_in_response):
-                break
+                    yield SSEEvent("tool_call", {"name": tool_name, "status": "executing"})
+                    try:
+                        result = await execute_tool(
+                            tool_name, tool_args,
+                            uid=uid, org_id=org_id, facility_id=facility_id,
+                        )
+                        result_summary = summarize_result(result)
+                        tool_call_log.append({
+                            "tool": tool_name,
+                            "args": _json_safe(tool_args),
+                            "result": _json_safe(result),
+                        })
+                        _append_execution_step(
+                            execution_log,
+                            "tool_executed",
+                            tool=tool_name,
+                            result=_summarize_result_for_log(result),
+                        )
+                        yield SSEEvent("tool_result", {"name": tool_name, "status": "success", "count": len(result) if isinstance(result, list) else 1})
+
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tc["id"],
+                            "content": result_summary,
+                        })
+
+                    except Exception as exc:
+                        logger.exception("Tool %s failed", tool_name)
+                        _append_execution_step(
+                            execution_log,
+                            "tool_failed",
+                            tool=tool_name,
+                            error={"type": exc.__class__.__name__, "message": str(exc)},
+                        )
+                        yield SSEEvent("tool_result", {"name": tool_name, "status": "error", "error": str(exc)})
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tc["id"],
+                            "content": f"Error: {exc}",
+                        })
+
+                # If all remaining tool calls were mutations needing confirmation, break
+                if all(is_mutation_tool(tc["name"]) for tc in tool_calls_in_response):
+                    break
 
         # Parse the final LLM response for structured components
         parsed = _parse_response(full_text)

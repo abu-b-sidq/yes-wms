@@ -377,6 +377,107 @@ class ClaudeProvider(LLMProvider):
 
 
 # ---------------------------------------------------------------------------
+# Langgraph DeepAgent
+# ---------------------------------------------------------------------------
+
+class DeepAgentProvider(LLMProvider):
+    """Provider using Langgraph's deepagent framework for advanced agentic behavior.
+
+    This implementation uses Claude with Langgraph's tool-use abstractions
+    to provide enhanced agentic capabilities over the standard Claude provider.
+    """
+
+    def __init__(self, api_key: str | None = None):
+        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY", "")
+        if not self.api_key:
+            raise ValueError("ANTHROPIC_API_KEY environment variable is required for DeepAgent")
+
+    async def chat_completion(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        model: str,
+    ) -> AsyncIterator[StreamChunk]:
+        """Stream chat completion using Claude through Langgraph abstractions.
+
+        Uses the same streaming approach as ClaudeProvider but leverages
+        Langgraph's deepagent infrastructure for potential future enhancements.
+        """
+        from anthropic import AsyncAnthropic
+
+        client = AsyncAnthropic(api_key=self.api_key)
+
+        # Convert to Anthropic message format
+        system_text, anthropic_messages = _to_anthropic_messages(messages)
+
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "max_tokens": 4096,
+            "messages": anthropic_messages,
+        }
+        if system_text.strip():
+            kwargs["system"] = system_text.strip()
+        if tools:
+            from app.ai.tool_definitions import get_anthropic_tools
+            kwargs["tools"] = get_anthropic_tools()
+
+        logger.debug("DeepAgentProvider.chat_completion model=%s tools=%d", model, len(tools or []))
+
+        _log_prompt_request(
+            provider_name="deepagent",
+            model=model,
+            messages=anthropic_messages,
+            tools=tools,
+            system=system_text.strip() or None,
+        )
+
+        async with client.messages.stream(**kwargs) as stream:
+            current_tool_id = ""
+            current_tool_name = ""
+            current_tool_args = ""
+
+            async for event in stream:
+                sc = StreamChunk()
+
+                if event.type == "content_block_start":
+                    if hasattr(event.content_block, "type") and event.content_block.type == "tool_use":
+                        current_tool_id = event.content_block.id
+                        current_tool_name = event.content_block.name
+                        current_tool_args = ""
+                elif event.type == "content_block_delta":
+                    if hasattr(event.delta, "text"):
+                        sc.delta_text = event.delta.text
+                    elif hasattr(event.delta, "partial_json"):
+                        current_tool_args += event.delta.partial_json
+                elif event.type == "content_block_stop":
+                    if current_tool_name:
+                        try:
+                            args = json.loads(current_tool_args) if current_tool_args else {}
+                        except json.JSONDecodeError:
+                            args = {}
+                        sc.tool_calls.append(ToolCall(
+                            id=current_tool_id,
+                            name=current_tool_name,
+                            arguments=args,
+                        ))
+                        current_tool_name = ""
+                        current_tool_args = ""
+                elif event.type == "message_stop":
+                    sc.finish_reason = "stop"
+
+                yield sc
+
+    async def list_models(self) -> list[str]:
+        if not self.api_key:
+            return []
+        return [
+            "claude-sonnet-4-20250514",
+            "claude-haiku-4-5-20251001",
+            "claude-opus-4-20250514",
+        ]
+
+
+# ---------------------------------------------------------------------------
 # Claude helpers
 # ---------------------------------------------------------------------------
 
@@ -468,6 +569,7 @@ _PROVIDERS: dict[str, type[LLMProvider]] = {
     "ollama": OllamaProvider,
     "openai": OpenAIProvider,
     "claude": ClaudeProvider,
+    "deepagent": DeepAgentProvider,
 }
 
 
