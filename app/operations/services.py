@@ -51,8 +51,8 @@ def create_transaction(
         "picks__sku", "drops__sku", "drops__paired_pick"
     ).get(pk=txn.pk)
 
-    # Notify workers of new pick tasks
-    _notify_new_pick_tasks(txn)
+    # Notify workers of new available tasks.
+    _notify_new_tasks(txn)
 
     return txn
 
@@ -331,23 +331,25 @@ def _create_drops(txn: Transaction, org: Organization, drops_data: list[dict]) -
     return drops
 
 
-def _notify_new_pick_tasks(txn: Transaction) -> None:
-    """Send push + WebSocket notifications for new pick tasks."""
+def _notify_new_tasks(txn: Transaction) -> None:
+    """Send notifications for new available pick and drop tasks."""
     try:
         from app.notifications.fcm_service import notify_new_pick_task
         from app.notifications.websocket import broadcast_to_facility
 
         facility_id = str(txn.facility_id)
         picks = list(txn.picks.select_related("sku").all())
+        drops = list(txn.drops.select_related("sku").all())
 
         for pick in picks:
             notify_new_pick_task(facility_id, pick)
 
-        if picks:
+        if picks or drops:
             broadcast_to_facility(facility_id, {
                 "type": "new_task_available",
                 "transaction_id": str(txn.pk),
                 "pick_count": len(picks),
+                "drop_count": len(drops),
             })
     except Exception:
         logger.debug("Failed to send new task notifications for txn %s", txn.pk)

@@ -141,7 +141,7 @@ _TOOL_DEFS: list[types.Tool] = [
         name="wms_create_transaction",
         description=(
             "Create a warehouse transaction in PENDING status. "
-            "Use wms_execute_transaction to commit it to inventory."
+            "MCP keeps transactions pending and does not commit inventory."
         ),
         inputSchema={
             "type": "object",
@@ -188,7 +188,7 @@ _TOOL_DEFS: list[types.Tool] = [
     ),
     types.Tool(
         name="wms_execute_transaction",
-        description="Execute a PENDING transaction — debits picks and credits drops atomically.",
+        description="Return a PENDING transaction for review. MCP does not commit inventory or complete transactions.",
         inputSchema={
             "type": "object",
             "properties": {
@@ -212,7 +212,7 @@ _TOOL_DEFS: list[types.Tool] = [
     ),
     types.Tool(
         name="wms_move_inventory",
-        description="Move stock between two locations (creates and executes a MOVE transaction).",
+        description="Create a pending MOVE transaction to move stock between two locations.",
         inputSchema={
             "type": "object",
             "properties": {
@@ -233,8 +233,8 @@ _TOOL_DEFS: list[types.Tool] = [
     types.Tool(
         name="wms_create_grn",
         description=(
-            "Goods Received Note — receive items into the PRE_PUTAWAY staging zone "
-            "(creates and executes a GRN transaction)."
+            "Goods Received Note — create a pending GRN transaction "
+            "for items landing in the PRE_PUTAWAY staging zone."
         ),
         inputSchema={
             "type": "object",
@@ -263,7 +263,7 @@ _TOOL_DEFS: list[types.Tool] = [
     ),
     types.Tool(
         name="wms_putaway",
-        description="Move inventory from PRE_PUTAWAY staging zone to a storage location.",
+        description="Create a pending PUTAWAY transaction from PRE_PUTAWAY staging zone to a storage location.",
         inputSchema={
             "type": "object",
             "properties": {
@@ -283,7 +283,7 @@ _TOOL_DEFS: list[types.Tool] = [
     ),
     types.Tool(
         name="wms_order_pick",
-        description="Pick inventory from a location for an order or invoice.",
+        description="Create a pending ORDER_PICK transaction from a location for an order or invoice.",
         inputSchema={
             "type": "object",
             "properties": {

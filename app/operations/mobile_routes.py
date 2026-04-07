@@ -123,15 +123,18 @@ def session_select_facility(request, payload: schemas.SelectFacilityIn):
 
 @router.get(
     "/tasks/available",
-    summary="List available pick tasks",
-    description="Returns unclaimed pick tasks for the worker's current facility.",
+    summary="List available tasks",
+    description="Returns unclaimed pick and drop tasks for the worker's current facility.",
     openapi_extra=ORG_WITH_REQUIRED_FACILITY,
 )
 def list_available_tasks(request):
     authorize_request(request, PERM_OPERATIONS_EXECUTE, require_membership=True)
     org, facility = resolve_request_tenant(request, require_facility=True)
-    picks = task_service.list_available_tasks(org, facility)
-    return success_response(request, data=[_pick_task_out(p) for p in picks])
+    tasks = task_service.list_available_tasks(org, facility)
+    return success_response(request, data=schemas.AvailableTasksOut(
+        picks=[_pick_task_out(p) for p in tasks["picks"]],
+        drops=[_drop_task_out(d) for d in tasks["drops"]],
+    ).dict())
 
 
 @router.post(
@@ -148,9 +151,27 @@ def claim_pick_task(request, pick_id: str):
     pick = task_service.claim_task(org, facility, pick_id, user)
 
     # Notify via WebSocket that task was claimed
-    _notify_task_claimed(facility, pick)
+    _notify_task_claimed(facility, "pick", pick)
 
     return success_response(request, data=_pick_task_out(pick))
+
+
+@router.post(
+    "/tasks/drops/{drop_id}/claim",
+    summary="Claim a drop task",
+    description="Lock and assign a drop task to the current worker.",
+    openapi_extra=ORG_WITH_REQUIRED_FACILITY,
+)
+def claim_drop_task(request, drop_id: str):
+    authorize_request(request, PERM_OPERATIONS_EXECUTE, require_membership=True)
+    org, facility = resolve_request_tenant(request, require_facility=True)
+    auth = get_auth_context(request)
+    user = _get_app_user(auth)
+    drop = task_service.claim_drop(org, facility, drop_id, user)
+
+    _notify_task_claimed(facility, "drop", drop)
+
+    return success_response(request, data=_drop_task_out(drop))
 
 
 @router.post(
@@ -435,14 +456,15 @@ def _drop_task_out(drop) -> schemas.DropTaskOut:
     )
 
 
-def _notify_task_claimed(facility, pick):
+def _notify_task_claimed(facility, task_type: str, task):
     """Send WebSocket notification that a task was claimed."""
     try:
         from app.notifications.websocket import broadcast_to_facility
         broadcast_to_facility(str(facility.pk), {
             "type": "task_claimed",
-            "pick_id": str(pick.pk),
-            "claimed_by": pick.assigned_to.display_name if pick.assigned_to else "",
+            "task_type": task_type,
+            "task_id": str(task.pk),
+            "claimed_by": task.assigned_to.display_name if task.assigned_to else "",
         })
     except Exception:
         pass  # Non-critical, don't fail the request

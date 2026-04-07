@@ -5,6 +5,7 @@ import {
   getAvailableTasks,
   getMyTasks,
   claimPickTask,
+  claimDropTask,
   startPickTask,
   completePickTask,
   startDropTask,
@@ -12,7 +13,8 @@ import {
 } from '../api/tasks';
 
 export function useTasks() {
-  const [availableTasks, setAvailableTasks] = useState<PickTask[]>([]);
+  const [availablePicks, setAvailablePicks] = useState<PickTask[]>([]);
+  const [availableDrops, setAvailableDrops] = useState<DropTask[]>([]);
   const [myPicks, setMyPicks] = useState<PickTask[]>([]);
   const [myDrops, setMyDrops] = useState<DropTask[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,8 @@ export function useTasks() {
         getAvailableTasks(),
         getMyTasks(),
       ]);
-      setAvailableTasks(available.data);
+      setAvailablePicks(available.data.picks);
+      setAvailableDrops(available.data.drops);
       setMyPicks(mine.data.picks);
       setMyDrops(mine.data.drops);
     } catch (err: any) {
@@ -38,6 +41,12 @@ export function useTasks() {
 
   const claim = useCallback(async (pickId: string) => {
     const result = await claimPickTask(pickId);
+    await refresh();
+    return result.data;
+  }, [refresh]);
+
+  const claimDrop = useCallback(async (dropId: string) => {
+    const result = await claimDropTask(dropId);
     await refresh();
     return result.data;
   }, [refresh]);
@@ -67,13 +76,15 @@ export function useTasks() {
   }, [refresh]);
 
   return {
-    availableTasks,
+    availablePicks,
+    availableDrops,
     myPicks,
     myDrops,
     loading,
     error,
     refresh,
     claim,
+    claimDrop,
     startPick,
     completePick,
     startDrop,

@@ -7,11 +7,15 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTasks } from '../hooks/useTasks';
+import { AmbientBackdrop } from '../components/AmbientBackdrop';
 import { AnimatedCounter } from '../components/AnimatedCounter';
-import { colors, spacing, borderRadius, typography, getStatusColor } from '../theme';
+import { colors, spacing, borderRadius, typography, getStatusColor, shadows } from '../theme';
+import {
+  triggerLightImpact,
+  triggerSuccessNotification,
+} from '../utils/haptics';
 
 export function PickTaskScreen() {
   const navigation = useNavigation<any>();
@@ -32,7 +36,7 @@ export function PickTaskScreen() {
     setLoading(true);
     try {
       await startPick(pick.id);
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await triggerLightImpact();
       pick.task_status = 'IN_PROGRESS';
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -45,7 +49,7 @@ export function PickTaskScreen() {
     setLoading(true);
     try {
       const result = await completePick(pick.id);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await triggerSuccessNotification();
       setCompleted(true);
       setPointsEarned(result.pick.points_awarded);
       if (result.drop) {
@@ -66,36 +70,41 @@ export function PickTaskScreen() {
 
   if (completed) {
     return (
-      <View style={styles.successContainer}>
-        <Text style={styles.successEmoji}>🎉</Text>
-        <Text style={styles.successTitle}>Pick Complete!</Text>
-        <View style={styles.pointsContainer}>
-          <AnimatedCounter
-            value={pointsEarned}
-            prefix="+"
-            suffix=" XP"
-            style={styles.pointsValue}
-          />
+      <View style={styles.screen}>
+        <AmbientBackdrop variant="task" />
+        <View style={styles.successContainer}>
+          <Text style={styles.successEmoji}>🎉</Text>
+          <Text style={styles.successTitle}>Pick Complete!</Text>
+          <View style={styles.pointsContainer}>
+            <AnimatedCounter
+              value={pointsEarned}
+              prefix="+"
+              suffix=" XP"
+              style={styles.pointsValue}
+            />
+          </View>
+          {assignedDrop ? (
+            <TouchableOpacity style={styles.nextButton} onPress={handleGoToDrop}>
+              <Text style={styles.nextButtonText}>Go to Drop Task</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.doneButtonText}>Back to Dashboard</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        {assignedDrop ? (
-          <TouchableOpacity style={styles.nextButton} onPress={handleGoToDrop}>
-            <Text style={styles.nextButtonText}>Go to Drop Task →</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.doneButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.doneButtonText}>Back to Dashboard</Text>
-          </TouchableOpacity>
-        )}
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
+    <View style={styles.screen}>
+      <AmbientBackdrop variant="task" />
+      <View style={styles.container}>
+        <View style={styles.card}>
         <View style={styles.statusRow}>
           <View
             style={[
@@ -142,53 +151,57 @@ export function PickTaskScreen() {
         {pick.reference_number ? (
           <Text style={styles.refText}>Ref: {pick.reference_number}</Text>
         ) : null}
-      </View>
+        </View>
 
-      <View style={styles.actions}>
-        {isAssigned && (
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={handleStart}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.textPrimary} />
-            ) : (
-              <>
-                <Text style={styles.actionEmoji}>▶️</Text>
-                <Text style={styles.actionText}>Start Pick</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
+        <View style={styles.actions}>
+          {isAssigned ? (
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={handleStart}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.primaryContrast} />
+              ) : (
+                <>
+                  <Text style={styles.actionEmoji}>▶️</Text>
+                  <Text style={styles.actionText}>Start Pick</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          ) : null}
 
-        {isInProgress && (
-          <TouchableOpacity
-            style={styles.completeButton}
-            onPress={handleComplete}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.textPrimary} />
-            ) : (
-              <>
-                <Text style={styles.actionEmoji}>✅</Text>
-                <Text style={styles.actionText}>Confirm Pick Complete</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        )}
+          {isInProgress ? (
+            <TouchableOpacity
+              style={styles.completeButton}
+              onPress={handleComplete}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.primaryContrast} />
+              ) : (
+                <>
+                  <Text style={styles.actionEmoji}>✅</Text>
+                  <Text style={styles.actionText}>Confirm Pick Complete</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  container: {
+    flex: 1,
     padding: spacing.md,
   },
   card: {
@@ -197,6 +210,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.bgCardLight,
+    ...shadows.card,
   },
   statusRow: {
     flexDirection: 'row',
@@ -265,6 +279,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    ...shadows.soft,
   },
   completeButton: {
     backgroundColor: colors.success,
@@ -274,22 +289,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    ...shadows.soft,
   },
   actionEmoji: {
     fontSize: 20,
   },
   actionText: {
     ...typography.bodyBold,
-    color: colors.textPrimary,
+    color: colors.primaryContrast,
     fontSize: 18,
   },
   // Success state
   successContainer: {
     flex: 1,
-    backgroundColor: colors.bg,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
+    margin: spacing.md,
+    backgroundColor: colors.glass,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
+    ...shadows.card,
   },
   successEmoji: {
     fontSize: 64,
@@ -309,14 +330,15 @@ const styles = StyleSheet.create({
     color: colors.xpGold,
   },
   nextButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.primary,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
+    ...shadows.soft,
   },
   nextButtonText: {
     ...typography.bodyBold,
-    color: colors.bg,
+    color: colors.primaryContrast,
     fontSize: 18,
   },
   doneButton: {
@@ -326,6 +348,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderWidth: 1,
     borderColor: colors.bgCardLight,
+    ...shadows.soft,
   },
   doneButtonText: {
     ...typography.bodyBold,

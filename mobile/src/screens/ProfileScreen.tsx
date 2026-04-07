@@ -9,9 +9,10 @@ import {
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { getWorkerStats, WorkerStats } from '../api/gamification';
+import { AmbientBackdrop } from '../components/AmbientBackdrop';
 import { PointsBadge } from '../components/PointsBadge';
 import { StreakIndicator } from '../components/StreakIndicator';
-import { colors, spacing, borderRadius, typography, getLevelColor } from '../theme';
+import { colors, spacing, borderRadius, typography, getLevelColor, shadows } from '../theme';
 
 export function ProfileScreen() {
   const { user, selectedFacility, signOut } = useAuth();
@@ -46,104 +47,114 @@ export function ProfileScreen() {
     : 100;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={loading}
-          onRefresh={refresh}
-          tintColor={colors.primary}
-        />
-      }
-    >
-      {/* Profile Header */}
-      <View style={styles.profileHeader}>
-        <View style={styles.avatarLarge}>
-          <Text style={styles.avatarText}>
-            {(user?.displayName || 'W')[0].toUpperCase()}
+    <View style={styles.screen}>
+      <AmbientBackdrop />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={refresh}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarLarge}>
+            <Text style={styles.avatarText}>
+              {(user?.displayName || 'W')[0].toUpperCase()}
+            </Text>
+          </View>
+          <Text style={styles.displayName}>
+            {user?.displayName || 'Warehouse Worker'}
+          </Text>
+          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={styles.facility}>
+            {selectedFacility?.name || 'No facility'}
           </Text>
         </View>
-        <Text style={styles.displayName}>
-          {user?.displayName || 'Warehouse Worker'}
-        </Text>
-        <Text style={styles.email}>{user?.email}</Text>
-        <Text style={styles.facility}>
-          {selectedFacility?.name || 'No facility'}
-        </Text>
-      </View>
 
-      {/* Stats */}
-      {stats && (
-        <>
-          <View style={styles.card}>
-            <PointsBadge points={stats.total_points} level={stats.level} size="large" />
+        {stats ? (
+          <>
+            <View style={styles.card}>
+              <PointsBadge points={stats.total_points} level={stats.level} size="large" />
 
-            {nextLevel && (
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${progressToNext}%`,
-                        backgroundColor: getLevelColor(stats.level),
-                      },
-                    ]}
-                  />
+              {nextLevel ? (
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${progressToNext}%`,
+                          backgroundColor: getLevelColor(stats.level),
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.progressText}>
+                    {stats.total_points} / {nextLevel.target} XP to {nextLevel.next}
+                  </Text>
                 </View>
-                <Text style={styles.progressText}>
-                  {stats.total_points} / {nextLevel.target} XP to {nextLevel.next}
-                </Text>
+              ) : null}
+            </View>
+
+            <View style={styles.card}>
+              <StreakIndicator
+                streak={stats.current_streak}
+                longestStreak={stats.longest_streak}
+              />
+            </View>
+
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{stats.tasks_completed}</Text>
+                <Text style={styles.statLabel}>Tasks Done</Text>
               </View>
-            )}
-          </View>
-
-          <View style={styles.card}>
-            <StreakIndicator
-              streak={stats.current_streak}
-              longestStreak={stats.longest_streak}
-            />
-          </View>
-
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{stats.tasks_completed}</Text>
-              <Text style={styles.statLabel}>Tasks Done</Text>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{stats.current_streak}</Text>
+                <Text style={styles.statLabel}>Day Streak</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{stats.longest_streak}</Text>
+                <Text style={styles.statLabel}>Best Streak</Text>
+              </View>
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{stats.current_streak}</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{stats.longest_streak}</Text>
-              <Text style={styles.statLabel}>Best Streak</Text>
-            </View>
-          </View>
-        </>
-      )}
+          </>
+        ) : null}
 
-      {/* Sign Out */}
-      <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   content: {
     padding: spacing.md,
     paddingTop: spacing.xxl + spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xxl * 2,
   },
   profileHeader: {
     alignItems: 'center',
     marginBottom: spacing.lg,
+    backgroundColor: colors.glass,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
+    ...shadows.card,
   },
   avatarLarge: {
     width: 80,
@@ -173,12 +184,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   card: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.bgCardLight,
+    ...shadows.soft,
   },
   progressContainer: {
     marginTop: spacing.md,
@@ -206,12 +218,13 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.bgCardLight,
+    ...shadows.soft,
   },
   statValue: {
     ...typography.h2,
@@ -228,6 +241,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.error + '30',
+    ...shadows.soft,
   },
   signOutText: {
     ...typography.bodyBold,

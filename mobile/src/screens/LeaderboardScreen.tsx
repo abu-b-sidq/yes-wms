@@ -7,7 +7,8 @@ import {
   RefreshControl,
 } from 'react-native';
 import { getLeaderboard, LeaderboardEntry } from '../api/gamification';
-import { colors, spacing, borderRadius, typography, getLevelColor } from '../theme';
+import { AmbientBackdrop } from '../components/AmbientBackdrop';
+import { colors, spacing, borderRadius, typography, getLevelColor, shadows } from '../theme';
 
 export function LeaderboardScreen() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -88,8 +89,10 @@ export function LeaderboardScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.screen}>
+      <AmbientBackdrop />
       <FlatList
+        style={styles.container}
         data={entries}
         renderItem={renderEntry}
         keyExtractor={(item) => item.user_id}
@@ -100,6 +103,12 @@ export function LeaderboardScreen() {
             onRefresh={refresh}
             tintColor={colors.primary}
           />
+        }
+        ListHeaderComponent={
+          <View style={styles.headerCard}>
+            <Text style={styles.headerEyebrow}>Leaderboard</Text>
+            <Text style={styles.headerTitle}>Top operators this cycle</Text>
+          </View>
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
@@ -115,13 +124,38 @@ export function LeaderboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.bg,
   },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   list: {
     padding: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xxl * 2,
+  },
+  headerCard: {
+    backgroundColor: colors.glass,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
+    marginBottom: spacing.md,
+    ...shadows.soft,
+  },
+  headerEyebrow: {
+    ...typography.small,
+    color: colors.secondary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    marginTop: spacing.xs,
   },
   row: {
     flexDirection: 'row',
@@ -132,6 +166,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: colors.bgCardLight,
+    ...shadows.soft,
   },
   rowHighlighted: {
     borderColor: colors.xpGold + '30',
@@ -197,8 +232,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   emptyState: {
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
     alignItems: 'center',
-    paddingTop: spacing.xxl * 2,
+    padding: spacing.xl,
+    ...shadows.soft,
   },
   emptyEmoji: {
     fontSize: 48,

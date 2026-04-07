@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '../theme';
+import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 
 interface StreakIndicatorProps {
   streak: number;
@@ -33,12 +33,13 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
     borderColor: colors.bgCardLight,
+    ...shadows.soft,
   },
   containerHot: {
     borderColor: colors.streakFire + '50',

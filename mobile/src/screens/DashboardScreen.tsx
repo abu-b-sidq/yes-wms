@@ -11,16 +11,18 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../auth/AuthContext';
 import { useTasks } from '../hooks/useTasks';
 import { useWebSocket, WsEvent } from '../hooks/useWebSocket';
+import { DropTask, PickTask } from '../api/tasks';
 import { getWorkerStats, WorkerStats } from '../api/gamification';
+import { AmbientBackdrop } from '../components/AmbientBackdrop';
 import { PointsBadge } from '../components/PointsBadge';
 import { StreakIndicator } from '../components/StreakIndicator';
 import { TaskCard } from '../components/TaskCard';
-import { colors, spacing, borderRadius, typography } from '../theme';
+import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 
 export function DashboardScreen() {
   const navigation = useNavigation<any>();
   const { user, selectedFacility, signOut } = useAuth();
-  const { myPicks, myDrops, availableTasks, refresh, loading } = useTasks();
+  const { myPicks, myDrops, availablePicks, availableDrops, refresh, loading } = useTasks();
   const [stats, setStats] = useState<WorkerStats | null>(null);
 
   const loadStats = useCallback(async () => {
@@ -62,191 +64,270 @@ export function DashboardScreen() {
   const activeDrop = myDrops.find(
     (d) => d.task_status === 'ASSIGNED' || d.task_status === 'IN_PROGRESS'
   );
+  const availableTasks = [
+    ...availablePicks.map((task) => ({ type: 'pick' as const, task })),
+    ...availableDrops.map((task) => ({ type: 'drop' as const, task })),
+  ];
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={loading}
-          onRefresh={() => {
-            refresh();
-            loadStats();
-          }}
-          tintColor={colors.primary}
-        />
-      }
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>
-            Hey, {user?.displayName || 'Worker'} 👋
-          </Text>
-          <View style={styles.facilityRow}>
-            <Text style={styles.facilityName}>
-              {selectedFacility?.name || 'No facility'}
-            </Text>
-            <View
-              style={[
-                styles.connectionDot,
-                { backgroundColor: connected ? colors.success : colors.error },
-              ]}
-            />
-          </View>
-        </View>
-        <TouchableOpacity onPress={signOut} style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>
-            {(user?.displayName || 'W')[0].toUpperCase()}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Stats Card */}
-      {stats && (
-        <View style={styles.statsCard}>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.tasks_completed}</Text>
-              <Text style={styles.statLabel}>Tasks Done</Text>
+    <View style={styles.screen}>
+      <AmbientBackdrop />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => {
+              refresh();
+              loadStats();
+            }}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        <View style={styles.headerCard}>
+          <View style={styles.headerTop}>
+            <View style={styles.headerCopy}>
+              <View style={styles.headerEyebrow}>
+                <Text style={styles.headerEyebrowText}>Operations Console</Text>
+              </View>
+              <Text style={styles.greeting}>
+                Hey, {user?.displayName || 'Worker'}
+              </Text>
+              <Text style={styles.headerText}>
+                Keep warehouse flow moving with live task visibility.
+              </Text>
+              <View style={styles.facilityRow}>
+                <Text style={styles.facilityName}>
+                  {selectedFacility?.name || 'No facility'}
+                </Text>
+                <View
+                  style={[
+                    styles.connectionDot,
+                    { backgroundColor: connected ? colors.success : colors.error },
+                  ]}
+                />
+                <Text style={styles.connectionText}>
+                  {connected ? 'Live' : 'Offline'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <PointsBadge points={stats.total_points} level={stats.level} />
-            </View>
-          </View>
-          <StreakIndicator
-            streak={stats.current_streak}
-            longestStreak={stats.longest_streak}
-          />
-        </View>
-      )}
-
-      {/* Active Task */}
-      {activePick && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Active Pick Task</Text>
-          <TaskCard
-            type="pick"
-            skuCode={activePick.sku_code}
-            skuName={activePick.sku_name}
-            entityCode={activePick.source_entity_code}
-            quantity={activePick.quantity}
-            status={activePick.task_status}
-            referenceNumber={activePick.reference_number}
-            onPress={() =>
-              navigation.navigate('PickTask', { pick: activePick })
-            }
-            actionLabel={
-              activePick.task_status === 'ASSIGNED'
-                ? 'Start Pick'
-                : 'Continue Pick'
-            }
-            onAction={() =>
-              navigation.navigate('PickTask', { pick: activePick })
-            }
-          />
-        </View>
-      )}
-
-      {activeDrop && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Active Drop Task</Text>
-          <TaskCard
-            type="drop"
-            skuCode={activeDrop.sku_code}
-            skuName={activeDrop.sku_name}
-            entityCode={activeDrop.dest_entity_code}
-            quantity={activeDrop.quantity}
-            status={activeDrop.task_status}
-            referenceNumber={activeDrop.reference_number}
-            onPress={() =>
-              navigation.navigate('DropTask', { drop: activeDrop })
-            }
-            actionLabel={
-              activeDrop.task_status === 'ASSIGNED'
-                ? 'Start Drop'
-                : 'Continue Drop'
-            }
-            onAction={() =>
-              navigation.navigate('DropTask', { drop: activeDrop })
-            }
-          />
-        </View>
-      )}
-
-      {/* Available Tasks Preview */}
-      {!activePick && !activeDrop && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Available Tasks</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('AvailableTasks')}
-            >
-              <Text style={styles.seeAll}>See all →</Text>
+            <TouchableOpacity onPress={signOut} style={styles.avatarContainer}>
+              <Text style={styles.avatarText}>
+                {(user?.displayName || 'W')[0].toUpperCase()}
+              </Text>
             </TouchableOpacity>
           </View>
-          {availableTasks.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>✅</Text>
-              <Text style={styles.emptyText}>
-                No tasks available right now
-              </Text>
-            </View>
-          ) : (
-            availableTasks.slice(0, 3).map((task) => (
-              <TaskCard
-                key={task.id}
-                type="pick"
-                skuCode={task.sku_code}
-                skuName={task.sku_name}
-                entityCode={task.source_entity_code}
-                quantity={task.quantity}
-                status={task.task_status}
-                referenceNumber={task.reference_number}
-                actionLabel="Claim"
-                onAction={() =>
-                  navigation.navigate('AvailableTasks')
-                }
-              />
-            ))
-          )}
         </View>
-      )}
-    </ScrollView>
+
+        {stats ? (
+          <View style={styles.statsCard}>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{stats.tasks_completed}</Text>
+                <Text style={styles.statLabel}>Tasks Done</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <PointsBadge points={stats.total_points} level={stats.level} />
+              </View>
+            </View>
+            <StreakIndicator
+              streak={stats.current_streak}
+              longestStreak={stats.longest_streak}
+            />
+          </View>
+        ) : null}
+
+        {activePick ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Active Pick Task</Text>
+            <TaskCard
+              type="pick"
+              skuCode={activePick.sku_code}
+              skuName={activePick.sku_name}
+              entityCode={activePick.source_entity_code}
+              quantity={activePick.quantity}
+              status={activePick.task_status}
+              referenceNumber={activePick.reference_number}
+              onPress={() =>
+                navigation.navigate('PickTask', { pick: activePick })
+              }
+              actionLabel={
+                activePick.task_status === 'ASSIGNED'
+                  ? 'Start Pick'
+                  : 'Continue Pick'
+              }
+              onAction={() =>
+                navigation.navigate('PickTask', { pick: activePick })
+              }
+            />
+          </View>
+        ) : null}
+
+        {activeDrop ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Active Drop Task</Text>
+            <TaskCard
+              type="drop"
+              skuCode={activeDrop.sku_code}
+              skuName={activeDrop.sku_name}
+              entityCode={activeDrop.dest_entity_code}
+              quantity={activeDrop.quantity}
+              status={activeDrop.task_status}
+              referenceNumber={activeDrop.reference_number}
+              onPress={() =>
+                navigation.navigate('DropTask', { drop: activeDrop })
+              }
+              actionLabel={
+                activeDrop.task_status === 'ASSIGNED'
+                  ? 'Start Drop'
+                  : 'Continue Drop'
+              }
+              onAction={() =>
+                navigation.navigate('DropTask', { drop: activeDrop })
+              }
+            />
+          </View>
+        ) : null}
+
+        {!activePick && !activeDrop ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Available Tasks</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('AvailableTasks')}
+              >
+                <Text style={styles.seeAll}>See all</Text>
+              </TouchableOpacity>
+            </View>
+            {availableTasks.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyEmoji}>✅</Text>
+                <Text style={styles.emptyText}>
+                  No tasks available right now
+                </Text>
+              </View>
+            ) : (
+              availableTasks.slice(0, 3).map((availableTask) => {
+                if (availableTask.type === 'pick') {
+                  const task: PickTask = availableTask.task;
+                  return (
+                    <TaskCard
+                      key={`pick-${task.id}`}
+                      type="pick"
+                      skuCode={task.sku_code}
+                      skuName={task.sku_name}
+                      entityCode={task.source_entity_code}
+                      quantity={task.quantity}
+                      status={task.task_status}
+                      referenceNumber={task.reference_number}
+                      actionLabel="Claim"
+                      onAction={() =>
+                        navigation.navigate('AvailableTasks')
+                      }
+                    />
+                  );
+                }
+
+                const task: DropTask = availableTask.task;
+                return (
+                  <TaskCard
+                    key={`drop-${task.id}`}
+                    type="drop"
+                    skuCode={task.sku_code}
+                    skuName={task.sku_name}
+                    entityCode={task.dest_entity_code}
+                    quantity={task.quantity}
+                    status={task.task_status}
+                    referenceNumber={task.reference_number}
+                    actionLabel="Claim"
+                    onAction={() =>
+                      navigation.navigate('AvailableTasks')
+                    }
+                  />
+                );
+              })
+            )}
+          </View>
+        ) : null}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   content: {
     padding: spacing.md,
     paddingTop: spacing.xxl + spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xxl * 2,
   },
-  header: {
+  headerCard: {
+    backgroundColor: colors.glass,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  headerCopy: {
+    flex: 1,
+  },
+  headerEyebrow: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.secondary + '20',
+    borderWidth: 1,
+    borderColor: colors.secondary + '2C',
+    marginBottom: spacing.sm,
+  },
+  headerEyebrowText: {
+    ...typography.small,
+    color: colors.secondary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   greeting: {
     ...typography.h2,
     color: colors.textPrimary,
   },
+  headerText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    lineHeight: 22,
+  },
   facilityRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginTop: 2,
+    marginTop: spacing.md,
   },
   facilityName: {
     ...typography.caption,
     color: colors.textSecondary,
+  },
+  connectionText: {
+    ...typography.small,
+    color: colors.textMuted,
   },
   connectionDot: {
     width: 8,
@@ -254,25 +335,27 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   avatarContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.soft,
   },
   avatarText: {
     ...typography.h3,
-    color: colors.textPrimary,
+    color: colors.primaryContrast,
   },
   statsCard: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.xl,
     padding: spacing.md,
     marginBottom: spacing.lg,
     gap: spacing.md,
     borderWidth: 1,
     borderColor: colors.bgCardLight,
+    ...shadows.card,
   },
   statsRow: {
     flexDirection: 'row',
@@ -312,12 +395,16 @@ const styles = StyleSheet.create({
   seeAll: {
     ...typography.caption,
     color: colors.primary,
+    fontWeight: '700',
   },
   emptyState: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.lg,
     padding: spacing.xl,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
+    ...shadows.soft,
   },
   emptyEmoji: {
     fontSize: 32,

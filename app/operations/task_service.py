@@ -30,9 +30,9 @@ SPEED_BONUS_SECONDS = 120  # complete within 2 minutes for bonus
 
 def list_available_tasks(
     org: Organization, facility: Facility
-) -> list[Pick]:
+) -> dict[str, list[Pick] | list[Drop]]:
     now = timezone.now()
-    return list(
+    available_picks = list(
         Pick.objects.filter(
             org=org,
             transaction__facility=facility,
@@ -44,6 +44,19 @@ def list_available_tasks(
         .select_related("sku", "transaction", "transaction__facility")
         .order_by("transaction__created_at")[:50]
     )
+    available_drops = list(
+        Drop.objects.filter(
+            org=org,
+            transaction__facility=facility,
+            task_status=TaskStatus.PENDING,
+        )
+        .filter(
+            Q(locked_by__isnull=True) | Q(lock_expires_at__lt=now)
+        )
+        .select_related("sku", "transaction", "transaction__facility", "paired_pick")
+        .order_by("transaction__created_at")[:50]
+    )
+    return {"picks": available_picks, "drops": available_drops}
 
 
 def claim_task(
@@ -91,6 +104,52 @@ def claim_task(
     return Pick.objects.select_related(
         "sku", "transaction", "transaction__facility", "assigned_to"
     ).get(pk=pick.pk)
+
+
+def claim_drop(
+    org: Organization, facility: Facility, drop_id: str, user: AppUser
+) -> Drop:
+    now = timezone.now()
+
+    with db_transaction.atomic():
+        try:
+            drop = (
+                Drop.objects.select_for_update()
+                .select_related("transaction", "transaction__facility")
+                .get(pk=drop_id, org=org)
+            )
+        except Drop.DoesNotExist:
+            raise EntityNotFoundError(f"Drop task '{drop_id}' not found.")
+
+        if drop.transaction.facility_id != facility.pk:
+            raise ValidationError("Task does not belong to this facility.")
+
+        if (
+            drop.task_status == TaskStatus.ASSIGNED
+            and drop.locked_by is not None
+            and drop.locked_by != user
+            and drop.lock_expires_at
+            and drop.lock_expires_at > now
+        ):
+            raise TaskAlreadyClaimedError("This task has already been claimed by another worker.")
+
+        if drop.task_status not in (TaskStatus.PENDING, TaskStatus.ASSIGNED):
+            raise ValidationError(f"Cannot claim task in status '{drop.task_status}'.")
+
+        drop.task_status = TaskStatus.ASSIGNED
+        drop.assigned_to = user
+        drop.assigned_at = now
+        drop.locked_by = user
+        drop.locked_at = now
+        drop.lock_expires_at = now + timedelta(minutes=LOCK_DURATION_MINUTES)
+        drop.save(update_fields=[
+            "task_status", "assigned_to", "assigned_at",
+            "locked_by", "locked_at", "lock_expires_at", "updated_at",
+        ])
+
+    return Drop.objects.select_related(
+        "sku", "transaction", "transaction__facility", "assigned_to", "paired_pick"
+    ).get(pk=drop.pk)
 
 
 def start_pick(org: Organization, pick_id: str, user: AppUser) -> Pick:

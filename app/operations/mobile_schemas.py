@@ -83,6 +83,11 @@ class DropTaskOut(Schema):
     created_at: datetime
 
 
+class AvailableTasksOut(Schema):
+    picks: list[PickTaskOut] = []
+    drops: list[DropTaskOut] = []
+
+
 class MyTasksOut(Schema):
     picks: list[PickTaskOut] = []
     drops: list[DropTaskOut] = []

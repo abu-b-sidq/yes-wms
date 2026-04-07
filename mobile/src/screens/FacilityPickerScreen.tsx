@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
 import { Facility } from '../api/auth';
-import { colors, spacing, borderRadius, typography } from '../theme';
+import { AmbientBackdrop } from '../components/AmbientBackdrop';
+import { colors, spacing, borderRadius, typography, shadows } from '../theme';
 
 export function FacilityPickerScreen() {
   const { facilities, chooseFacility, loading, signOut } = useAuth();
@@ -33,70 +34,113 @@ export function FacilityPickerScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.screen}>
+        <AmbientBackdrop variant="auth" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Select Warehouse</Text>
-      <Text style={styles.subtitle}>Choose the warehouse you're working in today</Text>
+    <View style={styles.screen}>
+      <AmbientBackdrop variant="auth" />
+      <View style={styles.container}>
+        <View style={styles.facilityCard}>
+          <View style={styles.header}>
+            <View style={styles.logoBadge}>
+              <Text style={styles.logoGlyph}>Y</Text>
+            </View>
+            <Text style={styles.title}>Select Facility</Text>
+            <Text style={styles.subtitle}>Choose the warehouse to continue.</Text>
+          </View>
 
-      {facilities.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🔒</Text>
-          <Text style={styles.emptyTitle}>No Access</Text>
-          <Text style={styles.emptyText}>
-            You don't have access to any warehouses yet.{'\n'}
-            Contact your admin to get assigned.
-          </Text>
+          {facilities.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🔒</Text>
+              <Text style={styles.emptyTitle}>No Access</Text>
+              <Text style={styles.emptyText}>
+                You don't have access to any warehouses yet.{'\n'}
+                Contact your admin to get assigned.
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={facilities}
+              renderItem={renderFacility}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.list}
+            />
+          )}
+
+          <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
         </View>
-      ) : (
-        <FlatList
-          data={facilities}
-          renderItem={renderFacility}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-        />
-      )}
-
-      <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
     padding: spacing.lg,
-    paddingTop: spacing.xxl + spacing.lg,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: colors.bg,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  facilityCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
+    padding: spacing.lg,
+    maxHeight: '84%',
+    ...shadows.card,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  logoBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  logoGlyph: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: colors.primaryContrast,
+  },
   title: {
-    ...typography.h1,
+    ...typography.h2,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
+    textAlign: 'center',
   },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
-    marginBottom: spacing.xl,
+    textAlign: 'center',
   },
   list: {
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
   },
   card: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -104,6 +148,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.bgCardLight,
+    ...shadows.soft,
   },
   iconContainer: {
     width: 48,
@@ -133,10 +178,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   emptyState: {
-    flex: 1,
+    paddingVertical: spacing.xxl,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: spacing.xxl,
   },
   emptyIcon: {
     fontSize: 48,
@@ -153,11 +197,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   signOutButton: {
-    padding: spacing.md,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.md,
     alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: colors.bgCardLight,
   },
   signOutText: {
-    ...typography.body,
+    ...typography.bodyBold,
     color: colors.error,
   },
 });

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
+import { StatusBar } from 'react-native';
 import { AuthProvider } from './src/auth/AuthContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { colors } from './src/theme';
 import {
   registerForPushNotifications,
   setupBackgroundHandler,
@@ -17,7 +18,7 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <StatusBar style="light" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
       <AppNavigator />
     </AuthProvider>
   );

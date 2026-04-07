@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, typography, getStatusColor } from '../theme';
+import { colors, spacing, borderRadius, typography, getStatusColor, shadows } from '../theme';
 
 interface TaskCardProps {
   type: 'pick' | 'drop';
@@ -96,10 +96,11 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bgCard,
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    padding: spacing.md + 2,
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.bgCardLight,
+    ...shadows.card,
   },
   header: {
     flexDirection: 'row',
@@ -110,6 +111,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
   },
   typeText: {
     ...typography.small,
@@ -119,6 +122,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
   },
   statusText: {
     ...typography.small,
@@ -127,6 +132,7 @@ const styles = StyleSheet.create({
   skuCode: {
     ...typography.h3,
     color: colors.textPrimary,
+    marginBottom: 2,
   },
   skuName: {
     ...typography.caption,
@@ -176,9 +182,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
     alignItems: 'center',
     marginTop: spacing.md,
+    ...shadows.soft,
   },
   actionText: {
     ...typography.bodyBold,
-    color: colors.textPrimary,
+    color: colors.primaryContrast,
   },
 });

@@ -41,12 +41,21 @@ export interface DropTask {
   created_at: string;
 }
 
-export async function getAvailableTasks(): Promise<{ data: PickTask[] }> {
+export interface AvailableTasksData {
+  picks: PickTask[];
+  drops: DropTask[];
+}
+
+export async function getAvailableTasks(): Promise<{ data: AvailableTasksData }> {
   return apiClient.get('/mobile/tasks/available');
 }
 
 export async function claimPickTask(pickId: string): Promise<{ data: PickTask }> {
   return apiClient.post(`/mobile/tasks/picks/${pickId}/claim`);
+}
+
+export async function claimDropTask(dropId: string): Promise<{ data: DropTask }> {
+  return apiClient.post(`/mobile/tasks/drops/${dropId}/claim`);
 }
 
 export async function startPickTask(pickId: string): Promise<{ data: PickTask }> {

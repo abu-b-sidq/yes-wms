@@ -3,23 +3,36 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  SectionList,
   RefreshControl,
   Alert,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { useTasks } from '../hooks/useTasks';
 import { useWebSocket, WsEvent } from '../hooks/useWebSocket';
 import { useAuth } from '../auth/AuthContext';
+import { AmbientBackdrop } from '../components/AmbientBackdrop';
 import { TaskCard } from '../components/TaskCard';
-import { PickTask } from '../api/tasks';
-import { colors, spacing, typography } from '../theme';
+import { DropTask, PickTask } from '../api/tasks';
+import { colors, spacing, typography, borderRadius, shadows } from '../theme';
+import {
+  triggerMediumImpact,
+  triggerSuccessNotification,
+} from '../utils/haptics';
+
+type AvailableTaskItem =
+  | { type: 'pick'; item: PickTask }
+  | { type: 'drop'; item: DropTask };
+
+type AvailableTaskSection = {
+  title: string;
+  data: AvailableTaskItem[];
+};
 
 export function AvailableTasksScreen() {
   const navigation = useNavigation<any>();
   const { selectedFacility } = useAuth();
-  const { availableTasks, loading, refresh, claim } = useTasks();
+  const { availablePicks, availableDrops, loading, refresh, claim, claimDrop } = useTasks();
 
   const handleWsEvent = useCallback(
     (event: WsEvent) => {
@@ -38,36 +51,81 @@ export function AvailableTasksScreen() {
 
   const handleClaim = async (task: PickTask) => {
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      await claim(task.id);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.navigate('PickTask', { pick: task });
+      await triggerMediumImpact();
+      const claimedTask = await claim(task.id);
+      await triggerSuccessNotification();
+      navigation.navigate('PickTask', { pick: claimedTask });
     } catch (err: any) {
       Alert.alert('Cannot Claim', err.message || 'Task may have been claimed by someone else.');
     }
   };
 
-  const renderTask = ({ item }: { item: PickTask }) => (
-    <TaskCard
-      type="pick"
-      skuCode={item.sku_code}
-      skuName={item.sku_name}
-      entityCode={item.source_entity_code}
-      quantity={item.quantity}
-      status={item.task_status}
-      batchNumber={item.batch_number}
-      referenceNumber={item.reference_number}
-      actionLabel="Claim Task"
-      onAction={() => handleClaim(item)}
-    />
-  );
+  const handleClaimDrop = async (task: DropTask) => {
+    try {
+      await triggerMediumImpact();
+      const claimedTask = await claimDrop(task.id);
+      await triggerSuccessNotification();
+      navigation.navigate('DropTask', { drop: claimedTask });
+    } catch (err: any) {
+      Alert.alert('Cannot Claim', err.message || 'Task may have been claimed by someone else.');
+    }
+  };
+
+  const sections: AvailableTaskSection[] = [
+    ...(availablePicks.length > 0
+      ? [{ title: 'Available Picks', data: availablePicks.map((pick) => ({ type: 'pick' as const, item: pick })) }]
+      : []),
+    ...(availableDrops.length > 0
+      ? [{ title: 'Available Drops', data: availableDrops.map((drop) => ({ type: 'drop' as const, item: drop })) }]
+      : []),
+  ];
+  const totalTasks = availablePicks.length + availableDrops.length;
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={availableTasks}
-        renderItem={renderTask}
-        keyExtractor={(item) => item.id}
+    <View style={styles.screen}>
+      <AmbientBackdrop />
+      <SectionList
+        style={styles.container}
+        sections={sections}
+        renderSectionHeader={({ section }) => (
+          <Text style={styles.sectionTitle}>{section.title}</Text>
+        )}
+        renderItem={({ item }) => {
+          if (item.type === 'pick') {
+            const pick = item.item;
+            return (
+              <TaskCard
+                type="pick"
+                skuCode={pick.sku_code}
+                skuName={pick.sku_name}
+                entityCode={pick.source_entity_code}
+                quantity={pick.quantity}
+                status={pick.task_status}
+                batchNumber={pick.batch_number}
+                referenceNumber={pick.reference_number}
+                actionLabel="Claim Task"
+                onAction={() => handleClaim(pick)}
+              />
+            );
+          }
+
+          const drop = item.item;
+          return (
+            <TaskCard
+              type="drop"
+              skuCode={drop.sku_code}
+              skuName={drop.sku_name}
+              entityCode={drop.dest_entity_code}
+              quantity={drop.quantity}
+              status={drop.task_status}
+              batchNumber={drop.batch_number}
+              referenceNumber={drop.reference_number}
+              actionLabel="Claim Task"
+              onAction={() => handleClaimDrop(drop)}
+            />
+          );
+        }}
+        keyExtractor={(item) => `${item.type}-${item.item.id}`}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl
@@ -86,9 +144,12 @@ export function AvailableTasksScreen() {
           </View>
         }
         ListHeaderComponent={
-          <Text style={styles.count}>
-            {availableTasks.length} task{availableTasks.length !== 1 ? 's' : ''} available
-          </Text>
+          <View style={styles.countCard}>
+            <Text style={styles.countEyebrow}>Live Queue</Text>
+            <Text style={styles.count}>
+              {totalTasks} task{totalTasks !== 1 ? 's' : ''} available
+            </Text>
+          </View>
         }
       />
     </View>
@@ -96,22 +157,53 @@ export function AvailableTasksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.bg,
   },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   list: {
     padding: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xxl * 2,
+  },
+  countCard: {
+    backgroundColor: colors.glass,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
+    marginBottom: spacing.md,
+    ...shadows.soft,
+  },
+  countEyebrow: {
+    ...typography.small,
+    color: colors.secondary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   count: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginBottom: spacing.md,
+    ...typography.bodyBold,
+    color: colors.textPrimary,
+    marginTop: spacing.xs,
+  },
+  sectionTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
   emptyState: {
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
     alignItems: 'center',
-    paddingTop: spacing.xxl * 2,
+    padding: spacing.xl,
+    ...shadows.soft,
   },
   emptyEmoji: {
     fontSize: 48,

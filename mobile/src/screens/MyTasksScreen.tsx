@@ -8,8 +8,19 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTasks } from '../hooks/useTasks';
+import { DropTask, PickTask } from '../api/tasks';
+import { AmbientBackdrop } from '../components/AmbientBackdrop';
 import { TaskCard } from '../components/TaskCard';
-import { colors, spacing, typography } from '../theme';
+import { colors, spacing, typography, borderRadius, shadows } from '../theme';
+
+type MyTaskItem =
+  | { type: 'pick'; item: PickTask }
+  | { type: 'drop'; item: DropTask };
+
+type MyTaskSection = {
+  title: string;
+  data: MyTaskItem[];
+};
 
 export function MyTasksScreen() {
   const navigation = useNavigation<any>();
@@ -19,7 +30,7 @@ export function MyTasksScreen() {
     refresh();
   }, [refresh]);
 
-  const sections = [
+  const sections: MyTaskSection[] = [
     ...(myPicks.length > 0
       ? [{ title: 'Active Picks', data: myPicks.map((p) => ({ type: 'pick' as const, item: p })) }]
       : []),
@@ -29,8 +40,10 @@ export function MyTasksScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={styles.screen}>
+      <AmbientBackdrop />
       <SectionList
+        style={styles.container}
         sections={sections}
         keyExtractor={(item) => item.item.id}
         renderSectionHeader={({ section }) => (
@@ -82,6 +95,14 @@ export function MyTasksScreen() {
           />
         }
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryEyebrow}>Assigned Work</Text>
+            <Text style={styles.summaryText}>
+              {myPicks.length + myDrops.length} active task{myPicks.length + myDrops.length !== 1 ? 's' : ''}
+            </Text>
+          </View>
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>😴</Text>
@@ -97,13 +118,38 @@ export function MyTasksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.bg,
   },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   list: {
     padding: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xxl * 2,
+  },
+  summaryCard: {
+    backgroundColor: colors.glass,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
+    marginBottom: spacing.md,
+    ...shadows.soft,
+  },
+  summaryEyebrow: {
+    ...typography.small,
+    color: colors.secondary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  summaryText: {
+    ...typography.bodyBold,
+    color: colors.textPrimary,
+    marginTop: spacing.xs,
   },
   sectionTitle: {
     ...typography.h3,
@@ -112,8 +158,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   emptyState: {
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.bgCardLight,
     alignItems: 'center',
-    paddingTop: spacing.xxl * 2,
+    padding: spacing.xl,
+    ...shadows.soft,
   },
   emptyEmoji: {
     fontSize: 48,

@@ -4,7 +4,10 @@ from __future__ import annotations
 from decimal import Decimal
 
 from asgiref.sync import sync_to_async
+from app.auth import authorization
+from app.auth import permissions
 from app.core.exceptions import AuthorizationError
+from app.operations import services as operation_services
 
 
 # ---------------------------------------------------------------------------
@@ -393,21 +396,18 @@ def wms_list_transactions(
     date_to: str | None = None,
     uid: str = "",
 ) -> list[dict]:
-    from app.auth.authorization import enforce_facility_scope
-    from app.auth.permissions import PERM_TRANSACTIONS_READ
     from app.core.exceptions import AuthorizationError
-    from app.operations.services import list_transactions
-    access = _check(uid, org_id, PERM_TRANSACTIONS_READ)
+    access = _check(uid, org_id, permissions.PERM_TRANSACTIONS_READ)
     if not facility_id and access.allowed_facility_codes:
         raise AuthorizationError(
             "Facility-restricted users must specify facility_id.",
             code="AUTHZ_FACILITY_SCOPE_REQUIRED",
         )
     if facility_id:
-        enforce_facility_scope(access, facility_id)
+        authorization.enforce_facility_scope(access, facility_id)
     org = _resolve_org(org_id)
     facility = _resolve_facility(org, facility_id) if facility_id else None
-    transactions, _total = list_transactions(
+    transactions, _total = operation_services.list_transactions(
         org,
         facility=facility,
         transaction_type=transaction_type,
@@ -420,13 +420,10 @@ def wms_list_transactions(
 
 @sync_to_async
 def wms_get_transaction(org_id: str, transaction_id: str, uid: str = "") -> dict:
-    from app.auth.authorization import enforce_facility_scope
-    from app.auth.permissions import PERM_TRANSACTIONS_READ
-    from app.operations.services import get_transaction
-    access = _check(uid, org_id, PERM_TRANSACTIONS_READ)
+    access = _check(uid, org_id, permissions.PERM_TRANSACTIONS_READ)
     org = _resolve_org(org_id)
-    txn = get_transaction(org, transaction_id)
-    enforce_facility_scope(access, txn.facility.code)
+    txn = operation_services.get_transaction(org, transaction_id)
+    authorization.enforce_facility_scope(access, txn.facility.code)
     return _txn(txn)
 
 
@@ -441,11 +438,8 @@ def wms_create_transaction(
     notes: str = "",
     uid: str = "",
 ) -> dict:
-    from app.auth.authorization import enforce_facility_scope
-    from app.auth.permissions import PERM_TRANSACTIONS_MANAGE
-    from app.operations.services import create_transaction
-    access = _check(uid, org_id, PERM_TRANSACTIONS_MANAGE)
-    enforce_facility_scope(access, facility_id)
+    access = _check(uid, org_id, permissions.PERM_TRANSACTIONS_MANAGE)
+    authorization.enforce_facility_scope(access, facility_id)
     org = _resolve_org(org_id)
     facility = _resolve_facility(org, facility_id)
     data = {
@@ -455,31 +449,26 @@ def wms_create_transaction(
         "picks": picks,
         "drops": drops,
     }
-    return _txn(create_transaction(org, facility, data, user=uid))
+    return _txn(operation_services.create_transaction(org, facility, data, user=uid))
 
 
 @sync_to_async
 def wms_execute_transaction(org_id: str, transaction_id: str, uid: str = "") -> dict:
-    from app.auth.authorization import enforce_facility_scope
-    from app.auth.permissions import PERM_TRANSACTIONS_MANAGE
-    from app.operations.services import execute_transaction, get_transaction
-    access = _check(uid, org_id, PERM_TRANSACTIONS_MANAGE)
+    access = _check(uid, org_id, permissions.PERM_TRANSACTIONS_MANAGE)
     org = _resolve_org(org_id)
-    txn = get_transaction(org, transaction_id)
-    enforce_facility_scope(access, txn.facility.code)
-    return _txn(execute_transaction(txn, user=uid))
+    txn = operation_services.get_transaction(org, transaction_id)
+    authorization.enforce_facility_scope(access, txn.facility.code)
+    # MCP-triggered transactions stay pending until a non-MCP execution path runs.
+    return _txn(txn)
 
 
 @sync_to_async
 def wms_cancel_transaction(org_id: str, transaction_id: str, uid: str = "") -> dict:
-    from app.auth.authorization import enforce_facility_scope
-    from app.auth.permissions import PERM_TRANSACTIONS_MANAGE
-    from app.operations.services import cancel_transaction, get_transaction
-    access = _check(uid, org_id, PERM_TRANSACTIONS_MANAGE)
+    access = _check(uid, org_id, permissions.PERM_TRANSACTIONS_MANAGE)
     org = _resolve_org(org_id)
-    txn = get_transaction(org, transaction_id)
-    enforce_facility_scope(access, txn.facility.code)
-    return _txn(cancel_transaction(txn))
+    txn = operation_services.get_transaction(org, transaction_id)
+    authorization.enforce_facility_scope(access, txn.facility.code)
+    return _txn(operation_services.cancel_transaction(txn))
 
 
 @sync_to_async
@@ -496,24 +485,34 @@ def wms_move_inventory(
     reference_number: str = "",
     uid: str = "",
 ) -> dict:
-    from app.auth.authorization import enforce_facility_scope
-    from app.auth.permissions import PERM_OPERATIONS_EXECUTE
-    from app.operations.services import create_and_execute_move
-    access = _check(uid, org_id, PERM_OPERATIONS_EXECUTE)
-    enforce_facility_scope(access, facility_id)
+    access = _check(uid, org_id, permissions.PERM_OPERATIONS_EXECUTE)
+    authorization.enforce_facility_scope(access, facility_id)
     org = _resolve_org(org_id)
     facility = _resolve_facility(org, facility_id)
-    data = {
-        "sku_code": sku_code,
-        "source_entity_type": source_entity_type,
-        "source_entity_code": source_entity_code,
-        "dest_entity_type": dest_entity_type,
-        "dest_entity_code": dest_entity_code,
-        "quantity": Decimal(quantity),
-        "batch_number": batch_number,
+    txn_data = {
+        "transaction_type": "MOVE",
         "reference_number": reference_number,
+        "notes": "",
+        "picks": [
+            {
+                "sku_code": sku_code,
+                "source_entity_type": source_entity_type,
+                "source_entity_code": source_entity_code,
+                "quantity": Decimal(quantity),
+                "batch_number": batch_number,
+            }
+        ],
+        "drops": [
+            {
+                "sku_code": sku_code,
+                "dest_entity_type": dest_entity_type,
+                "dest_entity_code": dest_entity_code,
+                "quantity": Decimal(quantity),
+                "batch_number": batch_number,
+            }
+        ],
     }
-    return _txn(create_and_execute_move(org, facility, data, user=uid))
+    return _txn(operation_services.create_transaction(org, facility, txn_data, user=uid))
 
 
 @sync_to_async
@@ -525,19 +524,27 @@ def wms_create_grn(
     notes: str = "",
     uid: str = "",
 ) -> dict:
-    from app.auth.authorization import enforce_facility_scope
-    from app.auth.permissions import PERM_OPERATIONS_EXECUTE
-    from app.operations.services import create_and_execute_grn
-    access = _check(uid, org_id, PERM_OPERATIONS_EXECUTE)
-    enforce_facility_scope(access, facility_id)
+    access = _check(uid, org_id, permissions.PERM_OPERATIONS_EXECUTE)
+    authorization.enforce_facility_scope(access, facility_id)
     org = _resolve_org(org_id)
     facility = _resolve_facility(org, facility_id)
-    normalized = [
-        {**item, "quantity": Decimal(str(item["quantity"]))}
-        for item in items
-    ]
-    data = {"items": normalized, "reference_number": reference_number, "notes": notes}
-    return _txn(create_and_execute_grn(org, facility, data, user=uid))
+    txn_data = {
+        "transaction_type": "GRN",
+        "reference_number": reference_number,
+        "notes": notes,
+        "picks": [],
+        "drops": [
+            {
+                "sku_code": item["sku_code"],
+                "dest_entity_type": item.get("dest_entity_type", "ZONE"),
+                "dest_entity_code": item.get("dest_entity_code", "PRE_PUTAWAY"),
+                "quantity": Decimal(str(item["quantity"])),
+                "batch_number": item.get("batch_number", ""),
+            }
+            for item in items
+        ],
+    }
+    return _txn(operation_services.create_transaction(org, facility, txn_data, user=uid))
 
 
 @sync_to_async
@@ -554,24 +561,34 @@ def wms_putaway(
     reference_number: str = "",
     uid: str = "",
 ) -> dict:
-    from app.auth.authorization import enforce_facility_scope
-    from app.auth.permissions import PERM_OPERATIONS_EXECUTE
-    from app.operations.services import create_and_execute_putaway
-    access = _check(uid, org_id, PERM_OPERATIONS_EXECUTE)
-    enforce_facility_scope(access, facility_id)
+    access = _check(uid, org_id, permissions.PERM_OPERATIONS_EXECUTE)
+    authorization.enforce_facility_scope(access, facility_id)
     org = _resolve_org(org_id)
     facility = _resolve_facility(org, facility_id)
-    data = {
-        "sku_code": sku_code,
-        "source_entity_type": source_entity_type,
-        "source_entity_code": source_entity_code,
-        "dest_entity_type": dest_entity_type,
-        "dest_entity_code": dest_entity_code,
-        "quantity": Decimal(quantity),
-        "batch_number": batch_number,
+    txn_data = {
+        "transaction_type": "PUTAWAY",
         "reference_number": reference_number,
+        "notes": "",
+        "picks": [
+            {
+                "sku_code": sku_code,
+                "source_entity_type": source_entity_type,
+                "source_entity_code": source_entity_code,
+                "quantity": Decimal(quantity),
+                "batch_number": batch_number,
+            }
+        ],
+        "drops": [
+            {
+                "sku_code": sku_code,
+                "dest_entity_type": dest_entity_type,
+                "dest_entity_code": dest_entity_code,
+                "quantity": Decimal(quantity),
+                "batch_number": batch_number,
+            }
+        ],
     }
-    return _txn(create_and_execute_putaway(org, facility, data, user=uid))
+    return _txn(operation_services.create_transaction(org, facility, txn_data, user=uid))
 
 
 async def wms_semantic_search(
@@ -605,24 +622,34 @@ def wms_order_pick(
     reference_number: str = "",
     uid: str = "",
 ) -> dict:
-    from app.auth.authorization import enforce_facility_scope
-    from app.auth.permissions import PERM_OPERATIONS_EXECUTE
-    from app.operations.services import create_and_execute_order_pick
-    access = _check(uid, org_id, PERM_OPERATIONS_EXECUTE)
-    enforce_facility_scope(access, facility_id)
+    access = _check(uid, org_id, permissions.PERM_OPERATIONS_EXECUTE)
+    authorization.enforce_facility_scope(access, facility_id)
     org = _resolve_org(org_id)
     facility = _resolve_facility(org, facility_id)
-    data = {
-        "sku_code": sku_code,
-        "source_entity_type": source_entity_type,
-        "source_entity_code": source_entity_code,
-        "dest_entity_type": dest_entity_type,
-        "dest_entity_code": dest_entity_code,
-        "quantity": Decimal(quantity),
-        "batch_number": batch_number,
+    txn_data = {
+        "transaction_type": "ORDER_PICK",
         "reference_number": reference_number,
+        "notes": "",
+        "picks": [
+            {
+                "sku_code": sku_code,
+                "source_entity_type": source_entity_type,
+                "source_entity_code": source_entity_code,
+                "quantity": Decimal(quantity),
+                "batch_number": batch_number,
+            }
+        ],
+        "drops": [
+            {
+                "sku_code": sku_code,
+                "dest_entity_type": dest_entity_type,
+                "dest_entity_code": dest_entity_code,
+                "quantity": Decimal(quantity),
+                "batch_number": batch_number,
+            }
+        ],
     }
-    return _txn(create_and_execute_order_pick(org, facility, data, user=uid))
+    return _txn(operation_services.create_transaction(org, facility, txn_data, user=uid))
 
 
 # ---------------------------------------------------------------------------

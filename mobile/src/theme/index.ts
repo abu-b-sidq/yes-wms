@@ -1,37 +1,46 @@
 export const colors = {
   // Core palette
-  primary: '#6C63FF',
-  primaryDark: '#5A52D5',
-  primaryLight: '#8B85FF',
-  secondary: '#FF6584',
-  accent: '#00D9A6',
-  warning: '#FFB800',
+  primary: '#79BF64',
+  primaryDark: '#5F9F4E',
+  primaryLight: '#D4EA72',
+  primaryContrast: '#0F1D11',
+  secondary: '#D4EA72',
+  accent: '#76B0FF',
+  accentViolet: '#BF9BFF',
+  accentAmber: '#F2C162',
+  warning: '#E4B452',
 
   // Backgrounds
-  bg: '#0F0F1A',
-  bgCard: '#1A1A2E',
-  bgCardLight: '#222240',
-  bgSurface: '#16213E',
+  bg: '#081311',
+  bgSoft: '#0D1D19',
+  bgCard: '#112420',
+  bgCardLight: '#1B3831',
+  bgSurface: '#17322C',
+  bgSurfaceMuted: '#1B3831',
+  glass: 'rgba(10, 20, 17, 0.72)',
+  glassSoft: 'rgba(255, 255, 255, 0.04)',
+  overlay: 'rgba(8, 19, 17, 0.78)',
 
   // Text
-  textPrimary: '#FFFFFF',
-  textSecondary: '#A0A0C0',
-  textMuted: '#6C6C8A',
+  textPrimary: '#F3F8F2',
+  textSecondary: '#B4C4BA',
+  textMuted: '#7D9487',
+  textSoft: '#566B61',
 
   // Status
-  success: '#00D9A6',
-  error: '#FF4757',
-  pending: '#FFB800',
-  inProgress: '#6C63FF',
-  completed: '#00D9A6',
+  success: '#65C186',
+  error: '#EF7C74',
+  pending: '#E4B452',
+  inProgress: '#79BF64',
+  completed: '#65C186',
 
   // Gamification
-  xpGold: '#FFD700',
-  streakFire: '#FF6B35',
+  xpGold: '#F2C162',
+  streakFire: '#EF7C74',
   levelRookie: '#A0A0C0',
-  levelPro: '#6C63FF',
-  levelExpert: '#FF6584',
-  levelMaster: '#FFD700',
+  levelPro: '#79BF64',
+  levelExpert: '#BF9BFF',
+  levelMaster: '#D4EA72',
 };
 
 export const spacing = {
@@ -44,21 +53,38 @@ export const spacing = {
 };
 
 export const borderRadius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm: 10,
+  md: 14,
+  lg: 18,
+  xl: 28,
   full: 999,
 };
 
 export const typography = {
-  h1: { fontSize: 32, fontWeight: '800' as const },
-  h2: { fontSize: 24, fontWeight: '700' as const },
+  h1: { fontSize: 34, fontWeight: '800' as const },
+  h2: { fontSize: 26, fontWeight: '700' as const },
   h3: { fontSize: 20, fontWeight: '600' as const },
   body: { fontSize: 16, fontWeight: '400' as const },
   bodyBold: { fontSize: 16, fontWeight: '600' as const },
   caption: { fontSize: 14, fontWeight: '400' as const },
   small: { fontSize: 12, fontWeight: '400' as const },
+};
+
+export const shadows = {
+  card: {
+    shadowColor: '#020B08',
+    shadowOpacity: 0.24,
+    shadowOffset: { width: 0, height: 14 },
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  soft: {
+    shadowColor: '#030D0A',
+    shadowOpacity: 0.16,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 4,
+  },
 };
 
 export const getLevelColor = (level: string) => {

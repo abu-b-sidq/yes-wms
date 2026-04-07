@@ -13,27 +13,43 @@ import { DropTaskScreen } from '../screens/DropTaskScreen';
 import { MyTasksScreen } from '../screens/MyTasksScreen';
 import { LeaderboardScreen } from '../screens/LeaderboardScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import { colors, typography } from '../theme';
+import { colors, typography, borderRadius, shadows } from '../theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const tabScreenOptions = {
-  headerStyle: { backgroundColor: colors.bgCard },
+  headerStyle: { backgroundColor: colors.bgSurface },
   headerTintColor: colors.textPrimary,
+  headerTitleStyle: {
+    ...typography.bodyBold,
+  },
+  headerShadowVisible: false,
   tabBarStyle: {
-    backgroundColor: colors.bgCard,
+    position: 'absolute' as const,
+    left: 16,
+    right: 16,
+    bottom: 18,
+    height: 78,
+    paddingBottom: 14,
+    paddingTop: 10,
+    backgroundColor: colors.bgSurface,
     borderTopColor: colors.bgCardLight,
+    borderColor: colors.bgCardLight,
     borderTopWidth: 1,
-    height: 85,
-    paddingBottom: 20,
-    paddingTop: 8,
+    borderWidth: 1,
+    borderRadius: borderRadius.xl,
+    ...shadows.card,
   },
   tabBarActiveTintColor: colors.primary,
   tabBarInactiveTintColor: colors.textMuted,
   tabBarLabelStyle: {
     ...typography.small,
     marginTop: 2,
+    fontWeight: '700' as const,
+  },
+  tabBarItemStyle: {
+    paddingTop: 4,
   },
 };
 
@@ -45,8 +61,8 @@ function MainTabs() {
         component={DashboardScreen}
         options={{
           headerShown: false,
-          tabBarIcon: ({ color }) => (
-            <TabIcon emoji="🏠" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon emoji="🏠" color={color} focused={focused} />
           ),
         }}
       />
@@ -56,8 +72,8 @@ function MainTabs() {
         options={{
           title: 'Available',
           headerTitle: 'Available Tasks',
-          tabBarIcon: ({ color }) => (
-            <TabIcon emoji="📋" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon emoji="📋" color={color} focused={focused} />
           ),
         }}
       />
@@ -67,8 +83,8 @@ function MainTabs() {
         options={{
           title: 'My Tasks',
           headerTitle: 'My Tasks',
-          tabBarIcon: ({ color }) => (
-            <TabIcon emoji="📦" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon emoji="📦" color={color} focused={focused} />
           ),
         }}
       />
@@ -78,8 +94,8 @@ function MainTabs() {
         options={{
           title: 'Ranks',
           headerTitle: 'Leaderboard',
-          tabBarIcon: ({ color }) => (
-            <TabIcon emoji="🏆" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon emoji="🏆" color={color} focused={focused} />
           ),
         }}
       />
@@ -88,8 +104,8 @@ function MainTabs() {
         component={ProfileScreen}
         options={{
           headerShown: false,
-          tabBarIcon: ({ color }) => (
-            <TabIcon emoji="👤" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon emoji="👤" color={color} focused={focused} />
           ),
         }}
       />
@@ -97,10 +113,25 @@ function MainTabs() {
   );
 }
 
-function TabIcon({ emoji, color }: { emoji: string; color: string }) {
+function TabIcon({
+  emoji,
+  color,
+  focused,
+}: {
+  emoji: string;
+  color: string;
+  focused: boolean;
+}) {
   return (
-    <View style={{ opacity: color === colors.primary ? 1 : 0.5 }}>
-      <Text style={{ fontSize: 22 }}>{emoji}</Text>
+    <View
+      style={[
+        tabIconStyles.container,
+        focused && tabIconStyles.containerFocused,
+      ]}
+    >
+      <Text style={[tabIconStyles.emoji, { opacity: focused ? 1 : 0.58 }]}>
+        {emoji}
+      </Text>
     </View>
   );
 }
@@ -123,7 +154,7 @@ export function AppNavigator() {
         colors: {
           primary: colors.primary,
           background: colors.bg,
-          card: colors.bgCard,
+          card: colors.bgSurface,
           text: colors.textPrimary,
           border: colors.bgCardLight,
           notification: colors.secondary,
@@ -138,9 +169,15 @@ export function AppNavigator() {
     >
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: colors.bgCard },
+          headerStyle: { backgroundColor: colors.bgSurface },
           headerTintColor: colors.textPrimary,
-          headerBackTitleVisible: false,
+          headerTitleStyle: {
+            ...typography.bodyBold,
+          },
+          headerShadowVisible: false,
+          contentStyle: {
+            backgroundColor: colors.bg,
+          },
         }}
       >
         {!user ? (
@@ -185,5 +222,23 @@ const loadingStyles = StyleSheet.create({
     backgroundColor: colors.bg,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+});
+
+const tabIconStyles = StyleSheet.create({
+  container: {
+    width: 42,
+    height: 32,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  containerFocused: {
+    backgroundColor: colors.primary + '20',
+    borderWidth: 1,
+    borderColor: colors.primary + '2E',
+  },
+  emoji: {
+    fontSize: 20,
   },
 });
