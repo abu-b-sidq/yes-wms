@@ -16,6 +16,7 @@ type PageScene =
   | 'putaway'
   | 'order-pick'
   | 'inventory'
+  | 'warehouse-view'
   | 'connectors'
   | 'connector-logs';
 
@@ -230,6 +231,10 @@ export class ShellComponent {
     }
     if (url.startsWith('/masters/location')) {
       this.pageScene.set('location');
+      return;
+    }
+    if (url.startsWith('/inventory/warehouse-view')) {
+      this.pageScene.set('warehouse-view');
       return;
     }
     if (url.startsWith('/inventory')) {

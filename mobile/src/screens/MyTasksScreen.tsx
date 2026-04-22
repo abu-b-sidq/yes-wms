@@ -79,6 +79,13 @@ export function MyTasksScreen() {
               quantity={drop.quantity}
               status={drop.task_status}
               referenceNumber={drop.reference_number}
+              helperText={
+                drop.paired_pick_id
+                  ? drop.paired_pick_status === 'COMPLETED'
+                    ? 'Linked pick complete'
+                    : 'Waiting on linked pick'
+                  : undefined
+              }
               onPress={() => navigation.navigate('DropTask', { drop })}
               actionLabel={
                 drop.task_status === 'ASSIGNED' ? 'Start' : 'Continue'

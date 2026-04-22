@@ -38,6 +38,7 @@ export interface DropTask {
   task_completed_at: string | null;
   points_awarded: number;
   paired_pick_id: string | null;
+  paired_pick_status: string | null;
   created_at: string;
 }
 

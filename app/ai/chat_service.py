@@ -501,48 +501,42 @@ async def _prefetch_semantic_context(
     user_message: str,
     uid: str,
     org_id: str,
-) -> list[dict] | None:
-    """Fetch semantic context before the first model call for a user message."""
+) -> dict | None:
+    """Fetch graph context before the first model call for a user message."""
     query = user_message.strip()
     if not query:
         return None
 
-    from app.mcp.tools import wms_semantic_search
+    from app.ai.graph_retrieval import get_graph_retrieval
 
     try:
-        results = await wms_semantic_search(
-            org_id=org_id,
-            query=query,
-            content_types=list(PREFETCH_RAG_CONTENT_TYPES),
-            limit=PREFETCH_RAG_LIMIT,
-            uid=uid,
-        )
-        logger.info("Prefetched semantic context for org=%s hits=%d", org_id, len(results))
-        return results
+        retrieval = get_graph_retrieval()
+        result = retrieval.graph_search(org_id=org_id, query=query, max_results=50)
+        if result["success"]:
+            logger.info("Prefetched graph context for org=%s", org_id)
+            return result
+        else:
+            logger.warning("Graph context prefetch returned no results for org=%s: %s", org_id, result.get("error"))
+            return None
     except Exception:
-        logger.exception("Pre-LLM semantic prefetch failed for org=%s", org_id)
+        logger.exception("Pre-LLM graph prefetch failed for org=%s", org_id)
         return None
 
 
-def _build_prefetched_context_prompt(results: list[dict]) -> str:
+def _build_prefetched_context_prompt(result: dict) -> str:
     intro = (
-        "Semantic context has already been prefetched for the current user message "
-        "before this first model call. Treat it as supplemental context. Use live "
-        "WMS tools for authoritative current-state answers and call "
-        "`wms_semantic_search` again only if you need narrower or follow-up retrieval."
+        "Graph-based context has been prefetched for the current user message "
+        "before this first model call. This context includes entities and their relationships "
+        "from the knowledge graph. Use live WMS tools for authoritative current-state answers "
+        "and call `wms_graph_search` again only if you need additional details or follow-up queries."
     )
 
-    if not results:
-        return f"{intro}\n\nPrefetched semantic context result: no relevant matches were found."
+    if not result or not result.get("success"):
+        return f"{intro}\n\nPrefetched graph context result: no relevant matches were found."
 
-    lines = [intro, "", "Prefetched semantic matches:"]
-    for idx, item in enumerate(results, start=1):
-        text = _truncate_text(str(item.get("text", "")), MAX_PREFETCH_TEXT_CHARS)
-        lines.append(
-            f"{idx}. type={item.get('type', 'unknown')} "
-            f"id={item.get('id', '')} score={item.get('score', '')}"
-        )
-        lines.append(f"   text={text}")
+    context = result.get("context", "No context available.")
+    lines = [intro, "", "Prefetched graph context:"]
+    lines.append(context)
     return "\n".join(lines)
 
 

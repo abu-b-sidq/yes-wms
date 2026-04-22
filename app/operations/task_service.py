@@ -53,7 +53,12 @@ def list_available_tasks(
         .filter(
             Q(locked_by__isnull=True) | Q(lock_expires_at__lt=now)
         )
+        .filter(
+            Q(transaction__picks__isnull=True, paired_pick__isnull=True)
+            | Q(paired_pick__task_status=TaskStatus.COMPLETED)
+        )
         .select_related("sku", "transaction", "transaction__facility", "paired_pick")
+        .distinct()
         .order_by("transaction__created_at")[:50]
     )
     return {"picks": available_picks, "drops": available_drops}
@@ -135,6 +140,8 @@ def claim_drop(
 
         if drop.task_status not in (TaskStatus.PENDING, TaskStatus.ASSIGNED):
             raise ValidationError(f"Cannot claim task in status '{drop.task_status}'.")
+
+        _validate_drop_dependency(drop, action_phrase="claiming")
 
         drop.task_status = TaskStatus.ASSIGNED
         drop.assigned_to = user
@@ -253,6 +260,7 @@ def start_drop(org: Organization, drop_id: str, user: AppUser) -> Drop:
         try:
             drop = (
                 Drop.objects.select_for_update()
+                .select_related("transaction")
                 .get(pk=drop_id, org=org)
             )
         except Drop.DoesNotExist:
@@ -260,6 +268,8 @@ def start_drop(org: Organization, drop_id: str, user: AppUser) -> Drop:
 
         if drop.assigned_to != user:
             raise TaskNotAssignedError("This task is not assigned to you.")
+
+        _validate_drop_dependency(drop, action_phrase="starting")
 
         transition_task(drop, TaskStatus.IN_PROGRESS)
         now = timezone.now()
@@ -287,6 +297,8 @@ def complete_drop(org: Organization, drop_id: str, user: AppUser) -> tuple[Drop,
 
         if drop.assigned_to != user:
             raise TaskNotAssignedError("This task is not assigned to you.")
+
+        _validate_drop_dependency(drop, action_phrase="completing")
 
         if drop.task_status != TaskStatus.IN_PROGRESS:
             raise ValidationError("Drop must be in progress to complete.")
@@ -516,3 +528,15 @@ def _get_level(total_points: int) -> str:
     elif total_points >= 500:
         return "PRO"
     return "ROOKIE"
+
+
+def _validate_drop_dependency(drop: Drop, *, action_phrase: str) -> None:
+    if drop.paired_pick_id:
+        if drop.paired_pick and drop.paired_pick.task_status != TaskStatus.COMPLETED:
+            raise ValidationError(f"Complete the linked pick before {action_phrase} this drop.")
+        return
+
+    if drop.transaction.picks.exists():
+        raise ValidationError(
+            "This drop is missing its linked pick. Recreate the transaction with matching pick/drop lines."
+        )

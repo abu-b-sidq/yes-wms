@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { DropTask, PickTask } from '../api/tasks';
 import { useTasks } from '../hooks/useTasks';
 import { AmbientBackdrop } from '../components/AmbientBackdrop';
 import { AnimatedCounter } from '../components/AnimatedCounter';
@@ -21,12 +22,13 @@ export function PickTaskScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { startPick, completePick } = useTasks();
+  const initialPick = route.params?.pick as PickTask | undefined;
+  const [pick, setPick] = useState<PickTask | null>(initialPick ?? null);
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [pointsEarned, setPointsEarned] = useState(0);
-  const [assignedDrop, setAssignedDrop] = useState<any>(null);
+  const [assignedDrop, setAssignedDrop] = useState<DropTask | null>(null);
 
-  const pick = route.params?.pick;
   if (!pick) return null;
 
   const isAssigned = pick.task_status === 'ASSIGNED';
@@ -35,9 +37,9 @@ export function PickTaskScreen() {
   const handleStart = async () => {
     setLoading(true);
     try {
-      await startPick(pick.id);
+      const updatedPick = await startPick(pick.id);
       await triggerLightImpact();
-      pick.task_status = 'IN_PROGRESS';
+      setPick(updatedPick);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     } finally {

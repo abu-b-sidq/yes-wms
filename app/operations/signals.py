@@ -28,3 +28,22 @@ def embed_transaction(sender, instance, **kwargs):
         upsert_embedding_sync("transaction", object_id, org_id, text)
 
     threading.Thread(target=_run, daemon=True).start()
+
+
+@receiver(post_save, sender=Transaction)
+def create_transaction_graph_node(sender, instance, **kwargs):
+    """Asynchronously create Transaction node in knowledge graph."""
+    def _run():
+        from app.ai.graph_service import GraphService
+        service = GraphService.get_instance()
+        service.create_transaction_node(
+            org_id=str(instance.org_id),
+            transaction_id=str(instance.id),
+            facility_code=instance.facility.code if instance.facility else "",
+            transaction_type=instance.transaction_type,
+            status=instance.status,
+            reference_number=instance.reference_number,
+            notes=instance.notes,
+        )
+
+    threading.Thread(target=_run, daemon=True).start()

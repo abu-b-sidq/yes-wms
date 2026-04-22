@@ -11,12 +11,16 @@ def validate_transaction_shape(transaction_type: str, picks: list, drops: list) 
             raise ValidationError("MOVE transaction requires at least 1 pick.")
         if len(drops) < 1:
             raise ValidationError("MOVE transaction requires at least 1 drop.")
+        if len(picks) != len(drops):
+            raise ValidationError("MOVE transaction requires matching pick and drop counts.")
 
     elif transaction_type == TransactionType.ORDER_PICK:
         if len(picks) < 1:
             raise ValidationError("ORDER_PICK transaction requires at least 1 pick.")
         if len(drops) < 1:
             raise ValidationError("ORDER_PICK transaction requires at least 1 drop.")
+        if len(picks) != len(drops):
+            raise ValidationError("ORDER_PICK transaction requires matching pick and drop counts.")
 
     elif transaction_type == TransactionType.GRN:
         if len(drops) < 1:
@@ -27,6 +31,8 @@ def validate_transaction_shape(transaction_type: str, picks: list, drops: list) 
             raise ValidationError("PUTAWAY transaction requires at least 1 pick.")
         if len(drops) < 1:
             raise ValidationError("PUTAWAY transaction requires at least 1 drop.")
+        if len(picks) != len(drops):
+            raise ValidationError("PUTAWAY transaction requires matching pick and drop counts.")
 
 
 def validate_pick_data(pick_data: dict) -> None:

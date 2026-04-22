@@ -452,6 +452,7 @@ def _drop_task_out(drop) -> schemas.DropTaskOut:
         task_completed_at=drop.task_completed_at,
         points_awarded=drop.points_awarded,
         paired_pick_id=str(drop.paired_pick_id) if drop.paired_pick_id else None,
+        paired_pick_status=drop.paired_pick.task_status if drop.paired_pick_id else None,
         created_at=drop.created_at,
     )
 

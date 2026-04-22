@@ -196,6 +196,7 @@ export class SidebarComponent {
     {
       label: 'Inventory',
       items: [
+        { label: 'Warehouse View', icon: 'warehouse', route: '/inventory/warehouse-view' },
         { label: 'Stock Balances', icon: 'inventory', route: '/inventory' }
       ]
     }

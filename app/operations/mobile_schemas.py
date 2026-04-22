@@ -80,6 +80,7 @@ class DropTaskOut(Schema):
     task_completed_at: datetime | None = None
     points_awarded: int = 0
     paired_pick_id: str | None = None
+    paired_pick_status: str | None = None
     created_at: datetime
 
 

@@ -12,6 +12,7 @@ interface TaskCardProps {
   batchNumber?: string;
   referenceNumber?: string;
   pointsAwarded?: number;
+  helperText?: string;
   onPress?: () => void;
   actionLabel?: string;
   onAction?: () => void;
@@ -27,6 +28,7 @@ export function TaskCard({
   batchNumber,
   referenceNumber,
   pointsAwarded,
+  helperText,
   onPress,
   actionLabel,
   onAction,
@@ -71,6 +73,10 @@ export function TaskCard({
 
       {referenceNumber ? (
         <Text style={styles.refText}>Ref: {referenceNumber}</Text>
+      ) : null}
+
+      {helperText ? (
+        <Text style={styles.helperText}>{helperText}</Text>
       ) : null}
 
       {pointsAwarded ? (
@@ -167,6 +173,11 @@ const styles = StyleSheet.create({
     ...typography.small,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  helperText: {
+    ...typography.small,
+    color: colors.secondary,
+    marginTop: spacing.sm,
   },
   pointsRow: {
     marginTop: spacing.sm,

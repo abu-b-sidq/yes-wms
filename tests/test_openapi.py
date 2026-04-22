@@ -36,6 +36,14 @@ def test_openapi_includes_dual_auth_security(client):
     assert {"warehouse", "X-Org-Id", "X-Facility-Id", "Authorization", "X-API-Key"} <= set(balance_header_params)
     assert balance_header_params["X-Facility-Id"]["required"] is False
 
+    virtual_warehouse_get = _path(schema, "/operations/virtual-warehouse", "/api/v1/operations/virtual-warehouse")["get"]
+    assert virtual_warehouse_get["security"] == [{"bearerAuth": []}, {"apiKeyAuth": []}]
+    virtual_warehouse_header_params = {
+        item["name"]: item for item in virtual_warehouse_get["parameters"] if item["in"] == "header"
+    }
+    assert {"warehouse", "X-Org-Id", "X-Facility-Id", "Authorization", "X-API-Key"} <= set(virtual_warehouse_header_params)
+    assert virtual_warehouse_header_params["X-Facility-Id"]["required"] is True
+
     organizations_post = _path(schema, "/masters/organizations", "/api/v1/masters/organizations")["post"]
     org_header_params = {item["name"] for item in organizations_post["parameters"] if item["in"] == "header"}
     assert {"warehouse", "Authorization", "X-API-Key"} <= org_header_params
@@ -49,7 +57,7 @@ def test_openapi_includes_dual_auth_security(client):
     assert me_header_params["X-Org-Id"]["required"] is False
     assert me_header_params["X-Facility-Id"]["required"] is False
 
-    allowed_roots = {"health", "masters", "operations", "inventory", "mobile"}
+    allowed_roots = {"ai", "connectors", "health", "masters", "operations", "inventory", "mobile"}
     actual_roots = {_root(path) for path in schema["paths"]}
     assert actual_roots <= allowed_roots
 

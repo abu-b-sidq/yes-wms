@@ -5,7 +5,7 @@ import {
   Transaction, TransactionListItem,
   GrnPayload, MovePayload, PutawayPayload, OrderPickPayload,
   TransactionCreatePayload,
-  InventoryBalance, TransactionType, TransactionStatus
+  InventoryBalance, TransactionType, TransactionStatus, VirtualWarehouseResponse
 } from '../models/operations.model';
 
 interface PaginatedResponse<T> {
@@ -156,5 +156,9 @@ export class OperationsService extends ApiService {
 
   getBalancesBySku(skuCode: string): Observable<InventoryBalance[]> {
     return this.get<InventoryBalance[]>(`/inventory/balances/by-sku/${skuCode}`);
+  }
+
+  getVirtualWarehouse(): Observable<VirtualWarehouseResponse> {
+    return this.get<VirtualWarehouseResponse>('/operations/virtual-warehouse');
   }
 }

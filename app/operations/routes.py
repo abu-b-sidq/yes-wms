@@ -4,6 +4,7 @@ from ninja import Router
 
 from app.auth.authorization import authorize_request, enforce_facility_scope
 from app.auth.permissions import (
+    PERM_INVENTORY_READ,
     PERM_OPERATIONS_EXECUTE,
     PERM_TRANSACTIONS_MANAGE,
     PERM_TRANSACTIONS_READ,
@@ -109,6 +110,180 @@ _TXN_LIST_SCHEMA = {
         "total": {"type": "integer"},
         "page": {"type": "integer"},
         "size": {"type": "integer"},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_AREA_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "key": {"type": "string"},
+        "label": {"type": "string"},
+        "kind": {"type": "string"},
+        "x": {"type": "integer"},
+        "y": {"type": "integer"},
+        "w": {"type": "integer"},
+        "h": {"type": "integer"},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_ZONE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "kind": {"type": "string"},
+        "label": {"type": "string"},
+        "x": {"type": "integer"},
+        "y": {"type": "integer"},
+        "w": {"type": "integer"},
+        "h": {"type": "integer"},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_STOCK_ITEM_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "sku_code": {"type": "string"},
+        "sku_name": {"type": "string"},
+        "batch_number": {"type": "string"},
+        "quantity_on_hand": {"type": "string", "format": "decimal"},
+        "quantity_available": {"type": "string", "format": "decimal"},
+        "quantity_reserved": {"type": "string", "format": "decimal"},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_TASK_SUMMARY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "string", "format": "uuid"},
+        "task_type": {"type": "string"},
+        "task_status": {"type": "string"},
+        "transaction_id": {"type": "string", "format": "uuid"},
+        "transaction_type": {"type": "string"},
+        "reference_number": {"type": "string"},
+        "sku_code": {"type": "string"},
+        "sku_name": {"type": "string"},
+        "quantity": {"type": "string", "format": "decimal"},
+        "counterpart_entity_code": {"type": "string", "nullable": True},
+        "assigned_to_name": {"type": "string", "nullable": True},
+        "picked_by_name": {"type": "string", "nullable": True},
+        "task_started_at": {"type": "string", "format": "date-time", "nullable": True},
+        "task_completed_at": {"type": "string", "format": "date-time", "nullable": True},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_LOCATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "zone_code": {"type": "string"},
+        "kind": {"type": "string"},
+        "x": {"type": "integer"},
+        "y": {"type": "integer"},
+        "w": {"type": "integer"},
+        "h": {"type": "integer"},
+        "rotation": {"type": "integer"},
+        "quantity_on_hand": {"type": "string", "format": "decimal"},
+        "quantity_available": {"type": "string", "format": "decimal"},
+        "quantity_reserved": {"type": "string", "format": "decimal"},
+        "stock_items": {"type": "array", "items": _VIRTUAL_WAREHOUSE_STOCK_ITEM_SCHEMA},
+        "active_tasks": {"type": "array", "items": _VIRTUAL_WAREHOUSE_TASK_SUMMARY_SCHEMA},
+        "worker_ids": {"type": "array", "items": {"type": "string"}},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_WORKER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "string"},
+        "user_id": {"type": "string"},
+        "display_name": {"type": "string"},
+        "state": {"type": "string"},
+        "x": {"type": "integer"},
+        "y": {"type": "integer"},
+        "task_id": {"type": "string", "format": "uuid"},
+        "task_type": {"type": "string"},
+        "task_status": {"type": "string"},
+        "sku_code": {"type": "string"},
+        "sku_name": {"type": "string"},
+        "quantity": {"type": "string", "format": "decimal"},
+        "source_entity_type": {"type": "string", "nullable": True},
+        "source_entity_code": {"type": "string", "nullable": True},
+        "dest_entity_type": {"type": "string", "nullable": True},
+        "dest_entity_code": {"type": "string", "nullable": True},
+        "assigned_at": {"type": "string", "format": "date-time", "nullable": True},
+        "task_started_at": {"type": "string", "format": "date-time", "nullable": True},
+        "task_completed_at": {"type": "string", "format": "date-time", "nullable": True},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_TASK_LINK_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "id": {"type": "string", "format": "uuid"},
+        "state": {"type": "string"},
+        "worker_id": {"type": "string"},
+        "worker_name": {"type": "string"},
+        "sku_code": {"type": "string"},
+        "quantity": {"type": "string", "format": "decimal"},
+        "source_entity_type": {"type": "string"},
+        "source_entity_code": {"type": "string"},
+        "dest_entity_type": {"type": "string"},
+        "dest_entity_code": {"type": "string"},
+        "source_x": {"type": "integer"},
+        "source_y": {"type": "integer"},
+        "dest_x": {"type": "integer"},
+        "dest_y": {"type": "integer"},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_SUMMARY_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "location_quantity": {"type": "string", "format": "decimal"},
+        "user_quantity": {"type": "string", "format": "decimal"},
+        "workers_active": {"type": "integer"},
+        "workers_carrying": {"type": "integer"},
+        "locations_with_stock": {"type": "integer"},
+        "unplaced_location_count": {"type": "integer"},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_UNPLACED_LOCATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "zone_code": {"type": "string"},
+    },
+}
+
+_VIRTUAL_WAREHOUSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "facility": {
+            "type": "object",
+            "properties": {
+                "code": {"type": "string"},
+                "name": {"type": "string"},
+                "warehouse_key": {"type": "string"},
+            },
+        },
+        "scene": {
+            "type": "object",
+            "properties": {
+                "width": {"type": "integer"},
+                "height": {"type": "integer"},
+                "areas": {"type": "array", "items": _VIRTUAL_WAREHOUSE_AREA_SCHEMA},
+            },
+        },
+        "zones": {"type": "array", "items": _VIRTUAL_WAREHOUSE_ZONE_SCHEMA},
+        "locations": {"type": "array", "items": _VIRTUAL_WAREHOUSE_LOCATION_SCHEMA},
+        "workers": {"type": "array", "items": _VIRTUAL_WAREHOUSE_WORKER_SCHEMA},
+        "task_links": {"type": "array", "items": _VIRTUAL_WAREHOUSE_TASK_LINK_SCHEMA},
+        "summary": _VIRTUAL_WAREHOUSE_SUMMARY_SCHEMA,
+        "unplaced_locations": {"type": "array", "items": _VIRTUAL_WAREHOUSE_UNPLACED_LOCATION_SCHEMA},
     },
 }
 
@@ -334,6 +509,28 @@ def order_pick(request, payload: schemas.OrderPickIn):
     return success_response(request, data=_txn_out(txn))
 
 
+@router.get(
+    "/virtual-warehouse",
+    summary="Virtual warehouse scene",
+    description=(
+        "Return a facility-scoped virtual warehouse scene that combines configured layout metadata, "
+        "live inventory by location, and worker/task overlays."
+    ),
+    openapi_extra=ORG_WITH_REQUIRED_FACILITY,
+)
+def virtual_warehouse(request):
+    authorize_request(
+        request,
+        PERM_INVENTORY_READ,
+        require_membership=True,
+    )
+    org, facility = resolve_request_tenant(request, require_facility=True)
+    return success_response(
+        request,
+        data=schemas.VirtualWarehouseOut(**services.get_virtual_warehouse(org, facility)).dict(),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Register response schemas (used by inject_security_schemes for Swagger docs)
 # ---------------------------------------------------------------------------
@@ -347,6 +544,7 @@ register_response_schema("app_operations_routes_move", _TXN_SCHEMA)
 register_response_schema("app_operations_routes_grn", _TXN_SCHEMA)
 register_response_schema("app_operations_routes_putaway", _TXN_SCHEMA)
 register_response_schema("app_operations_routes_order_pick", _TXN_SCHEMA)
+register_response_schema("app_operations_routes_virtual_warehouse", _VIRTUAL_WAREHOUSE_SCHEMA)
 
 
 # ---------------------------------------------------------------------------

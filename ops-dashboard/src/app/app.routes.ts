@@ -73,6 +73,11 @@ export const routes: Routes = [
 
       // Inventory
       {
+        path: 'inventory/warehouse-view',
+        loadComponent: () => import('./pages/inventory/warehouse-view/warehouse-view.component').then(m => m.WarehouseViewComponent),
+        data: { title: 'Warehouse View' }
+      },
+      {
         path: 'inventory',
         loadComponent: () => import('./pages/inventory/inventory.component').then(m => m.InventoryComponent),
         data: { title: 'Inventory' }

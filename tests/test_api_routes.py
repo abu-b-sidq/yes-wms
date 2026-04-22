@@ -2,7 +2,10 @@ from decimal import Decimal
 from uuid import UUID
 
 import pytest
+from app.core.enums import EntityType
 
+from app.inventory.models import InventoryBalance
+from app.masters.models import FacilityLocation, FacilityZone
 
 pytestmark = pytest.mark.django_db
 
@@ -144,3 +147,47 @@ def test_transactions_list_allows_optional_facility_filter(client, org, facility
 
     assert list_response.status_code == 200
     assert len(list_response.json()["data"]) >= 1
+
+
+def test_virtual_warehouse_endpoint_is_facility_scoped(client, org, facility, facility2, zone, location, location2, sku, api_headers):
+    FacilityZone.objects.filter(facility=facility, zone=zone).update(
+        overrides={"virtual_warehouse": {"kind": "storage", "x": 120, "y": 120, "w": 520, "h": 240}},
+    )
+    FacilityLocation.objects.filter(facility=facility, location=location).update(
+        overrides={"virtual_warehouse": {"kind": "rack", "x": 200, "y": 240}},
+    )
+    FacilityLocation.objects.filter(facility=facility, location=location2).update(
+        overrides={"virtual_warehouse": {"kind": "rack", "x": 320, "y": 320}},
+    )
+    InventoryBalance.objects.create(
+        org=org,
+        facility=facility,
+        sku=sku,
+        entity_type=EntityType.LOCATION,
+        entity_code=location.code,
+        batch_number="",
+        quantity_on_hand=Decimal("7.0000"),
+        quantity_available=Decimal("7.0000"),
+        quantity_reserved=Decimal("0"),
+    )
+    InventoryBalance.objects.create(
+        org=org,
+        facility=facility2,
+        sku=sku,
+        entity_type=EntityType.LOCATION,
+        entity_code=location.code,
+        batch_number="",
+        quantity_on_hand=Decimal("99.0000"),
+        quantity_available=Decimal("99.0000"),
+        quantity_reserved=Decimal("0"),
+    )
+
+    response = client.get(
+        "/api/v1/operations/virtual-warehouse",
+        **api_headers(org_id=org.id, facility_id=facility.code),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["facility"]["code"] == facility.code
+    assert Decimal(body["data"]["summary"]["location_quantity"]) == Decimal("7.0000")

@@ -71,6 +71,16 @@ export function AvailableTasksScreen() {
     }
   };
 
+  const getDropHelperText = (task: DropTask) => {
+    if (!task.paired_pick_id) {
+      return undefined;
+    }
+    if (task.paired_pick_status === 'COMPLETED') {
+      return 'Linked pick is complete. This drop is ready.';
+    }
+    return 'Waiting for the linked pick to be completed.';
+  };
+
   const sections: AvailableTaskSection[] = [
     ...(availablePicks.length > 0
       ? [{ title: 'Available Picks', data: availablePicks.map((pick) => ({ type: 'pick' as const, item: pick })) }]
@@ -110,6 +120,8 @@ export function AvailableTasksScreen() {
           }
 
           const drop = item.item;
+          const canClaimDrop =
+            !drop.paired_pick_id || drop.paired_pick_status === 'COMPLETED';
           return (
             <TaskCard
               type="drop"
@@ -120,8 +132,9 @@ export function AvailableTasksScreen() {
               status={drop.task_status}
               batchNumber={drop.batch_number}
               referenceNumber={drop.reference_number}
-              actionLabel="Claim Task"
-              onAction={() => handleClaimDrop(drop)}
+              helperText={getDropHelperText(drop)}
+              actionLabel={canClaimDrop ? 'Claim Task' : undefined}
+              onAction={canClaimDrop ? () => handleClaimDrop(drop) : undefined}
             />
           );
         }}

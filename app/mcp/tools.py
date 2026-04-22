@@ -591,21 +591,25 @@ def wms_putaway(
     return _txn(operation_services.create_transaction(org, facility, txn_data, user=uid))
 
 
-async def wms_semantic_search(
+async def wms_graph_search(
     org_id: str,
     query: str,
-    content_types: list[str] | None = None,
-    limit: int = 5,
     uid: str = "",
-) -> list[dict]:
-    """Semantic similarity search over embedded WMS data."""
+) -> dict:
+    """Graph-based retrieval using Neo4j knowledge graph.
+
+    Returns structured context about SKUs, transactions, locations, and related procedures
+    by traversing entity relationships in the graph.
+    """
     from app.auth.permissions import PERM_INVENTORY_READ
-    from app.ai.embeddings import embed_text, semantic_search
+    from app.ai.graph_retrieval import get_graph_retrieval
+
     await sync_to_async(_check)(uid, org_id, PERM_INVENTORY_READ)
-    types = content_types or ["transaction", "sku", "message", "knowledge"]
-    vector = await embed_text(query)
-    results = await sync_to_async(semantic_search)(vector, org_id, types, min(limit, 10))
-    return results
+
+    retrieval = get_graph_retrieval()
+    result = retrieval.graph_search(org_id=org_id, query=query, max_results=50)
+
+    return result
 
 
 @sync_to_async

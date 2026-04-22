@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { DropTask } from '../api/tasks';
 import { useTasks } from '../hooks/useTasks';
 import { AmbientBackdrop } from '../components/AmbientBackdrop';
 import { AnimatedCounter } from '../components/AnimatedCounter';
@@ -21,23 +22,31 @@ export function DropTaskScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { startDrop, completeDrop } = useTasks();
+  const initialDrop = route.params?.drop as DropTask | undefined;
+  const [drop, setDrop] = useState<DropTask | null>(initialDrop ?? null);
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [pointsEarned, setPointsEarned] = useState(0);
   const [txnCompleted, setTxnCompleted] = useState(false);
 
-  const drop = route.params?.drop;
   if (!drop) return null;
 
   const isAssigned = drop.task_status === 'ASSIGNED';
   const isInProgress = drop.task_status === 'IN_PROGRESS';
+  const isLinkedDrop = Boolean(drop.paired_pick_id);
+  const isLinkedPickComplete =
+    !drop.paired_pick_id || drop.paired_pick_status === 'COMPLETED';
 
   const handleStart = async () => {
+    if (!isLinkedPickComplete) {
+      Alert.alert('Pick Required', 'Complete the linked pick before starting this drop.');
+      return;
+    }
     setLoading(true);
     try {
-      await startDrop(drop.id);
+      const updatedDrop = await startDrop(drop.id);
       await triggerLightImpact();
-      drop.task_status = 'IN_PROGRESS';
+      setDrop(updatedDrop);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     } finally {
@@ -46,10 +55,15 @@ export function DropTaskScreen() {
   };
 
   const handleComplete = async () => {
+    if (!isLinkedPickComplete) {
+      Alert.alert('Pick Required', 'Complete the linked pick before completing this drop.');
+      return;
+    }
     setLoading(true);
     try {
       const result = await completeDrop(drop.id);
       await triggerSuccessNotification();
+      setDrop(result.drop);
       setCompleted(true);
       setPointsEarned(result.drop.points_awarded);
       setTxnCompleted(result.transaction_completed);
@@ -149,10 +163,29 @@ export function DropTaskScreen() {
         {drop.reference_number ? (
           <Text style={styles.refText}>Ref: {drop.reference_number}</Text>
         ) : null}
+
+        {isLinkedDrop ? (
+          <View
+            style={[
+              styles.dependencyBanner,
+              {
+                borderColor: isLinkedPickComplete ? colors.success : colors.warning,
+                backgroundColor: isLinkedPickComplete ? colors.success + '14' : colors.warning + '14',
+              },
+            ]}
+          >
+            <Text style={styles.dependencyTitle}>Linked Pick</Text>
+            <Text style={styles.dependencyText}>
+              {isLinkedPickComplete
+                ? 'The linked pick is complete. Finish this drop to continue the transaction.'
+                : 'This drop unlocks only after the linked pick is completed.'}
+            </Text>
+          </View>
+        ) : null}
         </View>
 
         <View style={styles.actions}>
-          {isAssigned ? (
+          {isAssigned && isLinkedPickComplete ? (
             <TouchableOpacity
               style={styles.startButton}
               onPress={handleStart}
@@ -170,7 +203,7 @@ export function DropTaskScreen() {
             </TouchableOpacity>
           ) : null}
 
-          {isInProgress ? (
+          {isInProgress && isLinkedPickComplete ? (
             <TouchableOpacity
               style={styles.completeButton}
               onPress={handleComplete}
@@ -264,6 +297,25 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textMuted,
     marginTop: spacing.sm,
+  },
+  dependencyBanner: {
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  dependencyTitle: {
+    ...typography.small,
+    color: colors.textPrimary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  dependencyText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    lineHeight: 20,
   },
   actions: {
     marginTop: 'auto',

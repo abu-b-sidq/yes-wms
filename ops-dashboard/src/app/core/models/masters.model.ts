@@ -52,6 +52,7 @@ export interface FacilityZone {
   zone_name?: string;
   facility: string;
   is_active: boolean;
+  overrides?: Record<string, unknown>;
 }
 
 export interface FacilityLocation {
@@ -61,6 +62,7 @@ export interface FacilityLocation {
   location_name?: string;
   facility: string;
   is_active: boolean;
+  overrides?: Record<string, unknown>;
 }
 
 export interface SkuCreatePayload {

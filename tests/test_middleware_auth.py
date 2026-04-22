@@ -148,6 +148,18 @@ def test_missing_facility_header_rejected_for_facility_scoped_route(client, org)
     assert response.json()["error"]["code"] == "TENANT_RESOLUTION_ERROR"
 
 
+def test_missing_facility_header_rejected_for_virtual_warehouse_route(client):
+    response = client.get(
+        "/api/v1/operations/virtual-warehouse",
+        HTTP_WAREHOUSE="TEST_WH9",
+        HTTP_X_ORG_ID="testorg",
+        HTTP_X_API_KEY="legacy-secret",
+    )
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "TENANT_RESOLUTION_ERROR"
+
+
 def test_unknown_warehouse_rejected_for_org_scoped_routes_once_facilities_exist(client, org, facility, api_headers):
     response = client.get(
         "/api/v1/masters/facilities",

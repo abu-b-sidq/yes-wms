@@ -79,6 +79,38 @@ class TestTransactionCreation:
                 },
             )
 
+    def test_create_move_with_mismatched_pick_drop_counts_fails(self, org, facility, sku):
+        with pytest.raises(ValidationError, match="matching pick and drop counts"):
+            services.create_transaction(
+                org,
+                facility,
+                {
+                    "transaction_type": TransactionType.MOVE,
+                    "picks": [
+                        {
+                            "sku_code": "SKU-001",
+                            "source_entity_type": EntityType.LOCATION,
+                            "source_entity_code": "LOC-001",
+                            "quantity": Decimal("10"),
+                        }
+                    ],
+                    "drops": [
+                        {
+                            "sku_code": "SKU-001",
+                            "dest_entity_type": EntityType.LOCATION,
+                            "dest_entity_code": "LOC-002",
+                            "quantity": Decimal("5"),
+                        },
+                        {
+                            "sku_code": "SKU-001",
+                            "dest_entity_type": EntityType.LOCATION,
+                            "dest_entity_code": "LOC-003",
+                            "quantity": Decimal("5"),
+                        },
+                    ],
+                },
+            )
+
     def test_create_with_invalid_quantity(self, org, facility, sku):
         with pytest.raises(ValidationError, match="positive"):
             services.create_transaction(

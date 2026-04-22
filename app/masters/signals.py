@@ -72,6 +72,23 @@ def embed_sku(sender, instance, **kwargs):
     threading.Thread(target=_run, daemon=True).start()
 
 
+@receiver(post_save, sender=SKU)
+def create_sku_graph_node(sender, instance, **kwargs):
+    """Asynchronously create SKU node in knowledge graph."""
+    def _run():
+        from app.ai.graph_service import GraphService
+        service = GraphService.get_instance()
+        service.create_sku_node(
+            org_id=str(instance.org_id),
+            sku_code=instance.code,
+            sku_name=instance.name,
+            unit_of_measure=instance.unit_of_measure,
+            metadata=instance.metadata,
+        )
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 @receiver(post_save, sender=Zone)
 def auto_map_zone(sender, instance, created, **kwargs):
     """When a new Zone is created, map it to all existing org Facilities."""
@@ -98,3 +115,37 @@ def auto_map_location(sender, instance, created, **kwargs):
     ]
     if mappings:
         FacilityLocation.objects.bulk_create(mappings, ignore_conflicts=True)
+
+
+@receiver(post_save, sender=Facility)
+def create_facility_graph_node(sender, instance, **kwargs):
+    """Asynchronously create Facility node in knowledge graph."""
+    def _run():
+        from app.ai.graph_service import GraphService
+        service = GraphService.get_instance()
+        service.create_facility_node(
+            org_id=str(instance.org_id),
+            facility_code=instance.code,
+            facility_name=instance.name,
+            warehouse_key=instance.warehouse_key,
+            address=instance.address,
+        )
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
+@receiver(post_save, sender=Location)
+def create_location_graph_node(sender, instance, **kwargs):
+    """Asynchronously create Location node in knowledge graph."""
+    def _run():
+        from app.ai.graph_service import GraphService
+        service = GraphService.get_instance()
+        service.create_location_node(
+            org_id=str(instance.org_id),
+            location_code=instance.code,
+            location_name=instance.name,
+            zone_code=instance.zone.code if instance.zone else "",
+            capacity=instance.capacity,
+        )
+
+    threading.Thread(target=_run, daemon=True).start()
