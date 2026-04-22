@@ -23,16 +23,12 @@ class GraphService:
             neo4j_password = os.getenv("NEO4J_PASSWORD", "password")
 
             try:
-                # Build driver kwargs based on URI scheme
-                driver_kwargs = {
-                    "auth": (neo4j_user, neo4j_password),
-                }
-
-                # Only use SSL/trust settings for encrypted URI schemes
-                if neo4j_uri.startswith(("bolt+s", "bolt+ssc", "neo4j+s", "neo4j+ssc")):
-                    driver_kwargs["trust"] = "TRUST_ALL_CERTIFICATES"
-
-                cls._driver = GraphDatabase.driver(neo4j_uri, **driver_kwargs)
+                # Build driver with just auth - URI scheme handles encryption automatically
+                # Do NOT use trust parameter - it causes conflicts with encrypted schemes
+                cls._driver = GraphDatabase.driver(
+                    neo4j_uri,
+                    auth=(neo4j_user, neo4j_password),
+                )
                 cls._driver.verify_connectivity()
                 logger.info(f"Connected to Neo4j at {neo4j_uri}")
             except Exception as e:
